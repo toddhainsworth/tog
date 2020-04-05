@@ -13,6 +13,9 @@ import Data.Aeson
 data Config = Config { token :: String } deriving (Show, Generic)
 instance FromJSON Config
 
+defaultConfig :: Config
+defaultConfig = Config { token = "" }
+
 configPath :: IO FilePath
 configPath = do
   homeDir <- getHomeDirectory
@@ -20,11 +23,10 @@ configPath = do
 
 loadConfig :: IO Config
 loadConfig = do
-  pth <- configPath
   cf <- configPath >>= B.readFile
   let config = case (decode cf :: Maybe Config) of
             Just a -> a
-            Nothing -> Config { token = "" }
+            Nothing -> defaultConfig
   return config
 
 main :: IO ()
