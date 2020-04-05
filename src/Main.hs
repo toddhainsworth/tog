@@ -24,7 +24,7 @@ loadConfig = do
   cf <- configPath >>= B.readFile
   let config = case (decode cf :: Maybe Config) of
             Just a -> a
-            Nothing -> Config {}
+            Nothing -> Config { token = "" }
   return config
 
 main :: IO ()
