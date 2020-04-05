@@ -8,9 +8,6 @@ import System.FilePath
 import Data.Aeson
 
 -- GOALS
--- Read JSON file
--- Parse JSON
--- Get token from JSON
 -- Push token into Hoggl
 -- Take workspaces and display
 data Config = Config { token :: String } deriving (Show, Generic)
