@@ -32,6 +32,9 @@ This is a Toggl CLI tool built with oclif framework. The project uses TypeScript
 - `@oclif/core` - Core oclif framework
 - `@oclif/plugin-help` - Help system
 - `@oclif/plugin-plugins` - Plugin management
+- `arktype` - Runtime type validation library
+- `home-config` - Configuration file management in user home directory
+- `openapi-fetch` - Type-safe API client for Toggl API integration
 
 ### Build Output
 - Compiled code goes to `dist/`
@@ -43,6 +46,41 @@ This is a Toggl CLI tool built with oclif framework. The project uses TypeScript
 - Uses Mocha with TypeScript support via ts-node
 - Tests have 60-second timeout configured
 - Use `@oclif/test` for oclif-specific testing utilities
+
+## Configuration Management
+
+### User Configuration
+- Configuration is stored in `~/.togrc` file using `home-config` package
+- Contains API token for Toggl API authentication
+- Use `tog init` to set up configuration with validation
+- Use `tog nuke` to delete configuration (with confirmation prompt)
+
+### API Integration
+- Uses `TogglClient` class from `src/lib/toggl-client.ts`
+- Implements Basic Auth with API token format: `${token}:api_token`
+- Client provides `ping()` method for token validation
+- Base URL: `https://api.track.toggl.com/api/v9`
+
+## Implementation Notes
+
+### Command Generation
+- Always use `npx oclif generate command <name>` to create new commands
+- This ensures proper oclif structure and includes test files
+
+### Type Validation
+- Use arktype for runtime validation: `type("string>=32")` for API tokens
+- Use arktype's `infer` for generating TypeScript types from schemas
+- Pattern: `type ApiToken = typeof ApiTokenSchema.infer`
+
+### Error Handling
+- Use `this.error()` for command failures that should exit with error code
+- Use `this.log()` for informational output
+- Handle home-config import with `@ts-ignore` comment (no types available)
+
+### Interactive Prompts
+- Use `readline/promises` for user input in commands
+- Always close readline interface in finally block
+- Use confirmation prompts for destructive operations (y/N pattern)
 
 ## Documentation
 - PRDs (Product Requirements Documents) are stored in `docs/prd/`

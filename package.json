@@ -11,6 +11,8 @@
     "@oclif/core": "^4",
     "@oclif/plugin-help": "^6",
     "@oclif/plugin-plugins": "^5",
+    "arktype": "^2.1.22",
+    "home-config": "^0.1.0",
     "openapi-fetch": "^0.14.0"
   },
   "devDependencies": {
