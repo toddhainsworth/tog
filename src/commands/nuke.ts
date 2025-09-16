@@ -1,47 +1,46 @@
 import {Command} from '@oclif/core'
 import * as readline from 'readline/promises'
-import * as fs from 'fs'
-import * as path from 'path'
 
-// @ts-ignore - home-config doesn't have types
-import homeConfig from 'home-config'
+import {configExists, deleteConfig, getConfigFilePath} from '../lib/config.js'
+import {EMOJIS} from '../lib/emojis.js'
 
 export default class Nuke extends Command {
   static override description = 'Delete Toggl CLI configuration'
-  static override examples = [
-    '<%= config.bin %> <%= command.id %>',
-  ]
+  static override examples = ['<%= config.bin %> <%= command.id %>']
 
   public async run(): Promise<void> {
+    // Set up interactive prompt for confirmation
     const rl = readline.createInterface({
       input: process.stdin,
       output: process.stdout,
     })
 
     try {
-      // Check if config file exists
-      const configPath = path.resolve((homeConfig as any).homeDir, '.togrc')
-      const configExists = fs.existsSync(configPath)
-
-      if (!configExists) {
-        this.log('ℹ️  No Toggl CLI configuration found. Nothing to delete.')
+      // Check if configuration file exists before attempting deletion
+      if (!configExists()) {
+        this.log(`${EMOJIS.INFO}  No Toggl CLI configuration found. Nothing to delete.`)
         return
       }
 
-      this.log('⚠️  This will permanently delete your Toggl CLI configuration (~/.togrc)')
+      // Warning message about permanent deletion
+      this.log(`${EMOJIS.WARNING}  This will permanently delete your Toggl CLI configuration (${getConfigFilePath()})`)
       this.log('You will need to run `tog init` again to set up your API token.')
 
-      const confirmation = await rl.question('Are you sure you want to continue? (y/N): ')
+      // Prompt for confirmation (defaults to No for safety)
+      const confirmation = await rl
+        .question('Are you sure you want to continue? (y/N): ')
+        .then((resp) => resp.toLowerCase())
 
-      if (confirmation.toLowerCase() !== 'y' && confirmation.toLowerCase() !== 'yes') {
-        this.log('❌ Operation cancelled.')
+      // Only proceed if user explicitly confirms with 'y' or 'yes'
+      if (!['yes', 'y'].includes(confirmation)) {
+        this.log(`${EMOJIS.ERROR} Operation cancelled.`)
         return
       }
 
-      fs.unlinkSync(configPath)
-      this.log('✓ Toggl CLI configuration deleted successfully')
+      // Delete the configuration file
+      deleteConfig()
+      this.log(`${EMOJIS.SUCCESS} Toggl CLI configuration deleted successfully`)
       this.log('Run `tog init` to set up your API token again.')
-
     } catch (error) {
       this.error(`Failed to delete configuration: ${error instanceof Error ? error.message : String(error)}`)
     } finally {

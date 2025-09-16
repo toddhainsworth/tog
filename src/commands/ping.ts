@@ -1,10 +1,8 @@
 import {Command} from '@oclif/core'
-import * as fs from 'fs'
-import * as path from 'path'
 
-// @ts-ignore - home-config doesn't have types
-import homeConfig from 'home-config'
 import {TogglClient} from '../lib/toggl-client.js'
+import {loadConfig} from '../lib/config.js'
+import {EMOJIS} from '../lib/emojis.js'
 
 export default class Ping extends Command {
   static override description = 'Test connection to Toggl API using stored token'
@@ -14,34 +12,25 @@ export default class Ping extends Command {
 
   public async run(): Promise<void> {
     try {
-      // Check if config file exists
-      const configPath = path.resolve((homeConfig as any).homeDir, '.togrc')
-      const configExists = fs.existsSync(configPath)
+      // Load and validate configuration from ~/.togrc
+      const config = loadConfig()
 
-      if (!configExists) {
+      if (!config) {
         this.error('No Toggl CLI configuration found. Run `tog init` to set up your API token first.')
         return
       }
 
-      // Load configuration
-      const config = homeConfig.load('.togrc', {})
+      this.log(`${EMOJIS.LOADING} Testing connection to Toggl API...`)
 
-      if (!config.apiToken) {
-        this.error('No API token found in configuration. Run `tog init` to set up your API token.')
-        return
-      }
-
-      this.log('🔄 Testing connection to Toggl API...')
-
-      // Test the connection
+      // Create Toggl client with stored API token and test connectivity
       const client = new TogglClient(config.apiToken)
       const isConnected = await client.ping()
 
       if (isConnected) {
-        this.log('✅ Successfully connected to Toggl API!')
+        this.log(`${EMOJIS.SUCCESS} Successfully connected to Toggl API!`)
         this.log('Your API token is working correctly.')
       } else {
-        this.error('❌ Failed to connect to Toggl API. Your API token may be invalid.')
+        this.error(`${EMOJIS.ERROR} Failed to connect to Toggl API. Your API token may be invalid.`)
       }
 
     } catch (error) {
