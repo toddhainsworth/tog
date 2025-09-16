@@ -10,7 +10,8 @@
   "dependencies": {
     "@oclif/core": "^4",
     "@oclif/plugin-help": "^6",
-    "@oclif/plugin-plugins": "^5"
+    "@oclif/plugin-plugins": "^5",
+    "openapi-fetch": "^0.14.0"
   },
   "devDependencies": {
     "@eslint/compat": "^1",
@@ -25,6 +26,7 @@
     "eslint-config-prettier": "^10",
     "mocha": "^10",
     "oclif": "^4",
+    "openapi-typescript": "5",
     "shx": "^0.3.3",
     "ts-node": "^10",
     "typescript": "^5"
