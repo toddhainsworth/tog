@@ -12,6 +12,7 @@
     "@oclif/plugin-help": "^6",
     "@oclif/plugin-plugins": "^5",
     "arktype": "^2.1.22",
+    "axios": "^1.12.2",
     "openapi-fetch": "^0.14.0"
   },
   "devDependencies": {
