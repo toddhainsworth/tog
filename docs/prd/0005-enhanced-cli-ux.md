@@ -78,7 +78,7 @@ interface PromptConfig {
 - [x] Update init command with enhanced workspace selection
 - [x] Maintain all existing functionality while improving UX
 - [x] Test enhanced UX implementation
-- [ ] Update all loading states with progress indicators (future enhancement)
+- [x] Update all loading states with progress indicators
 - [ ] Test across different terminal environments (manual testing required)
 - [ ] Ensure accessibility considerations are met (ongoing)
 

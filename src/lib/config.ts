@@ -1,14 +1,10 @@
-import * as fs from 'fs'
-import * as path from 'path'
-import * as os from 'os'
-import {type} from 'arktype'
+import * as fs from 'node:fs'
+import * as os from 'node:os'
+import * as path from 'node:path'
+
+import {ConfigSchema} from './validation.js'
 
 const CONFIG_FILE = '.togrc'
-
-const ApiTokenSchema = type('string>=32')
-const ConfigSchema = type({
-  apiToken: ApiTokenSchema,
-})
 
 export type TogglConfig = typeof ConfigSchema.infer
 
@@ -20,7 +16,7 @@ export function configExists(): boolean {
   return fs.existsSync(getConfigPath())
 }
 
-export function loadConfig(): TogglConfig | null {
+export function loadConfig(): null | TogglConfig {
   try {
     const configPath = getConfigPath()
     if (!fs.existsSync(configPath)) {
@@ -30,12 +26,8 @@ export function loadConfig(): TogglConfig | null {
     const data = fs.readFileSync(configPath, 'utf8')
     const parsed = JSON.parse(data)
 
-    const validation = ConfigSchema(parsed)
-    if (validation instanceof type.errors) {
-      return null
-    }
-
-    return validation
+    // Use assertion for validation - let caller handle errors
+    return ConfigSchema.assert(parsed)
   } catch {
     return null
   }
