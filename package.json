@@ -13,6 +13,7 @@
     "@oclif/plugin-plugins": "^5",
     "arktype": "^2.1.22",
     "axios": "^1.12.2",
+    "inquirer": "^12.9.6",
     "openapi-fetch": "^0.14.0"
   },
   "devDependencies": {
@@ -20,6 +21,7 @@
     "@oclif/prettier-config": "^0.2.1",
     "@oclif/test": "^4",
     "@types/chai": "^4",
+    "@types/inquirer": "^9.0.9",
     "@types/mocha": "^10",
     "@types/node": "^18",
     "chai": "^4",
