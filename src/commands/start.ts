@@ -2,7 +2,7 @@ import { Command } from '@oclif/core'
 
 import { loadConfig } from '../lib/config.js'
 import { EMOJIS } from '../lib/emojis.js'
-import { promptForDescription, promptForTaskSelection } from '../lib/prompts.js'
+import { promptForDescription, promptForTaskSelection, withSpinner } from '../lib/prompts.js'
 import { TogglClient } from '../lib/toggl-client.js'
 
 export default class Start extends Command {
@@ -21,14 +21,15 @@ export default class Start extends Command {
         return
       }
 
-      this.log(`${EMOJIS.LOADING} Checking API connectivity...`)
-
       // Create Toggl client and verify connectivity
       const client = new TogglClient(config.apiToken)
 
       let isConnected: boolean
       try {
-        isConnected = await client.ping()
+        isConnected = await withSpinner('Checking API connectivity...', () => client.ping(), {
+          log: this.log.bind(this),
+          warn: this.warn.bind(this)
+        })
       } catch (error) {
         this.error(`${EMOJIS.ERROR} API validation error: ${error instanceof Error ? error.message : String(error)}`)
         return
@@ -65,13 +66,16 @@ export default class Start extends Command {
       }
 
       // Fetch and display available tasks
-      this.log(`${EMOJIS.LOADING} Fetching available tasks...`)
       let tasks: Awaited<ReturnType<typeof client.getTasks>>
       let projects: Awaited<ReturnType<typeof client.getProjects>>
 
       try {
-        tasks = await client.getTasks()
-        projects = await client.getProjects()
+        [tasks, projects] = await withSpinner('Fetching available tasks and projects...', async () => {
+          return await Promise.all([client.getTasks(), client.getProjects()])
+        }, {
+          log: this.log.bind(this),
+          warn: this.warn.bind(this)
+        })
       } catch (error) {
         this.error(`Failed to fetch tasks/projects: ${error instanceof Error ? error.message : String(error)}`)
         return
@@ -109,7 +113,6 @@ export default class Start extends Command {
       }
 
       this.log(`${EMOJIS.SUCCESS} Selected: ${selectedChoice.display}`)
-      this.log(`${EMOJIS.LOADING} Creating timer...`)
 
       // Create time entry with selected task/project
       const timeEntryData: {
@@ -136,7 +139,12 @@ export default class Start extends Command {
         timeEntryData.project_id = selectedChoice.project_id
       }
 
-      const timeEntry = await client.createTimeEntry(config.workspaceId, timeEntryData)
+      const timeEntry = await withSpinner('Creating timer...', () =>
+        client.createTimeEntry(config.workspaceId, timeEntryData)
+      , {
+        log: this.log.bind(this),
+        warn: this.warn.bind(this)
+      })
 
       if (timeEntry) {
         this.log(`${EMOJIS.SUCCESS} Timer started successfully!`)

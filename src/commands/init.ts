@@ -3,7 +3,7 @@ import * as readline from 'node:readline/promises'
 
 import {getConfigFilePath, saveConfig} from '../lib/config.js'
 import {EMOJIS} from '../lib/emojis.js'
-import {promptForWorkspaceSelection} from '../lib/prompts.js'
+import {promptForWorkspaceSelection, withSpinner} from '../lib/prompts.js'
 import {TogglClient} from '../lib/toggl-client.js'
 import {ApiTokenSchema} from '../lib/validation.js'
 
@@ -42,12 +42,14 @@ export default class Init extends Command {
 
       // Optional API validation - test token against Toggl API
       if (flags.validate) {
-        this.log(`${EMOJIS.LOADING} Validating API token...`)
         const client = new TogglClient(validatedToken)
 
         let isValid: boolean
         try {
-          isValid = await client.ping()
+          isValid = await withSpinner('Validating API token...', () => client.ping(), {
+            log: this.log.bind(this),
+            warn: this.warn.bind(this)
+          })
         } catch (error) {
           this.error(`${EMOJIS.ERROR} API validation failed: ${error instanceof Error ? error.message : String(error)}`)
           return
@@ -63,12 +65,14 @@ export default class Init extends Command {
       }
 
       // Fetch available workspaces for selection
-      this.log(`${EMOJIS.LOADING} Fetching available workspaces...`)
       const client = new TogglClient(validatedToken)
 
       let workspaces: Awaited<ReturnType<typeof client.getWorkspaces>>
       try {
-        workspaces = await client.getWorkspaces()
+        workspaces = await withSpinner('Fetching available workspaces...', () => client.getWorkspaces(), {
+          log: this.log.bind(this),
+          warn: this.warn.bind(this)
+        })
       } catch (error) {
         this.error(`Failed to fetch workspaces: ${error instanceof Error ? error.message : String(error)}`)
         return

@@ -1,4 +1,5 @@
 import inquirer from 'inquirer'
+import ora from 'ora'
 
 import {EMOJIS} from './emojis.js'
 
@@ -167,4 +168,38 @@ export async function promptForWorkspaceSelection(
   ])
 
   return answer.workspaceId
+}
+
+// Loading utilities for better UX during async operations with oclif integration
+export async function withSpinner<T>(
+  text: string,
+  operation: () => Promise<T>,
+  context: {
+    log: (message: string) => void;
+    jsonEnabled?: () => boolean;
+    warn?: (message: string) => void;
+  }
+): Promise<T> {
+  // If JSON output is enabled, don't show spinner
+  if (context.jsonEnabled?.()) {
+    return await operation()
+  }
+
+  const spinner = ora({
+    text,
+    spinner: 'dots'
+  }).start()
+
+  try {
+    const result = await operation()
+    spinner.succeed(`${text.replace(/\.\.\.$/, '')} completed`)
+    return result
+  } catch (error) {
+    spinner.fail(`${text.replace(/\.\.\.$/, '')} failed`)
+    // Use oclif's logging for errors
+    if (error instanceof Error && context.warn) {
+      context.warn(`Operation failed: ${error.message}`)
+    }
+    throw error
+  }
 }

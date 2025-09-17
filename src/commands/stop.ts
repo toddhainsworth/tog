@@ -2,6 +2,7 @@ import {Command} from '@oclif/core'
 
 import {loadConfig} from '../lib/config.js'
 import {EMOJIS} from '../lib/emojis.js'
+import {withSpinner} from '../lib/prompts.js'
 import {TogglClient} from '../lib/toggl-client.js'
 
 export default class Stop extends Command {
@@ -20,11 +21,12 @@ export default class Stop extends Command {
         return
       }
 
-      this.log(`${EMOJIS.LOADING} Checking for running timer...`)
-
       // Create Toggl client and get current time entry
       const client = new TogglClient(config.apiToken)
-      const currentEntry = await client.getCurrentTimeEntry()
+      const currentEntry = await withSpinner('Checking for running timer...', () => client.getCurrentTimeEntry(), {
+        log: this.log.bind(this),
+        warn: this.warn.bind(this)
+      })
 
       if (!currentEntry) {
         this.log(`${EMOJIS.INFO} No timer is currently running.`)
