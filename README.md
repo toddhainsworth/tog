@@ -1,13 +1,48 @@
 tog
 =================
 
-Toggl CLI
+A modern CLI for Toggl time tracking with enhanced user experience
 
 
 [![oclif](https://img.shields.io/badge/cli-oclif-brightgreen.svg)](https://oclif.io)
 [![Version](https://img.shields.io/npm/v/tog.svg)](https://npmjs.org/package/tog)
 [![Downloads/week](https://img.shields.io/npm/dw/tog.svg)](https://npmjs.org/package/tog)
 
+
+## Features
+
+- 🚀 **Modern CLI UX** - Enhanced prompts with arrow-key navigation and spinners
+- ⏱️ **Timer Management** - Start, stop, and check status of Toggl timers
+- 📊 **Project Integration** - Select from your Toggl projects and tasks
+- 🔧 **Easy Setup** - Simple configuration with API token validation
+- 💫 **Loading Indicators** - Visual feedback for all API operations
+
+## Quick Start
+
+1. **Install** (when published to npm):
+   ```bash
+   npm install -g tog
+   ```
+
+2. **Configure** with your Toggl API token:
+   ```bash
+   tog init
+   ```
+
+3. **Start tracking time**:
+   ```bash
+   tog start
+   ```
+
+4. **Check current timer**:
+   ```bash
+   tog current
+   ```
+
+5. **Stop timer**:
+   ```bash
+   tog stop
+   ```
 
 <!-- toc -->
 * [Usage](#usage)
@@ -29,61 +64,30 @@ USAGE
 <!-- usagestop -->
 # Commands
 <!-- commands -->
-* [`tog hello PERSON`](#tog-hello-person)
-* [`tog hello world`](#tog-hello-world)
+* [`tog current`](#tog-current)
 * [`tog help [COMMAND]`](#tog-help-command)
-* [`tog plugins`](#tog-plugins)
-* [`tog plugins add PLUGIN`](#tog-plugins-add-plugin)
-* [`tog plugins:inspect PLUGIN...`](#tog-pluginsinspect-plugin)
-* [`tog plugins install PLUGIN`](#tog-plugins-install-plugin)
-* [`tog plugins link PATH`](#tog-plugins-link-path)
-* [`tog plugins remove [PLUGIN]`](#tog-plugins-remove-plugin)
-* [`tog plugins reset`](#tog-plugins-reset)
-* [`tog plugins uninstall [PLUGIN]`](#tog-plugins-uninstall-plugin)
-* [`tog plugins unlink [PLUGIN]`](#tog-plugins-unlink-plugin)
-* [`tog plugins update`](#tog-plugins-update)
+* [`tog init`](#tog-init)
+* [`tog nuke`](#tog-nuke)
+* [`tog ping`](#tog-ping)
+* [`tog start`](#tog-start)
+* [`tog stop`](#tog-stop)
 
-## `tog hello PERSON`
+## `tog current`
 
-Say hello
+Show currently running timer
 
 ```
 USAGE
-  $ tog hello PERSON -f <value>
-
-ARGUMENTS
-  PERSON  Person to say hello to
-
-FLAGS
-  -f, --from=<value>  (required) Who is saying hello
+  $ tog current
 
 DESCRIPTION
-  Say hello
+  Show currently running timer
 
 EXAMPLES
-  $ tog hello friend --from oclif
-  hello friend from oclif! (./src/commands/hello/index.ts)
+  $ tog current
 ```
 
-_See code: [src/commands/hello/index.ts](https://github.com/toddhainsworth/tog/blob/v0.0.0/src/commands/hello/index.ts)_
-
-## `tog hello world`
-
-Say hello world
-
-```
-USAGE
-  $ tog hello world
-
-DESCRIPTION
-  Say hello world
-
-EXAMPLES
-  $ tog hello world
-  hello world! (./src/commands/hello/world.ts)
-```
-
-_See code: [src/commands/hello/world.ts](https://github.com/toddhainsworth/tog/blob/v0.0.0/src/commands/hello/world.ts)_
+_See code: [src/commands/current.ts](https://github.com/toddhainsworth/tog/blob/v0.0.0/src/commands/current.ts)_
 
 ## `tog help [COMMAND]`
 
@@ -105,293 +109,96 @@ DESCRIPTION
 
 _See code: [@oclif/plugin-help](https://github.com/oclif/plugin-help/blob/v6.2.33/src/commands/help.ts)_
 
-## `tog plugins`
+## `tog init`
 
-List installed plugins.
+Initialize Toggl CLI with API token
 
 ```
 USAGE
-  $ tog plugins [--json] [--core]
+  $ tog init [-v]
 
 FLAGS
-  --core  Show core plugins.
-
-GLOBAL FLAGS
-  --json  Format output as json.
+  -v, --validate  Validate API token by testing connection to Toggl API
 
 DESCRIPTION
-  List installed plugins.
+  Initialize Toggl CLI with API token
 
 EXAMPLES
-  $ tog plugins
+  $ tog init
+
+  $ tog init --validate
 ```
 
-_See code: [@oclif/plugin-plugins](https://github.com/oclif/plugin-plugins/blob/v5.4.47/src/commands/plugins/index.ts)_
+_See code: [src/commands/init.ts](https://github.com/toddhainsworth/tog/blob/v0.0.0/src/commands/init.ts)_
 
-## `tog plugins add PLUGIN`
+## `tog nuke`
 
-Installs a plugin into tog.
+Delete Toggl CLI configuration
 
 ```
 USAGE
-  $ tog plugins add PLUGIN... [--json] [-f] [-h] [-s | -v]
-
-ARGUMENTS
-  PLUGIN...  Plugin to install.
-
-FLAGS
-  -f, --force    Force npm to fetch remote resources even if a local copy exists on disk.
-  -h, --help     Show CLI help.
-  -s, --silent   Silences npm output.
-  -v, --verbose  Show verbose npm output.
-
-GLOBAL FLAGS
-  --json  Format output as json.
+  $ tog nuke
 
 DESCRIPTION
-  Installs a plugin into tog.
-
-  Uses npm to install plugins.
-
-  Installation of a user-installed plugin will override a core plugin.
-
-  Use the TOG_NPM_LOG_LEVEL environment variable to set the npm loglevel.
-  Use the TOG_NPM_REGISTRY environment variable to set the npm registry.
-
-ALIASES
-  $ tog plugins add
+  Delete Toggl CLI configuration
 
 EXAMPLES
-  Install a plugin from npm registry.
-
-    $ tog plugins add myplugin
-
-  Install a plugin from a github url.
-
-    $ tog plugins add https://github.com/someuser/someplugin
-
-  Install a plugin from a github slug.
-
-    $ tog plugins add someuser/someplugin
+  $ tog nuke
 ```
 
-## `tog plugins:inspect PLUGIN...`
+_See code: [src/commands/nuke.ts](https://github.com/toddhainsworth/tog/blob/v0.0.0/src/commands/nuke.ts)_
 
-Displays installation properties of a plugin.
+## `tog ping`
+
+Test connection to Toggl API using stored token
 
 ```
 USAGE
-  $ tog plugins inspect PLUGIN...
-
-ARGUMENTS
-  PLUGIN...  [default: .] Plugin to inspect.
+  $ tog ping [--json]
 
 FLAGS
-  -h, --help     Show CLI help.
-  -v, --verbose
-
-GLOBAL FLAGS
-  --json  Format output as json.
+  --json  Format output as json
 
 DESCRIPTION
-  Displays installation properties of a plugin.
+  Test connection to Toggl API using stored token
 
 EXAMPLES
-  $ tog plugins inspect myplugin
+  $ tog ping
 ```
 
-_See code: [@oclif/plugin-plugins](https://github.com/oclif/plugin-plugins/blob/v5.4.47/src/commands/plugins/inspect.ts)_
+_See code: [src/commands/ping.ts](https://github.com/toddhainsworth/tog/blob/v0.0.0/src/commands/ping.ts)_
 
-## `tog plugins install PLUGIN`
+## `tog start`
 
-Installs a plugin into tog.
+Start a new time tracking timer
 
 ```
 USAGE
-  $ tog plugins install PLUGIN... [--json] [-f] [-h] [-s | -v]
-
-ARGUMENTS
-  PLUGIN...  Plugin to install.
-
-FLAGS
-  -f, --force    Force npm to fetch remote resources even if a local copy exists on disk.
-  -h, --help     Show CLI help.
-  -s, --silent   Silences npm output.
-  -v, --verbose  Show verbose npm output.
-
-GLOBAL FLAGS
-  --json  Format output as json.
+  $ tog start
 
 DESCRIPTION
-  Installs a plugin into tog.
-
-  Uses npm to install plugins.
-
-  Installation of a user-installed plugin will override a core plugin.
-
-  Use the TOG_NPM_LOG_LEVEL environment variable to set the npm loglevel.
-  Use the TOG_NPM_REGISTRY environment variable to set the npm registry.
-
-ALIASES
-  $ tog plugins add
+  Start a new time tracking timer
 
 EXAMPLES
-  Install a plugin from npm registry.
-
-    $ tog plugins install myplugin
-
-  Install a plugin from a github url.
-
-    $ tog plugins install https://github.com/someuser/someplugin
-
-  Install a plugin from a github slug.
-
-    $ tog plugins install someuser/someplugin
+  $ tog start
 ```
 
-_See code: [@oclif/plugin-plugins](https://github.com/oclif/plugin-plugins/blob/v5.4.47/src/commands/plugins/install.ts)_
+_See code: [src/commands/start.ts](https://github.com/toddhainsworth/tog/blob/v0.0.0/src/commands/start.ts)_
 
-## `tog plugins link PATH`
+## `tog stop`
 
-Links a plugin into the CLI for development.
+Stop the currently running timer
 
 ```
 USAGE
-  $ tog plugins link PATH [-h] [--install] [-v]
-
-ARGUMENTS
-  PATH  [default: .] path to plugin
-
-FLAGS
-  -h, --help          Show CLI help.
-  -v, --verbose
-      --[no-]install  Install dependencies after linking the plugin.
+  $ tog stop
 
 DESCRIPTION
-  Links a plugin into the CLI for development.
-
-  Installation of a linked plugin will override a user-installed or core plugin.
-
-  e.g. If you have a user-installed or core plugin that has a 'hello' command, installing a linked plugin with a 'hello'
-  command will override the user-installed or core plugin implementation. This is useful for development work.
-
+  Stop the currently running timer
 
 EXAMPLES
-  $ tog plugins link myplugin
+  $ tog stop
 ```
 
-_See code: [@oclif/plugin-plugins](https://github.com/oclif/plugin-plugins/blob/v5.4.47/src/commands/plugins/link.ts)_
-
-## `tog plugins remove [PLUGIN]`
-
-Removes a plugin from the CLI.
-
-```
-USAGE
-  $ tog plugins remove [PLUGIN...] [-h] [-v]
-
-ARGUMENTS
-  PLUGIN...  plugin to uninstall
-
-FLAGS
-  -h, --help     Show CLI help.
-  -v, --verbose
-
-DESCRIPTION
-  Removes a plugin from the CLI.
-
-ALIASES
-  $ tog plugins unlink
-  $ tog plugins remove
-
-EXAMPLES
-  $ tog plugins remove myplugin
-```
-
-## `tog plugins reset`
-
-Remove all user-installed and linked plugins.
-
-```
-USAGE
-  $ tog plugins reset [--hard] [--reinstall]
-
-FLAGS
-  --hard       Delete node_modules and package manager related files in addition to uninstalling plugins.
-  --reinstall  Reinstall all plugins after uninstalling.
-```
-
-_See code: [@oclif/plugin-plugins](https://github.com/oclif/plugin-plugins/blob/v5.4.47/src/commands/plugins/reset.ts)_
-
-## `tog plugins uninstall [PLUGIN]`
-
-Removes a plugin from the CLI.
-
-```
-USAGE
-  $ tog plugins uninstall [PLUGIN...] [-h] [-v]
-
-ARGUMENTS
-  PLUGIN...  plugin to uninstall
-
-FLAGS
-  -h, --help     Show CLI help.
-  -v, --verbose
-
-DESCRIPTION
-  Removes a plugin from the CLI.
-
-ALIASES
-  $ tog plugins unlink
-  $ tog plugins remove
-
-EXAMPLES
-  $ tog plugins uninstall myplugin
-```
-
-_See code: [@oclif/plugin-plugins](https://github.com/oclif/plugin-plugins/blob/v5.4.47/src/commands/plugins/uninstall.ts)_
-
-## `tog plugins unlink [PLUGIN]`
-
-Removes a plugin from the CLI.
-
-```
-USAGE
-  $ tog plugins unlink [PLUGIN...] [-h] [-v]
-
-ARGUMENTS
-  PLUGIN...  plugin to uninstall
-
-FLAGS
-  -h, --help     Show CLI help.
-  -v, --verbose
-
-DESCRIPTION
-  Removes a plugin from the CLI.
-
-ALIASES
-  $ tog plugins unlink
-  $ tog plugins remove
-
-EXAMPLES
-  $ tog plugins unlink myplugin
-```
-
-## `tog plugins update`
-
-Update installed plugins.
-
-```
-USAGE
-  $ tog plugins update [-h] [-v]
-
-FLAGS
-  -h, --help     Show CLI help.
-  -v, --verbose
-
-DESCRIPTION
-  Update installed plugins.
-```
-
-_See code: [@oclif/plugin-plugins](https://github.com/oclif/plugin-plugins/blob/v5.4.47/src/commands/plugins/update.ts)_
+_See code: [src/commands/stop.ts](https://github.com/toddhainsworth/tog/blob/v0.0.0/src/commands/stop.ts)_
 <!-- commandsstop -->
