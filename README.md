@@ -5,8 +5,6 @@ A modern CLI for Toggl time tracking with enhanced user experience
 
 
 [![oclif](https://img.shields.io/badge/cli-oclif-brightgreen.svg)](https://oclif.io)
-[![Version](https://img.shields.io/npm/v/tog.svg)](https://npmjs.org/package/tog)
-[![Downloads/week](https://img.shields.io/npm/dw/tog.svg)](https://npmjs.org/package/tog)
 
 
 ## Features
