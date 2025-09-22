@@ -1,5 +1,5 @@
 import {expect} from 'chai'
-import sinon from 'sinon'
+import {createSandbox} from 'sinon'
 
 import {
   calculateElapsedSeconds,
@@ -8,10 +8,10 @@ import {
 } from '../../src/lib/time-utils.js'
 
 describe('Time utilities', () => {
-  let sandbox: sinon.SinonSandbox
+  let sandbox: ReturnType<typeof createSandbox>
 
   beforeEach(() => {
-    sandbox = sinon.createSandbox()
+    sandbox = createSandbox()
   })
 
   afterEach(() => {

@@ -1,4 +1,4 @@
-import {expect} from 'chai'
+import { expect } from 'chai'
 
 import {
   ApiTokenSchema,
@@ -67,8 +67,8 @@ describe('Validation schemas', () => {
     })
 
     it('should reject missing fields', () => {
-      expect(() => ConfigSchema.assert({apiToken: 'a'.repeat(32)})).to.throw()
-      expect(() => ConfigSchema.assert({workspaceId: 123})).to.throw()
+      expect(() => ConfigSchema.assert({ apiToken: 'a'.repeat(32) })).to.throw()
+      expect(() => ConfigSchema.assert({ workspaceId: 123 })).to.throw()
     })
   })
 
@@ -191,18 +191,18 @@ describe('Validation schemas', () => {
     })
 
     it('should accept arrays with valid items', () => {
-      const workspaces = [{id: 1, name: 'WS1'}, {id: 2, name: 'WS2'}]
+      const workspaces = [{ id: 1, name: 'WS1' }, { id: 2, name: 'WS2' }]
       expect(() => WorkspacesArraySchema.assert(workspaces)).to.not.throw()
 
-      const projects = [{active: true, id: 1, name: 'P1', workspace_id: 1}]
+      const projects = [{ active: true, id: 1, name: 'P1', workspace_id: 1 }]
       expect(() => ProjectsArraySchema.assert(projects)).to.not.throw()
 
-      const tasks = [{active: true, id: 1, name: 'T1', project_id: 1}]
+      const tasks = [{ active: true, id: 1, name: 'T1', project_id: 1 }]
       expect(() => TasksArraySchema.assert(tasks)).to.not.throw()
     })
 
     it('should reject arrays with invalid items', () => {
-      const invalidWorkspaces = [{id: 1}] // Missing name
+      const invalidWorkspaces = [{ id: 1 }] // Missing name
       expect(() => WorkspacesArraySchema.assert(invalidWorkspaces)).to.throw()
     })
   })

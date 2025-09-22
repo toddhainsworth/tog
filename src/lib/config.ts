@@ -1,6 +1,6 @@
 import * as fs from 'node:fs'
 import * as os from 'node:os'
-import * as path from 'node:path'
+import {join} from 'node:path'
 
 import {ConfigSchema} from './validation.js'
 
@@ -9,7 +9,7 @@ const CONFIG_FILE = '.togrc'
 export type TogglConfig = typeof ConfigSchema.infer
 
 function getConfigPath(): string {
-  return path.join(os.homedir(), CONFIG_FILE)
+  return join(os.homedir(), CONFIG_FILE)
 }
 
 export function configExists(): boolean {

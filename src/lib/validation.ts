@@ -25,8 +25,7 @@ export const TimeEntrySchema = type({
   'uid?': 'number', // Legacy user ID
   'user_id?': 'number',
   'wid?': 'number', // Legacy workspace ID
-  workspace_id: 'number',
-})
+  workspace_id: 'number',})
 
 export const WorkspaceSchema = type({
   id: 'number',
@@ -40,15 +39,13 @@ export const ProjectSchema = type({
   'color?': 'string',
   id: 'number',
   name: 'string',
-  workspace_id: 'number',
-})
+  workspace_id: 'number',})
 
 export const TaskSchema = type({
   active: 'boolean',
   id: 'number',
   name: 'string',
-  project_id: 'number',
-})
+  project_id: 'number',})
 
 export const UserSchema = type({
   'email?': 'string',
@@ -62,7 +59,7 @@ export const ProjectsArraySchema = type(ProjectSchema, '[]')
 export const TasksArraySchema = type(TaskSchema, '[]')
 
 // User input validation
-export const WorkspaceSelectionSchema = type('string&/^[1-9]\\d*$/')
+export const WorkspaceSelectionSchema = type(String.raw`string&/^[1-9]\d*$/`)
 export const TimerDescriptionSchema = type('string>=1')
 
 // Configuration validation (enhanced version of what's in config.ts)

@@ -1,8 +1,8 @@
 import {expect} from 'chai'
 import * as fs from 'node:fs'
 import * as os from 'node:os'
-import * as path from 'node:path'
-import sinon from 'sinon'
+import {join} from 'node:path'
+import {createSandbox} from 'sinon'
 
 import {
   configExists,
@@ -14,12 +14,12 @@ import {
 } from '../../src/lib/config.js'
 
 describe('Config module', () => {
-  let sandbox: sinon.SinonSandbox
+  let sandbox: ReturnType<typeof createSandbox>
   let configPath: string
 
   beforeEach(() => {
-    sandbox = sinon.createSandbox()
-    configPath = path.join(os.homedir(), '.togrc')
+    sandbox = createSandbox()
+    configPath = join(os.homedir(), '.togrc')
 
     // Clean up any existing config
     if (fs.existsSync(configPath)) {

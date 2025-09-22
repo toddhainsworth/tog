@@ -15,6 +15,8 @@ export default [
   },
   {
     rules: {
+      // Disable camelcase to allow API property names like workspace_id, project_id
+      'camelcase': 'off',
       // Disable new-cap to allow openapi-fetch HTTP method naming (GET, POST, etc.)
       'new-cap': 'off',
       // Disable all perfectionist rules

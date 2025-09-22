@@ -99,8 +99,7 @@ export async function promptForTaskSelection(
       short: project.name,
       value: {
         display: displayName,
-        project_id: project.id
-      }
+        project_id: project.id      }
     })
   }
 
@@ -124,7 +123,7 @@ export async function promptForConfirmation(
   message: string,
   defaultValue: boolean = false
 ): Promise<boolean> {
-  return await confirm({
+  return confirm({
     default: defaultValue,
     message: `${EMOJIS.WARNING} ${message}`
   })
@@ -147,7 +146,7 @@ export async function promptForWorkspaceSelection(
     value: workspace.id
   }))
 
-  return await select({
+  return select({
     choices: choices.map(choice => ({
       name: choice.name,
       value: choice.value,
@@ -169,7 +168,7 @@ export async function withSpinner<T>(
 ): Promise<T> {
   // If JSON output is enabled, don't show spinner
   if (context.jsonEnabled?.()) {
-    return await operation()
+    return operation()
   }
 
   const spinner = ora({

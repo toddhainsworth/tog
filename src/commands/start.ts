@@ -1,13 +1,9 @@
-import { Command } from '@oclif/core'
-
 import type { Project, Task, TimeEntry } from '../lib/validation.js'
 
-import { loadConfig } from '../lib/config.js'
-import { EMOJIS } from '../lib/emojis.js'
+import { BaseCommand } from '../lib/base-command.js'
 import { promptForDescription, promptForTaskSelection, withSpinner } from '../lib/prompts.js'
-import { TogglClient } from '../lib/toggl-client.js'
 
-export default class Start extends Command {
+export default class Start extends BaseCommand {
   static override description = 'Start a new time tracking timer'
   static override examples = [
     '<%= config.bin %> <%= command.id %>',
@@ -15,16 +11,9 @@ export default class Start extends Command {
 
   public async run(): Promise<void> {
     try {
-      // Load and validate configuration
-      const config = loadConfig()
-
-      if (!config) {
-        this.error('No Toggl CLI configuration found. Run `tog init` to set up your API token first.')
-        return
-      }
-
-      // Create Toggl client and verify connectivity
-      const client = new TogglClient(config.apiToken)
+      // Load config and create client using base class methods
+      const config = this.loadConfigOrExit()
+      const client = this.getClient()
 
       let isConnected: boolean
       try {
@@ -33,12 +22,12 @@ export default class Start extends Command {
           warn: this.warn.bind(this)
         })
       } catch (error) {
-        this.error(`${EMOJIS.ERROR} API validation error: ${error instanceof Error ? error.message : String(error)}`)
+        this.handleError(error, 'API validation error')
         return
       }
 
       if (!isConnected) {
-        this.error(`${EMOJIS.ERROR} Unable to connect to Toggl API. Please check your configuration.`)
+        this.handleError(new Error('Unable to connect to Toggl API. Please check your configuration.'), 'Connection failed')
         return
       }
 
@@ -47,12 +36,12 @@ export default class Start extends Command {
       try {
         currentEntry = await client.getCurrentTimeEntry()
       } catch (error) {
-        this.error(`${EMOJIS.ERROR} Failed to check current timer: ${error instanceof Error ? error.message : String(error)}`)
+        this.handleError(error, 'Failed to check current timer')
         return
       }
 
       if (currentEntry) {
-        this.log(`${EMOJIS.WARNING} Timer is already running: "${currentEntry.description || 'Untitled'}"`)
+        this.logWarning(`Timer is already running: "${currentEntry.description || 'Untitled'}"`)
         this.log('Use `tog stop` to stop the current timer before starting a new one.')
         return
       }
@@ -63,7 +52,7 @@ export default class Start extends Command {
       try {
         description = await promptForDescription()
       } catch (error) {
-        this.error(`Failed to get timer description: ${error instanceof Error ? error.message : String(error)}`)
+        this.handleError(error, 'Failed to get timer description')
         return
       }
 
@@ -72,32 +61,30 @@ export default class Start extends Command {
       let projects: Project[]
 
       try {
-        [tasks, projects] = await withSpinner('Fetching available tasks and projects...', async () => await Promise.all([client.getTasks(), client.getProjects()]), {
+        [tasks, projects] = await withSpinner('Fetching available tasks and projects...', async () => Promise.all([client.getTasks(), client.getProjects()]), {
           log: this.log.bind(this),
           warn: this.warn.bind(this)
         })
       } catch (error) {
-        this.error(`Failed to fetch tasks/projects: ${error instanceof Error ? error.message : String(error)}`)
+        this.handleError(error, 'Failed to fetch tasks/projects')
         return
       }
 
       if (tasks.length === 0 && projects.length === 0) {
         // No tasks or projects, create simple time entry
-        this.log(`${EMOJIS.INFO} No tasks or projects found. Creating simple time entry...`)
+        this.logInfo('No tasks or projects found. Creating simple time entry...')
 
         const timeEntry = await client.createTimeEntry(config.workspaceId, {
-          created_with: 'tog-cli',
-          description,
+          created_with: 'tog-cli',          description,
           duration: -1, // Indicates a running timer
           start: new Date().toISOString(),
-          workspace_id: config.workspaceId,
-        })
+          workspace_id: config.workspaceId,        })
 
         if (timeEntry) {
-          this.log(`${EMOJIS.SUCCESS} Timer started successfully!`)
+          this.logSuccess('Timer started successfully!')
           this.log(`Description: "${description}"`)
         } else {
-          this.error(`${EMOJIS.ERROR} Failed to start timer. Please try again.`)
+          this.handleError(new Error('Failed to start timer. Please try again.'), 'Timer creation failed')
         }
 
         return
@@ -108,11 +95,11 @@ export default class Start extends Command {
       try {
         selectedChoice = await promptForTaskSelection(tasks, projects)
       } catch (error) {
-        this.error(`Failed to select task/project: ${error instanceof Error ? error.message : String(error)}`)
+        this.handleError(error, 'Failed to select task/project')
         return
       }
 
-      this.log(`${EMOJIS.SUCCESS} Selected: ${selectedChoice.display}`)
+      this.logSuccess(`Selected: ${selectedChoice.display}`)
 
       // Create time entry with selected task/project
       const timeEntryData: {
@@ -147,15 +134,15 @@ export default class Start extends Command {
       })
 
       if (timeEntry) {
-        this.log(`${EMOJIS.SUCCESS} Timer started successfully!`)
+        this.logSuccess('Timer started successfully!')
         this.log(`Description: "${description}"`)
         this.log(`Selected: ${selectedChoice.display}`)
       } else {
-        this.error(`${EMOJIS.ERROR} Failed to start timer. Please try again.`)
+        this.handleError(new Error('Failed to start timer. Please try again.'), 'Timer creation failed')
       }
 
     } catch (error) {
-      this.error(`Failed to start timer: ${error instanceof Error ? error.message : String(error)}`)
+      this.handleError(error, 'Failed to start timer')
     }
   }
 }
