@@ -59,7 +59,7 @@ export const ProjectsArraySchema = type(ProjectSchema, '[]')
 export const TasksArraySchema = type(TaskSchema, '[]')
 
 // User input validation
-export const WorkspaceSelectionSchema = type(String.raw`string&/^[1-9]\d*$/`)
+export const WorkspaceSelectionSchema = type('string&/^[1-9]\\d*$/')
 export const TimerDescriptionSchema = type('string>=1')
 
 // Configuration validation (enhanced version of what's in config.ts)

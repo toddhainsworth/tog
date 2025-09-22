@@ -9,7 +9,7 @@ import {TogglClient} from './toggl-client.js'
  */
 export abstract class BaseCommand extends Command {
   private client: null | TogglClient = null
-  private config: null | TogglConfig = null
+  private togglConfig: null | TogglConfig = null
 
   /**
    * Get or create Toggl client instance
@@ -17,7 +17,7 @@ export abstract class BaseCommand extends Command {
    */
   protected getClient(): TogglClient {
     if (!this.client) {
-      const config = this.config || this.loadConfigOrExit()
+      const config = this.togglConfig || this.loadConfigOrExit()
       this.client = new TogglClient(config.apiToken)
     }
 
@@ -44,7 +44,7 @@ export abstract class BaseCommand extends Command {
       this.error('No Toggl CLI configuration found. Run `tog init` to set up your API token first.')
     }
 
-    this.config = config
+    this.togglConfig = config
     return config
   }
 
