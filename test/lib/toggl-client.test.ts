@@ -24,7 +24,7 @@ describe('TogglClient', () => {
 
   describe('ping', () => {
     it('should return true for valid response', async () => {
-      const mockResponse = {data: {id: 123, email: 'test@example.com'}}
+      const mockResponse = {data: {email: 'test@example.com', id: 123}}
       sandbox.stub(axios, 'create').returns({
         get: sandbox.stub().resolves(mockResponse),
       } as any)
@@ -58,12 +58,12 @@ describe('TogglClient', () => {
   describe('getCurrentTimeEntry', () => {
     it('should return current time entry when running', async () => {
       const mockEntry = {
-        id: 1,
-        description: 'Working',
-        start: new Date().toISOString(),
-        duration: -1,
-        workspace_id: 123,
         at: new Date().toISOString(),
+        description: 'Working',
+        duration: -1,
+        id: 1,
+        start: new Date().toISOString(),
+        workspace_id: 123,
       }
       sandbox.stub(axios, 'create').returns({
         get: sandbox.stub().resolves({data: mockEntry}),
@@ -110,8 +110,8 @@ describe('TogglClient', () => {
   describe('getTasks', () => {
     it('should return tasks array', async () => {
       const mockTasks = [
-        {id: 1, name: 'Task 1', active: true, project_id: 100},
-        {id: 2, name: 'Task 2', active: true, project_id: 100},
+        {active: true, id: 1, name: 'Task 1', project_id: 100},
+        {active: true, id: 2, name: 'Task 2', project_id: 100},
       ]
       sandbox.stub(axios, 'create').returns({
         get: sandbox.stub().resolves({data: mockTasks}),
@@ -136,8 +136,8 @@ describe('TogglClient', () => {
   describe('getProjects', () => {
     it('should return projects array', async () => {
       const mockProjects = [
-        {id: 100, name: 'Project 1', active: true, workspace_id: 123},
-        {id: 101, name: 'Project 2', active: false, workspace_id: 123},
+        {active: true, id: 100, name: 'Project 1', workspace_id: 123},
+        {active: false, id: 101, name: 'Project 2', workspace_id: 123},
       ]
       sandbox.stub(axios, 'create').returns({
         get: sandbox.stub().resolves({data: mockProjects}),
@@ -178,12 +178,12 @@ describe('TogglClient', () => {
   describe('createTimeEntry', () => {
     it('should create and return new time entry', async () => {
       const mockEntry = {
-        id: 789,
-        description: 'New task',
-        start: new Date().toISOString(),
-        duration: -1,
-        workspace_id: 123,
         at: new Date().toISOString(),
+        description: 'New task',
+        duration: -1,
+        id: 789,
+        start: new Date().toISOString(),
+        workspace_id: 123,
       }
       sandbox.stub(axios, 'create').returns({
         post: sandbox.stub().resolves({data: mockEntry}),

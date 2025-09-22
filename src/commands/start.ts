@@ -1,10 +1,11 @@
 import { Command } from '@oclif/core'
 
+import type { Project, Task, TimeEntry } from '../lib/validation.js'
+
 import { loadConfig } from '../lib/config.js'
 import { EMOJIS } from '../lib/emojis.js'
 import { promptForDescription, promptForTaskSelection, withSpinner } from '../lib/prompts.js'
 import { TogglClient } from '../lib/toggl-client.js'
-import type { Project, Task, TimeEntry } from '../lib/validation.js'
 
 export default class Start extends Command {
   static override description = 'Start a new time tracking timer'
@@ -42,7 +43,7 @@ export default class Start extends Command {
       }
 
       // Check if there's already a running timer
-      let currentEntry: TimeEntry | null
+      let currentEntry: null | TimeEntry
       try {
         currentEntry = await client.getCurrentTimeEntry()
       } catch (error) {
@@ -71,9 +72,7 @@ export default class Start extends Command {
       let projects: Project[]
 
       try {
-        [tasks, projects] = await withSpinner('Fetching available tasks and projects...', async () => {
-          return await Promise.all([client.getTasks(), client.getProjects()])
-        }, {
+        [tasks, projects] = await withSpinner('Fetching available tasks and projects...', async () => await Promise.all([client.getTasks(), client.getProjects()]), {
           log: this.log.bind(this),
           warn: this.warn.bind(this)
         })
@@ -88,9 +87,9 @@ export default class Start extends Command {
 
         const timeEntry = await client.createTimeEntry(config.workspaceId, {
           created_with: 'tog-cli',
-          description: description,
-          start: new Date().toISOString(),
+          description,
           duration: -1, // Indicates a running timer
+          start: new Date().toISOString(),
           workspace_id: config.workspaceId,
         })
 
@@ -105,7 +104,7 @@ export default class Start extends Command {
       }
 
       // Use enhanced task/project selection
-      let selectedChoice: {task_id?: number; project_id?: number; display: string}
+      let selectedChoice: {display: string; project_id?: number; task_id?: number;}
       try {
         selectedChoice = await promptForTaskSelection(tasks, projects)
       } catch (error) {
@@ -119,16 +118,16 @@ export default class Start extends Command {
       const timeEntryData: {
         created_with: string
         description: string
-        start: string
         duration: number
-        workspace_id: number
-        task_id?: number
         project_id?: number
+        start: string
+        task_id?: number
+        workspace_id: number
       } = {
         created_with: 'tog-cli',
-        description: description,
-        start: new Date().toISOString(),
+        description,
         duration: -1, // Indicates a running timer
+        start: new Date().toISOString(),
         workspace_id: config.workspaceId,
       }
 

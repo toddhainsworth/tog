@@ -1,45 +1,48 @@
-import {input, select, confirm} from '@inquirer/prompts'
+import {confirm, input, select} from '@inquirer/prompts'
 import ora from 'ora'
 
-import {EMOJIS} from './emojis.js'
 import type {Project, Task, Workspace} from './validation.js'
+
+import {EMOJIS} from './emojis.js'
 
 // Enhanced prompt utilities for consistent CLI UX
 
 export interface TaskChoice {
-  value: {
-    task_id?: number
-    project_id?: number
-    display: string
-  }
   name: string
   short?: string
+  value: {
+    display: string
+    project_id?: number
+    task_id?: number
+  }
 }
 
 export interface PromptConfig {
-  message: string
   choices?: TaskChoice[]
-  validate?: (input: string) => boolean | string
   default?: string
+  message: string
+  validate?: (input: string) => boolean | string
 }
 
 export async function promptForDescription(message: string = 'Enter timer description'): Promise<string> {
   const description = await input({
     message: `${EMOJIS.INFO} ${message}:`,
-    validate: (input: string) => {
+    transformer(input: string) {
+      const trimmed = input.trim()
+      const remaining = 200 - trimmed.length
+      return remaining < 20 ? `${trimmed} (${remaining} chars left)` : trimmed
+    },
+    validate(input: string) {
       const trimmed = input.trim()
       if (trimmed.length === 0) {
         return 'Description cannot be empty'
       }
+
       if (trimmed.length > 200) {
         return 'Description must be 200 characters or less'
       }
+
       return true
-    },
-    transformer: (input: string) => {
-      const trimmed = input.trim()
-      const remaining = 200 - trimmed.length
-      return remaining < 20 ? `${trimmed} (${remaining} chars left)` : trimmed
     }
   })
 
@@ -47,8 +50,8 @@ export async function promptForDescription(message: string = 'Enter timer descri
 }
 
 interface TaskWithContext extends Task {
-  project_name?: string
   client_name?: string
+  project_name?: string
 }
 
 interface ProjectWithClient extends Project {
@@ -58,7 +61,7 @@ interface ProjectWithClient extends Project {
 export async function promptForTaskSelection(
   tasks: TaskWithContext[],
   projects: ProjectWithClient[]
-): Promise<{task_id?: number; project_id?: number; display: string}> {
+): Promise<{display: string; project_id?: number; task_id?: number;}> {
   const choices: TaskChoice[] = []
 
   // Add tasks first (with project context)
@@ -74,9 +77,9 @@ export async function promptForTaskSelection(
         name: displayName,
         short: task.name,
         value: {
-          task_id: task.id,
+          display: displayName,
           project_id: task.project_id,
-          display: displayName
+          task_id: task.id
         }
       })
     }
@@ -95,8 +98,8 @@ export async function promptForTaskSelection(
       name: displayName,
       short: project.name,
       value: {
-        project_id: project.id,
-        display: displayName
+        display: displayName,
+        project_id: project.id
       }
     })
   }
@@ -106,11 +109,11 @@ export async function promptForTaskSelection(
   }
 
   const selection = await select({
-    message: `${EMOJIS.LOADING} Select a ${tasks.length > 0 ? 'task or project' : 'project'}:`,
     choices: choices.map(choice => ({
       name: choice.name,
       value: choice.value,
     })),
+    message: `${EMOJIS.LOADING} Select a ${tasks.length > 0 ? 'task or project' : 'project'}:`,
     pageSize: Math.min(15, choices.length),
   })
 
@@ -122,8 +125,8 @@ export async function promptForConfirmation(
   defaultValue: boolean = false
 ): Promise<boolean> {
   return await confirm({
-    message: `${EMOJIS.WARNING} ${message}`,
-    default: defaultValue
+    default: defaultValue,
+    message: `${EMOJIS.WARNING} ${message}`
   })
 }
 
@@ -140,16 +143,16 @@ export async function promptForWorkspaceSelection(
 
   const choices = workspaces.map(workspace => ({
     name: workspace.name,
-    value: workspace.id,
-    short: workspace.name
+    short: workspace.name,
+    value: workspace.id
   }))
 
   return await select({
-    message: `${EMOJIS.LOADING} Select default workspace:`,
     choices: choices.map(choice => ({
       name: choice.name,
       value: choice.value,
     })),
+    message: `${EMOJIS.LOADING} Select default workspace:`,
     pageSize: Math.min(10, choices.length),
   })
 }
@@ -159,8 +162,8 @@ export async function withSpinner<T>(
   text: string,
   operation: () => Promise<T>,
   context: {
-    log: (message: string) => void;
     jsonEnabled?: () => boolean;
+    log: (message: string) => void;
     warn?: (message: string) => void;
   }
 ): Promise<T> {
@@ -170,8 +173,8 @@ export async function withSpinner<T>(
   }
 
   const spinner = ora({
-    text,
-    spinner: 'dots'
+    spinner: 'dots',
+    text
   }).start()
 
   try {
@@ -184,6 +187,7 @@ export async function withSpinner<T>(
     if (error instanceof Error && context.warn) {
       context.warn(`Operation failed: ${error.message}`)
     }
+
     throw error
   }
 }

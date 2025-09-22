@@ -3,17 +3,17 @@ import {expect} from 'chai'
 import {
   ApiTokenSchema,
   ConfigSchema,
-  ProjectSchema,
   ProjectsArraySchema,
-  TaskSchema,
+  ProjectSchema,
   TasksArraySchema,
+  TaskSchema,
   TimeEntrySchema,
   TimerDescriptionSchema,
   UserSchema,
   WorkspaceIdSchema,
+  WorkspacesArraySchema,
   WorkspaceSchema,
   WorkspaceSelectionSchema,
-  WorkspacesArraySchema,
 } from '../../src/lib/validation.js'
 
 describe('Validation schemas', () => {
@@ -37,7 +37,7 @@ describe('Validation schemas', () => {
   describe('WorkspaceIdSchema', () => {
     it('should accept positive workspace IDs', () => {
       expect(() => WorkspaceIdSchema.assert(1)).to.not.throw()
-      expect(() => WorkspaceIdSchema.assert(12345)).to.not.throw()
+      expect(() => WorkspaceIdSchema.assert(12_345)).to.not.throw()
     })
 
     it('should reject zero', () => {
@@ -53,7 +53,7 @@ describe('Validation schemas', () => {
     it('should accept valid config', () => {
       const validConfig = {
         apiToken: 'a'.repeat(32),
-        workspaceId: 12345,
+        workspaceId: 12_345,
       }
       expect(() => ConfigSchema.assert(validConfig)).to.not.throw()
     })
@@ -75,35 +75,35 @@ describe('Validation schemas', () => {
   describe('TimeEntrySchema', () => {
     it('should accept valid time entry', () => {
       const validEntry = {
-        id: 1,
         at: '2024-01-01T00:00:00Z',
+        description: 'Working on tests',
         duration: 3600,
+        id: 1,
         start: '2024-01-01T00:00:00Z',
         workspace_id: 123,
-        description: 'Working on tests',
       }
       expect(() => TimeEntrySchema.assert(validEntry)).to.not.throw()
     })
 
     it('should accept time entry with optional fields', () => {
       const entryWithOptionals = {
-        id: 1,
         at: '2024-01-01T00:00:00Z',
-        duration: -1, // Running timer
-        start: '2024-01-01T00:00:00Z',
-        workspace_id: 123,
-        description: 'Working',
-        project_id: 456,
-        task_id: 789,
         billable: true,
+        description: 'Working',
+        duration: -1, // Running timer
+        id: 1,
+        project_id: 456,
+        start: '2024-01-01T00:00:00Z',
+        task_id: 789,
+        workspace_id: 123,
       }
       expect(() => TimeEntrySchema.assert(entryWithOptionals)).to.not.throw()
     })
 
     it('should reject missing required fields', () => {
       const missingFields = {
-        id: 1,
         duration: 3600,
+        id: 1,
         // Missing: at, start, workspace_id
       }
       expect(() => TimeEntrySchema.assert(missingFields)).to.throw()
@@ -132,9 +132,9 @@ describe('Validation schemas', () => {
   describe('ProjectSchema', () => {
     it('should accept valid project', () => {
       const validProject = {
+        active: true,
         id: 123,
         name: 'My Project',
-        active: true,
         workspace_id: 456,
       }
       expect(() => ProjectSchema.assert(validProject)).to.not.throw()
@@ -142,12 +142,12 @@ describe('Validation schemas', () => {
 
     it('should accept project with optional fields', () => {
       const projectWithOptionals = {
+        active: false,
+        client_name: 'ACME Corp',
+        color: '#FF0000',
         id: 123,
         name: 'My Project',
-        active: false,
         workspace_id: 456,
-        color: '#FF0000',
-        client_name: 'ACME Corp',
       }
       expect(() => ProjectSchema.assert(projectWithOptionals)).to.not.throw()
     })
@@ -156,9 +156,9 @@ describe('Validation schemas', () => {
   describe('TaskSchema', () => {
     it('should accept valid task', () => {
       const validTask = {
+        active: true,
         id: 123,
         name: 'My Task',
-        active: true,
         project_id: 456,
       }
       expect(() => TaskSchema.assert(validTask)).to.not.throw()
@@ -175,9 +175,9 @@ describe('Validation schemas', () => {
 
     it('should accept user with optional fields', () => {
       const userWithOptionals = {
-        id: 123,
         email: 'user@example.com',
         fullname: 'John Doe',
+        id: 123,
       }
       expect(() => UserSchema.assert(userWithOptionals)).to.not.throw()
     })
@@ -194,10 +194,10 @@ describe('Validation schemas', () => {
       const workspaces = [{id: 1, name: 'WS1'}, {id: 2, name: 'WS2'}]
       expect(() => WorkspacesArraySchema.assert(workspaces)).to.not.throw()
 
-      const projects = [{id: 1, name: 'P1', active: true, workspace_id: 1}]
+      const projects = [{active: true, id: 1, name: 'P1', workspace_id: 1}]
       expect(() => ProjectsArraySchema.assert(projects)).to.not.throw()
 
-      const tasks = [{id: 1, name: 'T1', active: true, project_id: 1}]
+      const tasks = [{active: true, id: 1, name: 'T1', project_id: 1}]
       expect(() => TasksArraySchema.assert(tasks)).to.not.throw()
     })
 

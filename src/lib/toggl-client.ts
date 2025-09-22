@@ -38,6 +38,41 @@ export class TogglClient {
     })
   }
 
+  createTimeEntry(workspaceId: number, timeEntry: TimeEntryPayload): Promise<TimeEntry> {
+    return this.client
+      .post(`/workspaces/${workspaceId}/time_entries?meta=true`, timeEntry)
+      .then((resp) => resp.data)
+      .then(TimeEntrySchema.assert)
+  }
+
+  getCurrentTimeEntry(): Promise<null | TimeEntry> {
+    return this.client
+      .get('/me/time_entries/current')
+      .then((resp) => resp.data)
+      .then((data) => data ? TimeEntrySchema.assert(data) : null)
+  }
+
+  getProjects(): Promise<Project[]> {
+    return this.client
+      .get('/me/projects')
+      .then((resp) => resp.data || [])
+      .then(ProjectsArraySchema.assert)
+  }
+
+  getTasks(): Promise<Task[]> {
+    return this.client
+      .get('/me/tasks?meta=true')
+      .then((resp) => resp.data)
+      .then(TasksArraySchema.assert)
+  }
+
+  getWorkspaces(): Promise<Workspace[]> {
+    return this.client
+      .get('/me/workspaces')
+      .then((resp) => resp.data || [])
+      .then(WorkspacesArraySchema.assert)
+  }
+
   ping(): Promise<boolean> {
     return this.client
       .get('/me')
@@ -48,45 +83,10 @@ export class TogglClient {
       .catch(() => false)
   }
 
-  getCurrentTimeEntry(): Promise<TimeEntry | null> {
-    return this.client
-      .get('/me/time_entries/current')
-      .then((resp) => resp.data)
-      .then((data) => data ? TimeEntrySchema.assert(data) : null)
-  }
-
   stopTimeEntry(workspaceId: number, timeEntryId: number): Promise<boolean> {
     return this.client
       .patch(`/workspaces/${workspaceId}/time_entries/${timeEntryId}/stop`)
       .then(() => true)
       .catch(() => false)
-  }
-
-  getTasks(): Promise<Task[]> {
-    return this.client
-      .get('/me/tasks?meta=true')
-      .then((resp) => resp.data)
-      .then(TasksArraySchema.assert)
-  }
-
-  getProjects(): Promise<Project[]> {
-    return this.client
-      .get('/me/projects')
-      .then((resp) => resp.data || [])
-      .then(ProjectsArraySchema.assert)
-  }
-
-  getWorkspaces(): Promise<Workspace[]> {
-    return this.client
-      .get('/me/workspaces')
-      .then((resp) => resp.data || [])
-      .then(WorkspacesArraySchema.assert)
-  }
-
-  createTimeEntry(workspaceId: number, timeEntry: TimeEntryPayload): Promise<TimeEntry> {
-    return this.client
-      .post(`/workspaces/${workspaceId}/time_entries?meta=true`, timeEntry)
-      .then((resp) => resp.data)
-      .then(TimeEntrySchema.assert)
   }
 }

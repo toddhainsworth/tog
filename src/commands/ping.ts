@@ -10,12 +10,11 @@ export default class Ping extends Command {
   static override examples = [
     '<%= config.bin %> <%= command.id %>',
   ]
-
-  static override flags = {
+static override flags = {
     json: Flags.boolean({description: 'Format output as json'}),
   }
 
-  public async run(): Promise<{connected: boolean; message: string} | void> {
+  public async run(): Promise<void | {connected: boolean; message: string}> {
     try {
       // Parse flags to get json option
       const {flags} = await this.parse(Ping)
@@ -34,8 +33,8 @@ export default class Ping extends Command {
         'Testing connection to Toggl API...',
         () => client.ping(),
         {
-          log: this.log.bind(this),
           jsonEnabled: () => flags.json,
+          log: this.log.bind(this),
           warn: this.warn.bind(this)
         }
       )

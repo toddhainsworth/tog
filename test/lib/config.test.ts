@@ -44,7 +44,7 @@ describe('Config module', () => {
     it('should return true when config exists', () => {
       fs.writeFileSync(configPath, JSON.stringify({
         apiToken: 'test-token-at-least-32-characters-long',
-        workspaceId: 12345,
+        workspaceId: 12_345,
       }))
       expect(configExists()).to.be.true
     })
@@ -58,7 +58,7 @@ describe('Config module', () => {
     it('should return parsed config when valid config exists', () => {
       const testConfig: TogglConfig = {
         apiToken: 'test-token-at-least-32-characters-long',
-        workspaceId: 12345,
+        workspaceId: 12_345,
       }
       fs.writeFileSync(configPath, JSON.stringify(testConfig))
 
@@ -69,7 +69,7 @@ describe('Config module', () => {
     it('should return null for invalid config format', () => {
       fs.writeFileSync(configPath, JSON.stringify({
         apiToken: 'short', // Invalid: too short
-        workspaceId: 12345,
+        workspaceId: 12_345,
       }))
 
       expect(loadConfig()).to.be.null
@@ -85,7 +85,7 @@ describe('Config module', () => {
     it('should write config to file', () => {
       const testConfig: TogglConfig = {
         apiToken: 'test-token-at-least-32-characters-long',
-        workspaceId: 12345,
+        workspaceId: 12_345,
       }
 
       saveConfig(testConfig)
@@ -98,11 +98,11 @@ describe('Config module', () => {
     it('should overwrite existing config', () => {
       const oldConfig: TogglConfig = {
         apiToken: 'old-token-at-least-32-characters-long!!',
-        workspaceId: 11111,
+        workspaceId: 11_111,
       }
       const newConfig: TogglConfig = {
         apiToken: 'new-token-at-least-32-characters-long!!',
-        workspaceId: 22222,
+        workspaceId: 22_222,
       }
 
       saveConfig(oldConfig)
@@ -117,7 +117,7 @@ describe('Config module', () => {
     it('should delete existing config file', () => {
       fs.writeFileSync(configPath, JSON.stringify({
         apiToken: 'test-token-at-least-32-characters-long',
-        workspaceId: 12345,
+        workspaceId: 12_345,
       }))
 
       expect(fs.existsSync(configPath)).to.be.true
