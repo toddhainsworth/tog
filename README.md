@@ -241,4 +241,29 @@ Claude Code successfully handled complex software development tasks including:
 - Git commit history and documentation
 - Problem-solving and debugging implementation issues
 
-This experiment demonstrates that AI can now handle the full software development lifecycle for real-world applications while maintaining high code quality through structured human oversight.
+### Challenges and Limitations
+
+While Claude Code handled most development tasks effectively, some challenges emerged:
+
+**Context Retention:**
+- Occasionally overlooked established project conventions documented in CLAUDE.md
+- Required reminders about coding standards (e.g., avoiding `any` types, commit message formats)
+- Sometimes needed re-direction when deviating from agreed architectural patterns
+
+**Long-term Memory:**
+- In longer development sessions, earlier decisions or constraints could be forgotten
+- Required periodic reinforcement of project-specific rules and preferences
+- Benefited from clear, immediate feedback when straying from established patterns
+
+**Complex Decision Making:**
+- Needed human guidance for strategic architectural decisions
+- Required clarification when multiple valid implementation approaches existed
+- Best performance came with clear, specific requirements rather than open-ended tasks
+
+**Mitigation Strategies:**
+- **CLAUDE.md documentation** provided persistent project context and standards
+- **PRD-driven approach** broke complex features into manageable, well-defined tasks
+- **Regular human code review** caught deviations and maintained quality standards
+- **Iterative feedback loops** allowed for quick course corrections
+
+This experiment demonstrates that AI can now handle the full software development lifecycle for real-world applications while maintaining high code quality through structured human oversight and clear documentation of project standards.
