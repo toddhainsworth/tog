@@ -1,10 +1,15 @@
 import axios, {type AxiosInstance} from 'axios'
 
 import {
+  type Project,
   ProjectsArraySchema,
+  type Task,
   TasksArraySchema,
+  type TimeEntry,
   TimeEntrySchema,
+  type User,
   UserSchema,
+  type Workspace,
   WorkspacesArraySchema,
 } from './validation.js'
 
@@ -43,7 +48,7 @@ export class TogglClient {
       .catch(() => false)
   }
 
-  getCurrentTimeEntry(): Promise<any | null> {
+  getCurrentTimeEntry(): Promise<TimeEntry | null> {
     return this.client
       .get('/me/time_entries/current')
       .then((resp) => resp.data)
@@ -57,28 +62,28 @@ export class TogglClient {
       .catch(() => false)
   }
 
-  getTasks(): Promise<any[]> {
+  getTasks(): Promise<Task[]> {
     return this.client
       .get('/me/tasks?meta=true')
       .then((resp) => resp.data)
       .then(TasksArraySchema.assert)
   }
 
-  getProjects(): Promise<any[]> {
+  getProjects(): Promise<Project[]> {
     return this.client
       .get('/me/projects')
       .then((resp) => resp.data || [])
       .then(ProjectsArraySchema.assert)
   }
 
-  getWorkspaces(): Promise<any[]> {
+  getWorkspaces(): Promise<Workspace[]> {
     return this.client
       .get('/me/workspaces')
       .then((resp) => resp.data || [])
       .then(WorkspacesArraySchema.assert)
   }
 
-  createTimeEntry(workspaceId: number, timeEntry: TimeEntryPayload): Promise<any | null> {
+  createTimeEntry(workspaceId: number, timeEntry: TimeEntryPayload): Promise<TimeEntry> {
     return this.client
       .post(`/workspaces/${workspaceId}/time_entries?meta=true`, timeEntry)
       .then((resp) => resp.data)

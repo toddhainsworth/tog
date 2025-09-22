@@ -2,6 +2,7 @@ import inquirer from 'inquirer'
 import ora from 'ora'
 
 import {EMOJIS} from './emojis.js'
+import type {Project, Task, Workspace} from './validation.js'
 
 // Enhanced prompt utilities for consistent CLI UX
 
@@ -49,19 +50,18 @@ export async function promptForDescription(message: string = 'Enter timer descri
   return answers.description.trim()
 }
 
+interface TaskWithContext extends Task {
+  project_name?: string
+  client_name?: string
+}
+
+interface ProjectWithClient extends Project {
+  client_name?: string
+}
+
 export async function promptForTaskSelection(
-  tasks: Array<{
-    id: number
-    name: string
-    project_id: number
-    project_name?: string
-    client_name?: string
-  }>,
-  projects: Array<{
-    id: number
-    name: string
-    client_name?: string
-  }>
+  tasks: TaskWithContext[],
+  projects: ProjectWithClient[]
 ): Promise<{task_id?: number; project_id?: number; display: string}> {
   const choices: TaskChoice[] = []
 
@@ -140,7 +140,7 @@ export async function promptForConfirmation(
 }
 
 export async function promptForWorkspaceSelection(
-  workspaces: Array<{id: number; name: string}>
+  workspaces: Workspace[]
 ): Promise<number> {
   if (workspaces.length === 0) {
     throw new Error('No workspaces available for selection')

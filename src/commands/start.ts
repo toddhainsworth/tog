@@ -4,6 +4,7 @@ import { loadConfig } from '../lib/config.js'
 import { EMOJIS } from '../lib/emojis.js'
 import { promptForDescription, promptForTaskSelection, withSpinner } from '../lib/prompts.js'
 import { TogglClient } from '../lib/toggl-client.js'
+import type { Project, Task, TimeEntry } from '../lib/validation.js'
 
 export default class Start extends Command {
   static override description = 'Start a new time tracking timer'
@@ -41,7 +42,7 @@ export default class Start extends Command {
       }
 
       // Check if there's already a running timer
-      let currentEntry: Awaited<ReturnType<typeof client.getCurrentTimeEntry>>
+      let currentEntry: TimeEntry | null
       try {
         currentEntry = await client.getCurrentTimeEntry()
       } catch (error) {
@@ -66,8 +67,8 @@ export default class Start extends Command {
       }
 
       // Fetch and display available tasks
-      let tasks: Awaited<ReturnType<typeof client.getTasks>>
-      let projects: Awaited<ReturnType<typeof client.getProjects>>
+      let tasks: Task[]
+      let projects: Project[]
 
       try {
         [tasks, projects] = await withSpinner('Fetching available tasks and projects...', async () => {
