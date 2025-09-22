@@ -47,6 +47,11 @@ export const TaskSchema = type({
   name: 'string',
   project_id: 'number',})
 
+export const ClientSchema = type({
+  id: 'number',
+  name: 'string',
+})
+
 export const UserSchema = type({
   'email?': 'string',
   'fullname?': 'string',
@@ -57,6 +62,7 @@ export const UserSchema = type({
 export const WorkspacesArraySchema = type(WorkspaceSchema, '[]')
 export const ProjectsArraySchema = type(ProjectSchema, '[]')
 export const TasksArraySchema = type(TaskSchema, '[]')
+export const ClientsArraySchema = type(ClientSchema, '[]')
 
 // User input validation
 // eslint-disable-next-line unicorn/prefer-string-raw
@@ -75,4 +81,5 @@ export type TimeEntry = typeof TimeEntrySchema.infer
 export type Workspace = typeof WorkspaceSchema.infer
 export type Project = typeof ProjectSchema.infer
 export type Task = typeof TaskSchema.infer
+export type Client = typeof ClientSchema.infer
 export type User = typeof UserSchema.infer

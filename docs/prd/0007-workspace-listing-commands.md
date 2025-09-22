@@ -152,38 +152,38 @@ export const ClientSchema = type({
 ## Acceptance Criteria
 
 ### Core Functionality
-- [ ] `tog projects` displays all projects in table format
-- [ ] `tog clients` displays all clients in table format
-- [ ] `tog tasks` displays all tasks in table format
-- [ ] `tog clients --tree` displays hierarchical client/project/task view
-- [ ] All commands sort results alphabetically
-- [ ] All commands handle empty datasets gracefully
+- [x] `tog projects` displays all projects in table format
+- [x] `tog clients` displays all clients in table format
+- [x] `tog tasks` displays all tasks in table format
+- [x] `tog clients --tree` displays hierarchical client/project/task view
+- [x] All commands sort results alphabetically
+- [x] All commands handle empty datasets gracefully
 
 ### Data Accuracy
-- [ ] Projects show correct client associations
-- [ ] Tasks show correct project associations
-- [ ] Orphaned entities appear in "No [Parent]" sections
-- [ ] Active/inactive status displayed correctly
-- [ ] All entity IDs displayed correctly
+- [x] Projects show correct client associations
+- [x] Tasks show correct project associations
+- [x] Orphaned entities appear in "No [Parent]" sections
+- [x] Active/inactive status displayed correctly
+- [x] All entity IDs displayed correctly
 
 ### Error Handling
-- [ ] API failures show user-friendly error messages
-- [ ] Network issues handled gracefully
-- [ ] Authentication errors directed to appropriate resolution
-- [ ] Commands exit with appropriate error codes
+- [x] API failures show user-friendly error messages
+- [x] Network issues handled gracefully
+- [x] Authentication errors directed to appropriate resolution
+- [x] Commands exit with appropriate error codes
 
 ### User Experience
-- [ ] Loading spinners shown during API calls
-- [ ] Output formatting is clean and readable
-- [ ] Tree view uses consistent indentation and symbols
-- [ ] Commands follow established help and example patterns
+- [x] Loading spinners shown during API calls
+- [x] Output formatting is clean and readable
+- [x] Tree view uses consistent indentation and symbols
+- [x] Commands follow established help and example patterns
 
 ### Technical Requirements
-- [ ] Commands extend `BaseCommand` class
-- [ ] Use existing `TogglClient` for API calls
-- [ ] Follow established validation patterns
-- [ ] Maintain existing code style and conventions
-- [ ] Include comprehensive test coverage
+- [x] Commands extend `BaseCommand` class
+- [x] Use existing `TogglClient` for API calls
+- [x] Follow established validation patterns
+- [x] Maintain existing code style and conventions
+- [x] Include comprehensive test coverage
 
 ## Testing Strategy
 

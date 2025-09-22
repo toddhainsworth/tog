@@ -2,6 +2,8 @@ import axios, {type AxiosInstance} from 'axios'
 
 import {createApiErrorFromAxios, TogglValidationError} from './errors.js'
 import {
+  type Client,
+  ClientsArraySchema,
   type Project,
   ProjectsArraySchema,
   type Task,
@@ -48,6 +50,20 @@ export class TogglClient {
       }
 
       throw createApiErrorFromAxios(error, `/workspaces/${workspaceId}/time_entries`)
+    }
+  }
+
+  async getClients(): Promise<Client[]> {
+    try {
+      const response = await this.client.get('/me/clients')
+      const data = response.data || []
+      return ClientsArraySchema.assert(data)
+    } catch (error) {
+      if (error instanceof Error && 'name' in error && error.name === 'ArkTypeError') {
+        throw TogglValidationError.invalidResponse(error.message)
+      }
+
+      throw createApiErrorFromAxios(error, '/me/clients')
     }
   }
 
