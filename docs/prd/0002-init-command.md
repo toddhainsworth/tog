@@ -86,12 +86,12 @@ export default class Nuke extends Command {
 - [x] arktype and home-config dependencies are properly installed
 
 ### Nuke Command
-- [ ] `tog nuke` command exists and is accessible
-- [ ] Command prompts for confirmation before deletion
-- [ ] Deletes the `~/.togrc` configuration file
-- [ ] Provides clear feedback on successful deletion
-- [ ] Handles gracefully when config file doesn't exist
-- [ ] Command follows oclif conventions and project structure
+- [x] `tog nuke` command exists and is accessible
+- [x] Command prompts for confirmation before deletion
+- [x] Deletes the `~/.togrc` configuration file
+- [x] Provides clear feedback on successful deletion
+- [x] Handles gracefully when config file doesn't exist
+- [x] Command follows oclif conventions and project structure
 
 ## Dependencies
 - PRD 0001: Basic Toggl Client (this PRD builds upon the existing client structure)
@@ -106,4 +106,4 @@ export default class Nuke extends Command {
 
 ---
 
-**Status:** Init command implemented and tested - Nuke command pending
+**Status:** Complete - Both init and nuke commands fully implemented and tested
