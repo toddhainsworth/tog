@@ -6,50 +6,6 @@ A modern CLI for Toggl time tracking with enhanced user experience
 
 [![oclif](https://img.shields.io/badge/cli-oclif-brightgreen.svg)](https://oclif.io)
 
-## 🤖 AI-Powered Development Experiment
-
-This project serves as a comprehensive case study in AI-assisted software development, exploring how far we could push modern AI capabilities using [Claude Code](https://claude.ai/code). The entire codebase was created through a structured collaboration between human strategic guidance and AI implementation.
-
-### Development Workflow
-
-Our AI-assisted development process followed a structured, professional approach:
-
-1. **PRD-Driven Development**: Each feature began with a Product Requirements Document (PRD) that outlined objectives, technical requirements, and acceptance criteria
-2. **Collaborative Refinement**: Human and AI worked together to refine requirements, discuss implementation approaches, and clarify technical details
-3. **AI Implementation**: Claude Code handled all coding tasks including implementation, testing, and tooling configuration
-4. **Human Code Review**: The human developer provided feedback, caught issues, and guided architectural decisions
-5. **Iterative Improvement**: Based on feedback, Claude Code refined the implementation until acceptance criteria were met
-
-### What This Demonstrates
-
-Claude Code successfully handled complex software development tasks including:
-
-- **Architecture from scratch** - Complete CLI application structure following industry best practices
-- **Full-stack implementation** - TypeScript code, comprehensive tests, build configurations, and dependency management
-- **Production-ready patterns** - Error handling, interactive UX, API integration, and user feedback systems
-- **Code quality maintenance** - Zero linting errors, strong TypeScript typing, and clean codebase organization
-- **Development lifecycle** - Git history, semantic versioning, release management, and documentation
-
-### Human vs AI Contributions
-
-**Human contributions:**
-- Initial project requirements and vision
-- PRD creation and requirements refinement
-- Code review and quality feedback
-- Strategic architectural guidance
-- Release management oversight
-
-**Claude contributions:**
-- All code implementation (100% of TypeScript, tests, configs)
-- PRD technical details and acceptance criteria
-- Package selection and dependency management
-- Error handling patterns and user experience design
-- Git commit history and documentation
-- Problem-solving and debugging implementation issues
-
-This experiment demonstrates that AI can now handle the full software development lifecycle for real-world applications while maintaining high code quality through structured human oversight.
-
-
 ## Features
 
 - 🚀 **Modern CLI UX** - Enhanced prompts with arrow-key navigation and spinners
@@ -244,3 +200,45 @@ EXAMPLES
 _See code: [src/commands/stop.ts](https://github.com/toddhainsworth/tog/blob/v0.0.0/src/commands/stop.ts)_
 <!-- commandsstop -->
 
+## 🤖 AI-Powered Development Experiment
+
+This project serves as a comprehensive case study in AI-assisted software development, exploring how far we could push modern AI capabilities using [Claude Code](https://claude.ai/code). The entire codebase was created through a structured collaboration between human strategic guidance and AI implementation.
+
+### Development Workflow
+
+Our AI-assisted development process followed a structured, professional approach:
+
+1. **PRD-Driven Development**: Each feature began with a Product Requirements Document (PRD) that outlined objectives, technical requirements, and acceptance criteria
+2. **Collaborative Refinement**: Human and AI worked together to refine requirements, discuss implementation approaches, and clarify technical details
+3. **AI Implementation**: Claude Code handled all coding tasks including implementation, testing, and tooling configuration
+4. **Human Code Review**: The human developer provided feedback, caught issues, and guided architectural decisions
+5. **Iterative Improvement**: Based on feedback, Claude Code refined the implementation until acceptance criteria were met
+
+### What This Demonstrates
+
+Claude Code successfully handled complex software development tasks including:
+
+- **Architecture from scratch** - Complete CLI application structure following industry best practices
+- **Full-stack implementation** - TypeScript code, comprehensive tests, build configurations, and dependency management
+- **Production-ready patterns** - Error handling, interactive UX, API integration, and user feedback systems
+- **Code quality maintenance** - Zero linting errors, strong TypeScript typing, and clean codebase organization
+- **Development lifecycle** - Git history, semantic versioning, release management, and documentation
+
+### Human vs AI Contributions
+
+**Human contributions:**
+- Initial project requirements and vision
+- PRD creation and requirements refinement
+- Code review and quality feedback
+- Strategic architectural guidance
+- Release management oversight
+
+**Claude contributions:**
+- All code implementation (100% of TypeScript, tests, configs)
+- PRD technical details and acceptance criteria
+- Package selection and dependency management
+- Error handling patterns and user experience design
+- Git commit history and documentation
+- Problem-solving and debugging implementation issues
+
+This experiment demonstrates that AI can now handle the full software development lifecycle for real-world applications while maintaining high code quality through structured human oversight.
