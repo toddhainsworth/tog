@@ -151,15 +151,15 @@ export default class Clients extends BaseCommand {
 
     // Create and display table
     const table = new Table({
-      colWidths: [40, 15, 8],
-      head: ['Name', 'Project Count', 'ID'],
+      colWidths: [8, 40, 15],
+      head: ['ID', 'Name', 'Project Count'],
       style: { head: ['cyan'] },
       wordWrap: true,
     })
 
     for (const clientItem of sortedClients) {
       const projectCount = projectCounts.get(clientItem.id) || 0
-      table.push([clientItem.name, projectCount, clientItem.id])
+      table.push([clientItem.id, clientItem.name, projectCount])
     }
 
     this.log('')

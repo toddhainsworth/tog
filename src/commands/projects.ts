@@ -33,8 +33,8 @@ export default class Projects extends BaseCommand {
 
       // Create and display table
       const table = new Table({
-        colWidths: [40, 25, 8, 8],
-        head: ['Name', 'Client', 'Active', 'ID'],
+        colWidths: [8, 40, 25, 8],
+        head: ['ID', 'Name', 'Client', 'Active'],
         style: { head: ['cyan'] },
         wordWrap: true,
       })
@@ -43,7 +43,7 @@ export default class Projects extends BaseCommand {
         const clientName = project.client_name || clientMap.get(project.workspace_id) || 'No Client'
         const activeStatus = project.active ? '✓' : '✗'
 
-        table.push([project.name, clientName, activeStatus, project.id])
+        table.push([project.id, project.name, clientName, activeStatus])
       }
 
       this.log('')
