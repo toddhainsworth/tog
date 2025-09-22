@@ -1,4 +1,4 @@
-import axios from 'axios'
+import axios, {type AxiosInstance} from 'axios'
 import {expect} from 'chai'
 import {createSandbox} from 'sinon'
 
@@ -27,7 +27,7 @@ describe('TogglClient', () => {
       const mockResponse = {data: {email: 'test@example.com', id: 123}}
       sandbox.stub(axios, 'create').returns({
         get: sandbox.stub().resolves(mockResponse),
-      } as unknown)
+      } as unknown as AxiosInstance)
 
       const client = new TogglClient('valid-token')
       const result = await client.ping()
@@ -37,7 +37,7 @@ describe('TogglClient', () => {
     it('should return false for invalid API token', async () => {
       sandbox.stub(axios, 'create').returns({
         get: sandbox.stub().rejects(new Error('401 Unauthorized')),
-      } as unknown)
+      } as unknown as AxiosInstance)
 
       const client = new TogglClient('invalid-token')
       const result = await client.ping()
@@ -47,7 +47,7 @@ describe('TogglClient', () => {
     it('should return false for network error', async () => {
       sandbox.stub(axios, 'create').returns({
         get: sandbox.stub().rejects(new Error('Network error')),
-      } as unknown)
+      } as unknown as AxiosInstance)
 
       const client = new TogglClient('test-token')
       const result = await client.ping()
@@ -66,7 +66,7 @@ describe('TogglClient', () => {
         workspace_id: 123,      }
       sandbox.stub(axios, 'create').returns({
         get: sandbox.stub().resolves({data: mockEntry}),
-      } as unknown)
+      } as unknown as AxiosInstance)
 
       const client = new TogglClient('test-token')
       const result = await client.getCurrentTimeEntry()
@@ -76,7 +76,7 @@ describe('TogglClient', () => {
     it('should return null when no timer is running', async () => {
       sandbox.stub(axios, 'create').returns({
         get: sandbox.stub().resolves({data: null}),
-      } as unknown)
+      } as unknown as AxiosInstance)
 
       const client = new TogglClient('test-token')
       const result = await client.getCurrentTimeEntry()
@@ -88,7 +88,7 @@ describe('TogglClient', () => {
     it('should return true when successfully stopped', async () => {
       sandbox.stub(axios, 'create').returns({
         patch: sandbox.stub().resolves({data: {}}),
-      } as unknown)
+      } as unknown as AxiosInstance)
 
       const client = new TogglClient('test-token')
       const result = await client.stopTimeEntry(123, 456)
@@ -98,7 +98,7 @@ describe('TogglClient', () => {
     it('should return false when stop fails', async () => {
       sandbox.stub(axios, 'create').returns({
         patch: sandbox.stub().rejects(new Error('Failed')),
-      } as unknown)
+      } as unknown as AxiosInstance)
 
       const client = new TogglClient('test-token')
       const result = await client.stopTimeEntry(123, 456)
@@ -114,7 +114,7 @@ describe('TogglClient', () => {
       ]
       sandbox.stub(axios, 'create').returns({
         get: sandbox.stub().resolves({data: mockTasks}),
-      } as unknown)
+      } as unknown as AxiosInstance)
 
       const client = new TogglClient('test-token')
       const result = await client.getTasks()
@@ -124,7 +124,7 @@ describe('TogglClient', () => {
     it('should return empty array when no tasks', async () => {
       sandbox.stub(axios, 'create').returns({
         get: sandbox.stub().resolves({data: []}),
-      } as unknown)
+      } as unknown as AxiosInstance)
 
       const client = new TogglClient('test-token')
       const result = await client.getTasks()
@@ -140,7 +140,7 @@ describe('TogglClient', () => {
       ]
       sandbox.stub(axios, 'create').returns({
         get: sandbox.stub().resolves({data: mockProjects}),
-      } as unknown)
+      } as unknown as AxiosInstance)
 
       const client = new TogglClient('test-token')
       const result = await client.getProjects()
@@ -150,7 +150,7 @@ describe('TogglClient', () => {
     it('should handle null response as empty array', async () => {
       sandbox.stub(axios, 'create').returns({
         get: sandbox.stub().resolves({data: null}),
-      } as unknown)
+      } as unknown as AxiosInstance)
 
       const client = new TogglClient('test-token')
       const result = await client.getProjects()
@@ -166,7 +166,7 @@ describe('TogglClient', () => {
       ]
       sandbox.stub(axios, 'create').returns({
         get: sandbox.stub().resolves({data: mockWorkspaces}),
-      } as unknown)
+      } as unknown as AxiosInstance)
 
       const client = new TogglClient('test-token')
       const result = await client.getWorkspaces()
@@ -186,7 +186,7 @@ describe('TogglClient', () => {
       }
       sandbox.stub(axios, 'create').returns({
         post: sandbox.stub().resolves({data: mockEntry}),
-      } as unknown)
+      } as unknown as AxiosInstance)
 
       const client = new TogglClient('test-token')
       const result = await client.createTimeEntry(123, {
@@ -206,7 +206,7 @@ describe('TogglClient', () => {
       let capturedConfig: unknown
       sandbox.stub(axios, 'create').callsFake((config) => {
         capturedConfig = config
-        return {get: sandbox.stub().resolves({data: {id: 1}})} as unknown
+        return {get: sandbox.stub().resolves({data: {id: 1}})} as unknown as AxiosInstance
       })
 
       const client = new TogglClient(token)
@@ -218,7 +218,7 @@ describe('TogglClient', () => {
       let capturedConfig: unknown
       sandbox.stub(axios, 'create').callsFake((config) => {
         capturedConfig = config
-        return {get: sandbox.stub().resolves({data: {id: 1}})} as unknown
+        return {get: sandbox.stub().resolves({data: {id: 1}})} as unknown as AxiosInstance
       })
 
       const client = new TogglClient('test-token')

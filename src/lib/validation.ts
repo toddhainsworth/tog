@@ -59,6 +59,7 @@ export const ProjectsArraySchema = type(ProjectSchema, '[]')
 export const TasksArraySchema = type(TaskSchema, '[]')
 
 // User input validation
+// eslint-disable-next-line unicorn/prefer-string-raw
 export const WorkspaceSelectionSchema = type('string&/^[1-9]\\d*$/')
 export const TimerDescriptionSchema = type('string>=1')
 
