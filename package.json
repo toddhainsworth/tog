@@ -8,6 +8,7 @@
   },
   "bugs": "https://github.com/toddhainsworth/tog/issues",
   "dependencies": {
+    "@inquirer/prompts": "^7.8.6",
     "@oclif/core": "^4",
     "@oclif/plugin-help": "^6",
     "@oclif/plugin-plugins": "^5",
@@ -25,6 +26,7 @@
     "@types/inquirer": "^9.0.9",
     "@types/mocha": "^10",
     "@types/node": "^18",
+    "@types/sinon": "^17.0.4",
     "chai": "^4",
     "eslint": "^9",
     "eslint-config-oclif": "^6",
@@ -33,6 +35,7 @@
     "oclif": "^4",
     "openapi-typescript": "5",
     "shx": "^0.3.3",
+    "sinon": "^21.0.0",
     "ts-node": "^10",
     "typescript": "^5"
   },

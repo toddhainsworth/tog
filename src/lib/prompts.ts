@@ -1,4 +1,4 @@
-import inquirer from 'inquirer'
+import {input, select, confirm} from '@inquirer/prompts'
 import ora from 'ora'
 
 import {EMOJIS} from './emojis.js'
@@ -24,30 +24,26 @@ export interface PromptConfig {
 }
 
 export async function promptForDescription(message: string = 'Enter timer description'): Promise<string> {
-  const answers = await inquirer.prompt([
-    {
-      type: 'input',
-      name: 'description',
-      message: `${EMOJIS.INFO} ${message}:`,
-      validate: (input: string) => {
-        const trimmed = input.trim()
-        if (trimmed.length === 0) {
-          return 'Description cannot be empty'
-        }
-        if (trimmed.length > 200) {
-          return 'Description must be 200 characters or less'
-        }
-        return true
-      },
-      transformer: (input: string) => {
-        const trimmed = input.trim()
-        const remaining = 200 - trimmed.length
-        return remaining < 20 ? `${trimmed} (${remaining} chars left)` : trimmed
+  const description = await input({
+    message: `${EMOJIS.INFO} ${message}:`,
+    validate: (input: string) => {
+      const trimmed = input.trim()
+      if (trimmed.length === 0) {
+        return 'Description cannot be empty'
       }
+      if (trimmed.length > 200) {
+        return 'Description must be 200 characters or less'
+      }
+      return true
+    },
+    transformer: (input: string) => {
+      const trimmed = input.trim()
+      const remaining = 200 - trimmed.length
+      return remaining < 20 ? `${trimmed} (${remaining} chars left)` : trimmed
     }
-  ])
+  })
 
-  return answers.description.trim()
+  return description.trim()
 }
 
 interface TaskWithContext extends Task {
@@ -109,34 +105,26 @@ export async function promptForTaskSelection(
     throw new Error('No tasks or projects available for selection')
   }
 
-  const answer = await inquirer.prompt([
-    {
-      type: 'list',
-      name: 'selection',
-      message: `${EMOJIS.LOADING} Select a ${tasks.length > 0 ? 'task or project' : 'project'}:`,
-      choices,
-      pageSize: Math.min(15, choices.length),
-      loop: false
-    }
-  ])
+  const selection = await select({
+    message: `${EMOJIS.LOADING} Select a ${tasks.length > 0 ? 'task or project' : 'project'}:`,
+    choices: choices.map(choice => ({
+      name: choice.name,
+      value: choice.value,
+    })),
+    pageSize: Math.min(15, choices.length),
+  })
 
-  return answer.selection
+  return selection
 }
 
 export async function promptForConfirmation(
   message: string,
   defaultValue: boolean = false
 ): Promise<boolean> {
-  const answer = await inquirer.prompt([
-    {
-      type: 'confirm',
-      name: 'confirmed',
-      message: `${EMOJIS.WARNING} ${message}`,
-      default: defaultValue
-    }
-  ])
-
-  return answer.confirmed
+  return await confirm({
+    message: `${EMOJIS.WARNING} ${message}`,
+    default: defaultValue
+  })
 }
 
 export async function promptForWorkspaceSelection(
@@ -156,18 +144,14 @@ export async function promptForWorkspaceSelection(
     short: workspace.name
   }))
 
-  const answer = await inquirer.prompt([
-    {
-      type: 'list',
-      name: 'workspaceId',
-      message: `${EMOJIS.LOADING} Select default workspace:`,
-      choices,
-      pageSize: Math.min(10, choices.length),
-      loop: false
-    }
-  ])
-
-  return answer.workspaceId
+  return await select({
+    message: `${EMOJIS.LOADING} Select default workspace:`,
+    choices: choices.map(choice => ({
+      name: choice.name,
+      value: choice.value,
+    })),
+    pageSize: Math.min(10, choices.length),
+  })
 }
 
 // Loading utilities for better UX during async operations with oclif integration
