@@ -18,9 +18,9 @@ This is a Toggl CLI tool built with oclif framework. The project uses TypeScript
 
 ### Command Structure
 - Commands are organized under `src/commands/` following oclif conventions
-- Each command extends `Command` from `@oclif/core`
+- Each command extends `BaseCommand` from `src/lib/base-command.ts` which provides shared functionality
 - Commands use static properties for `args`, `flags`, `description`, and `examples`
-- Command structure follows the pattern: `src/commands/[topic]/[command].ts`
+- Command structure follows the pattern: `src/commands/[command].ts`
 
 ### Configuration
 - **TypeScript**: ES2022 target with Node16 modules, strict mode enabled
@@ -32,9 +32,10 @@ This is a Toggl CLI tool built with oclif framework. The project uses TypeScript
 - `@oclif/core` - Core oclif framework
 - `@oclif/plugin-help` - Help system
 - `@oclif/plugin-plugins` - Plugin management
+- `@inquirer/prompts` - Interactive CLI prompts
 - `arktype` - Runtime type validation library
-- `home-config` - Configuration file management in user home directory
-- `openapi-fetch` - Type-safe API client for Toggl API integration
+- `axios` - HTTP client for API requests
+- `ora` - Terminal spinners for loading states
 
 ### Build Output
 - Compiled code goes to `dist/`
@@ -73,14 +74,80 @@ This is a Toggl CLI tool built with oclif framework. The project uses TypeScript
 - Pattern: `type ApiToken = typeof ApiTokenSchema.infer`
 
 ### Error Handling
+- Commands extend `BaseCommand` which provides `handleError()` method for consistent error handling
 - Use `this.error()` for command failures that should exit with error code
-- Use `this.log()` for informational output
-- Handle home-config import with `@ts-ignore` comment (no types available)
+- Use `this.logInfo()`, `this.logSuccess()`, `this.logWarning()` for consistent messaging with emojis
+- Error handling system includes typed errors in `src/lib/errors.ts`
 
 ### Interactive Prompts
-- Use `readline/promises` for user input in commands
-- Always close readline interface in finally block
+- Use `@inquirer/prompts` for user input: `confirm`, `input`, `select`
+- Prompt utilities available in `src/lib/prompts.ts`
+- Use `withSpinner()` for async operations with loading indicators
 - Use confirmation prompts for destructive operations (y/N pattern)
+
+## Release Process
+
+### Version Bumping Strategy
+- **Patch (0.1.x)**: Bug fixes, small improvements, dependency updates
+- **Minor (0.x.0)**: New features, significant refactoring, breaking changes in development
+- **Major (x.0.0)**: Major breaking changes, complete API overhauls
+
+### Release Steps
+1. **Ensure clean state**: All changes committed, tests passing, linting clean
+   ```bash
+   yarn test
+   yarn lint
+   yarn build
+   ```
+
+2. **Update version** in `package.json` according to semver
+   ```bash
+   # For minor version bump example
+   # Change "version": "0.1.1" to "version": "0.2.0"
+   ```
+
+3. **Commit version bump**
+   ```bash
+   git add package.json
+   git commit -m "chore: bump version to X.Y.Z
+
+   Brief summary of major changes in this release"
+   ```
+
+4. **Push to origin**
+   ```bash
+   git push origin main
+   ```
+
+5. **Create GitHub release**
+   ```bash
+   gh release create vX.Y.Z --title "vX.Y.Z - Release Title" --notes "Release notes"
+   ```
+
+### Release Notes Template
+```markdown
+## 🚀 Release Title
+
+### ✨ New Features
+- Feature descriptions
+
+### 🔧 Technical Improvements
+- Technical improvements
+
+### 🛠️ Internal Changes
+- Internal changes
+
+### 📦 Dependencies
+- Dependency updates
+
+### 🐛 Bug Fixes
+- Bug fixes
+```
+
+### Automation
+- Tests run automatically on commit via `posttest` script
+- Version script updates README via oclif when available
+- Use `yarn version` command for automated version bumping if preferred
 
 ## Documentation
 - PRDs (Product Requirements Documents) are stored in `docs/prd/`
