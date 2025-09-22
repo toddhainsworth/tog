@@ -1,13 +1,13 @@
-import {Command, Flags} from '@oclif/core'
+import {Flags} from '@oclif/core'
 import * as readline from 'node:readline/promises'
 
+import {BaseCommand} from '../lib/base-command.js'
 import {getConfigFilePath, saveConfig} from '../lib/config.js'
-import {EMOJIS} from '../lib/emojis.js'
 import {promptForWorkspaceSelection, withSpinner} from '../lib/prompts.js'
 import {TogglClient} from '../lib/toggl-client.js'
 import {ApiTokenSchema, type Workspace} from '../lib/validation.js'
 
-export default class Init extends Command {
+export default class Init extends BaseCommand {
   static override description = 'Initialize Toggl CLI with API token'
   static override examples = ['<%= config.bin %> <%= command.id %>', '<%= config.bin %> <%= command.id %> --validate']
   static override flags = {
@@ -51,17 +51,18 @@ export default class Init extends Command {
             warn: this.warn.bind(this)
           })
         } catch (error) {
-          this.error(`${EMOJIS.ERROR} API validation failed: ${error instanceof Error ? error.message : String(error)}`)
+          this.handleError(error, 'API validation failed')
           return
         }
 
         if (!isValid) {
-          this.error(
-            `${EMOJIS.ERROR} API token validation failed. Your API token doesn't work with the Toggl API. Please check your token and try again.`,
+          this.handleError(
+            new Error('API token validation failed. Your API token doesn\'t work with the Toggl API. Please check your token and try again.'),
+            'Token validation failed'
           )
         }
 
-        this.log(`${EMOJIS.SUCCESS} API token validated successfully!`)
+        this.logSuccess('API token validated successfully!')
       }
 
       // Fetch available workspaces for selection
@@ -74,12 +75,12 @@ export default class Init extends Command {
           warn: this.warn.bind(this)
         })
       } catch (error) {
-        this.error(`Failed to fetch workspaces: ${error instanceof Error ? error.message : String(error)}`)
+        this.handleError(error, 'Failed to fetch workspaces')
         return
       }
 
       if (workspaces.length === 0) {
-        this.error('No workspaces found for your account. Please ensure you have access to at least one workspace.')
+        this.handleError(new Error('No workspaces found for your account. Please ensure you have access to at least one workspace.'), 'No workspaces available')
         return
       }
 
@@ -89,10 +90,10 @@ export default class Init extends Command {
         selectedWorkspaceId = await promptForWorkspaceSelection(workspaces)
         const selectedWorkspace = workspaces.find(w => w.id === selectedWorkspaceId)
         if (selectedWorkspace) {
-          this.log(`${EMOJIS.SUCCESS} Selected workspace: "${selectedWorkspace.name}"`)
+          this.logSuccess(`Selected workspace: "${selectedWorkspace.name}"`)
         }
       } catch (error) {
-        this.error(`Failed to select workspace: ${error instanceof Error ? error.message : String(error)}`)
+        this.handleError(error, 'Failed to select workspace')
         return
       }
 
@@ -102,10 +103,10 @@ export default class Init extends Command {
         workspaceId: selectedWorkspaceId
       })
 
-      this.log(`${EMOJIS.SUCCESS} Configuration saved successfully to ${getConfigFilePath()}`)
+      this.logSuccess(`Configuration saved successfully to ${getConfigFilePath()}`)
       this.log('You can now use other Toggl CLI commands!')
     } catch (error) {
-      this.error(`Failed to save configuration: ${error instanceof Error ? error.message : String(error)}`)
+      this.handleError(error, 'Failed to save configuration')
     } finally {
       rl.close()
     }

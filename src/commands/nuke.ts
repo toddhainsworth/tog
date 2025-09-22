@@ -1,10 +1,8 @@
-import {Command} from '@oclif/core'
-
+import {BaseCommand} from '../lib/base-command.js'
 import {configExists, deleteConfig, getConfigFilePath} from '../lib/config.js'
-import {EMOJIS} from '../lib/emojis.js'
 import {promptForConfirmation} from '../lib/prompts.js'
 
-export default class Nuke extends Command {
+export default class Nuke extends BaseCommand {
   static override description = 'Delete Toggl CLI configuration'
   static override examples = ['<%= config.bin %> <%= command.id %>']
 
@@ -12,12 +10,12 @@ export default class Nuke extends Command {
     try {
       // Check if configuration file exists before attempting deletion
       if (!configExists()) {
-        this.log(`${EMOJIS.INFO}  No Toggl CLI configuration found. Nothing to delete.`)
+        this.logInfo('No Toggl CLI configuration found. Nothing to delete.')
         return
       }
 
       // Warning message about permanent deletion
-      this.log(`${EMOJIS.WARNING}  This will permanently delete your Toggl CLI configuration (${getConfigFilePath()})`)
+      this.logWarning(`This will permanently delete your Toggl CLI configuration (${getConfigFilePath()})`)
       this.log('You will need to run `tog init` again to set up your API token.')
 
       // Prompt for confirmation (defaults to No for safety)
@@ -27,16 +25,16 @@ export default class Nuke extends Command {
       )
 
       if (!confirmed) {
-        this.log(`${EMOJIS.INFO} Operation cancelled.`)
+        this.logInfo('Operation cancelled.')
         return
       }
 
       // Delete the configuration file
       deleteConfig()
-      this.log(`${EMOJIS.SUCCESS} Toggl CLI configuration deleted successfully`)
+      this.logSuccess('Toggl CLI configuration deleted successfully')
       this.log('Run `tog init` to set up your API token again.')
     } catch (error) {
-      this.error(`Failed to delete configuration: ${error instanceof Error ? error.message : String(error)}`)
+      this.handleError(error, 'Failed to delete configuration')
     }
   }
 }
