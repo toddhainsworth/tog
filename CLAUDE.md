@@ -151,3 +151,49 @@ This is a Toggl CLI tool built with oclif framework. The project uses TypeScript
 
 ## Documentation
 - PRDs (Product Requirements Documents) are stored in `docs/prd/`
+
+## Development Best Practices
+
+### TypeScript Safety
+- **Never use `any`** in TypeScript projects
+- **Avoid non-null assertions (`!`)** - use type-safe patterns instead:
+  ```typescript
+  // WRONG: Unsafe assumption
+  completeDays.push(dailySummaries.find(d => d.date === dateKey)!)
+
+  // RIGHT: Type-safe approach with Map
+  const existingDay = existingDaysMap.get(dateKey)
+  if (existingDay) {
+    completeDays.push(existingDay)
+  }
+  ```
+- **Prefer Maps for O(1) lookups** when type safety and performance matter
+- **Always run `yarn build`** after major changes - test success doesn't guarantee TypeScript compilation success
+
+### Test Environment Isolation
+- **Never contaminate production data** - tests were initially deleting user's real `.togrc` file
+- **Use dependency injection for testability**:
+  ```typescript
+  // Allow configurable paths for testing
+  export function setConfigPath(path: string | undefined): void {
+    configPath = path
+  }
+
+  // Use unique temporary files per test
+  beforeEach(() => {
+    testConfigPath = join(os.tmpdir(), `test-togrc-${Date.now()}-${Math.random().toString(36).slice(7)}`)
+    setConfigPath(testConfigPath)
+  })
+  ```
+- **Clean up test resources** properly in `afterEach`
+
+### Date and Time Handling
+- **Use UTC methods for date boundary calculations** to ensure consistent behavior across timezones:
+  - Use `getUTCDay()`, `setUTCDate()`, `setUTCHours()` instead of local time methods
+  - Critical for features like week calculations that must work consistently globally
+  - Use `timeZone: 'UTC'` in `toLocaleDateString()` options when needed
+
+### User Experience Design
+- **Start with essential information first** - initial weekly table had too many columns
+- **Iterate based on feedback** - simplified from 6 columns to 2 (Day + Duration) based on user input
+- **Prioritize readability over completeness** in table displays

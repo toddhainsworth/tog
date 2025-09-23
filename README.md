@@ -9,11 +9,13 @@ A modern CLI for Toggl time tracking with enhanced user experience
 ## Features
 
 - 🚀 **Modern CLI UX** - Enhanced prompts with arrow-key navigation and spinners
-- ⏱️ **Timer Management** - Start, stop, and check status of Toggl timers
-- 📊 **Project Integration** - Select from your Toggl projects and tasks
+- ⏱️ **Timer Management** - Start, stop, edit, continue, and check status of Toggl timers
+- 📊 **Project Integration** - Select from your Toggl projects and tasks with searchable selection
 - 📋 **Workspace Visibility** - List all projects, clients, and tasks with hierarchical views
+- 📈 **Time Reporting** - Daily and weekly summaries with project breakdowns
 - 🔧 **Easy Setup** - Simple configuration with API token validation
 - 💫 **Loading Indicators** - Visual feedback for all API operations
+- 🔄 **Quick Actions** - Continue last timer, quick start with flags
 
 ## Quick Start
 
@@ -37,17 +39,23 @@ A modern CLI for Toggl time tracking with enhanced user experience
 
 4. **Start tracking time**:
    ```bash
-   tog start
+   tog start               # Interactive selection
+   tog start -d "Fix bug"  # Quick start with description
    ```
 
-5. **Check current timer**:
+5. **Manage timers**:
    ```bash
-   tog current
+   tog current    # Check current timer
+   tog stop       # Stop timer
+   tog continue   # Continue last timer
+   tog edit       # Edit current timer
    ```
 
-6. **Stop timer**:
+6. **View time summaries**:
    ```bash
-   tog stop
+   tog today      # Today's time summary
+   tog week       # Current week summary
+   tog week --last # Previous week summary
    ```
 
 <!-- toc -->
@@ -71,7 +79,9 @@ USAGE
 # Commands
 <!-- commands -->
 * [`tog clients`](#tog-clients)
+* [`tog continue`](#tog-continue)
 * [`tog current`](#tog-current)
+* [`tog edit`](#tog-edit)
 * [`tog help [COMMAND]`](#tog-help-command)
 * [`tog init`](#tog-init)
 * [`tog nuke`](#tog-nuke)
@@ -90,6 +100,8 @@ USAGE
 * [`tog start`](#tog-start)
 * [`tog stop`](#tog-stop)
 * [`tog tasks`](#tog-tasks)
+* [`tog today`](#tog-today)
+* [`tog week`](#tog-week)
 
 ## `tog clients`
 
@@ -113,6 +125,23 @@ EXAMPLES
 
 _See code: [src/commands/clients.ts](https://github.com/toddhainsworth/tog/blob/v0.2.2/src/commands/clients.ts)_
 
+## `tog continue`
+
+Continue the most recent timer with the same settings
+
+```
+USAGE
+  $ tog continue
+
+DESCRIPTION
+  Continue the most recent timer with the same settings
+
+EXAMPLES
+  $ tog continue
+```
+
+_See code: [src/commands/continue.ts](https://github.com/toddhainsworth/tog/blob/v0.2.2/src/commands/continue.ts)_
+
 ## `tog current`
 
 Show currently running timer
@@ -129,6 +158,39 @@ EXAMPLES
 ```
 
 _See code: [src/commands/current.ts](https://github.com/toddhainsworth/tog/blob/v0.2.2/src/commands/current.ts)_
+
+## `tog edit`
+
+Edit the currently running timer
+
+```
+USAGE
+  $ tog edit [--clear] [-d <value>] [-p <value>] [-t <value>]
+
+FLAGS
+  -d, --description=<value>  New timer description
+  -p, --project=<value>      Project name or ID (use "none" to clear)
+  -t, --task=<value>         Task name or ID (use "none" to clear)
+      --clear                Clear all project and task assignments
+
+DESCRIPTION
+  Edit the currently running timer
+
+EXAMPLES
+  $ tog edit
+
+  $ tog edit -d "Updated description"
+
+  $ tog edit -p "New Project"
+
+  $ tog edit -p none
+
+  $ tog edit --clear
+
+  $ tog edit -d "New desc" -p "Project" -t "Task"
+```
+
+_See code: [src/commands/edit.ts](https://github.com/toddhainsworth/tog/blob/v0.2.2/src/commands/edit.ts)_
 
 ## `tog help [COMMAND]`
 
@@ -522,13 +584,24 @@ Start a new time tracking timer
 
 ```
 USAGE
-  $ tog start
+  $ tog start [-d <value>] [-p <value>] [-t <value>]
+
+FLAGS
+  -d, --description=<value>  Timer description
+  -p, --project=<value>      Project name or ID
+  -t, --task=<value>         Task name or ID
 
 DESCRIPTION
   Start a new time tracking timer
 
 EXAMPLES
   $ tog start
+
+  $ tog start -d "Working on API integration"
+
+  $ tog start -d "Bug fix" -p "Backend Project"
+
+  $ tog start -d "Feature work" -p "Frontend" -t "Login system"
 ```
 
 _See code: [src/commands/start.ts](https://github.com/toddhainsworth/tog/blob/v0.2.2/src/commands/start.ts)_
@@ -566,6 +639,45 @@ EXAMPLES
 ```
 
 _See code: [src/commands/tasks.ts](https://github.com/toddhainsworth/tog/blob/v0.2.2/src/commands/tasks.ts)_
+
+## `tog today`
+
+Display a comprehensive summary of today's time tracking activities
+
+```
+USAGE
+  $ tog today
+
+DESCRIPTION
+  Display a comprehensive summary of today's time tracking activities
+
+EXAMPLES
+  $ tog today
+```
+
+_See code: [src/commands/today.ts](https://github.com/toddhainsworth/tog/blob/v0.2.2/src/commands/today.ts)_
+
+## `tog week`
+
+Display comprehensive weekly time tracking summary
+
+```
+USAGE
+  $ tog week [--last]
+
+FLAGS
+  --last  Show previous week instead of current week
+
+DESCRIPTION
+  Display comprehensive weekly time tracking summary
+
+EXAMPLES
+  $ tog week
+
+  $ tog week --last
+```
+
+_See code: [src/commands/week.ts](https://github.com/toddhainsworth/tog/blob/v0.2.2/src/commands/week.ts)_
 <!-- commandsstop -->
 
 ## 🤖 AI-Powered Development Experiment
@@ -611,12 +723,13 @@ Claude Code successfully handled complex software development tasks including:
 
 ### Challenges and Limitations
 
-While Claude Code handled most development tasks effectively, some challenges emerged:
+While Claude Code handled most development tasks effectively, several challenges emerged throughout development:
 
 **Context Retention:**
 - Occasionally overlooked established project conventions documented in CLAUDE.md
 - Required reminders about coding standards (e.g., avoiding `any` types, commit message formats)
 - Sometimes needed re-direction when deviating from agreed architectural patterns
+- Initially implemented unsafe non-null assertions (`!`) requiring guidance toward type-safe Map-based lookups
 
 **Long-term Memory:**
 - In longer development sessions, earlier decisions or constraints could be forgotten
@@ -628,10 +741,22 @@ While Claude Code handled most development tasks effectively, some challenges em
 - Required clarification when multiple valid implementation approaches existed
 - Best performance came with clear, specific requirements rather than open-ended tasks
 
+**Test Environment Considerations:**
+- Created tests that inadvertently affected production data (deleting user's `.togrc` file)
+- Required implementing configurable file paths and isolated temporary test environments
+- Shows importance of considering production environment impact during test design
+
+**Technical Complexity Handling:**
+- UTC date handling for week boundaries required multiple iterations to get timezone-consistent behavior
+- Table design needed simplification from 6 columns to 2 based on user feedback about visual noise
+- Build verification caught TypeScript compilation issues that passing tests missed
+
 **Mitigation Strategies:**
 - **CLAUDE.md documentation** provided persistent project context and standards
 - **PRD-driven approach** broke complex features into manageable, well-defined tasks
 - **Regular human code review** caught deviations and maintained quality standards
 - **Iterative feedback loops** allowed for quick course corrections
+- **Continuous testing** during development caught edge cases and timezone issues
+- **Build verification** ensured TypeScript compilation remained clean
 
-This experiment demonstrates that AI can now handle the full software development lifecycle for real-world applications while maintaining high code quality through structured human oversight and clear documentation of project standards.
+This experiment demonstrates that AI can now handle the full software development lifecycle for real-world applications while maintaining high code quality through structured human oversight, continuous testing, and immediate feedback on problematic patterns.
