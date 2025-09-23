@@ -63,6 +63,7 @@ export const WorkspacesArraySchema = type(WorkspaceSchema, '[]')
 export const ProjectsArraySchema = type(ProjectSchema, '[]')
 export const TasksArraySchema = type(TaskSchema, '[]')
 export const ClientsArraySchema = type(ClientSchema, '[]')
+export const TimeEntriesArraySchema = type(TimeEntrySchema, '[]')
 
 // User input validation
 // eslint-disable-next-line unicorn/prefer-string-raw

@@ -8,6 +8,7 @@ import {
   ProjectsArraySchema,
   type Task,
   TasksArraySchema,
+  TimeEntriesArraySchema,
   type TimeEntry,
   TimeEntrySchema,
   UserSchema,
@@ -104,6 +105,25 @@ export class TogglClient {
       }
 
       throw createApiErrorFromAxios(error, '/me/tasks')
+    }
+  }
+
+  async getTimeEntries(startDate: string, endDate: string): Promise<TimeEntry[]> {
+    try {
+      const response = await this.client.get('/me/time_entries', {
+        params: {
+          end_date: endDate,
+          start_date: startDate,
+        },
+      })
+      const data = response.data || []
+      return TimeEntriesArraySchema.assert(data)
+    } catch (error) {
+      if (error instanceof Error && 'name' in error && error.name === 'ArkTypeError') {
+        throw TogglValidationError.invalidResponse(error.message)
+      }
+
+      throw createApiErrorFromAxios(error, '/me/time_entries')
     }
   }
 
