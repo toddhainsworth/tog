@@ -1,6 +1,8 @@
 import {Flags} from '@oclif/core'
 
-import type { Project, Task, TimeEntry } from '../lib/validation.js'
+import type { TogglConfig } from '../lib/config.js'
+import type { TogglClient } from '../lib/toggl-client.js'
+import type { Project, Task } from '../lib/validation.js'
 
 import { BaseCommand } from '../lib/base-command.js'
 import { promptForDescription, promptForTaskSelection, withSpinner } from '../lib/prompts.js'
@@ -22,178 +24,105 @@ static override flags = {
   public async run(): Promise<void> {
     try {
       const {flags} = await this.parse(Start)
-
-      // Load config and create client using base class methods
       const config = this.loadConfigOrExit()
       const client = this.getClient()
 
-      let isConnected: boolean
-      try {
-        isConnected = await withSpinner('Checking API connectivity...', () => client.ping(), {
-          log: this.log.bind(this),
-          warn: this.warn.bind(this)
-        })
-      } catch (error) {
-        this.handleError(error, 'API validation error')
-        return
-      }
+      // Check for running timer
+      if (await this.checkForRunningTimer(client)) return
 
-      if (!isConnected) {
-        this.handleError(new Error('Unable to connect to Toggl API. Please check your configuration.'), 'Connection failed')
-        return
-      }
+      // Get timer description
+      const description = await this.getTimerDescription(flags)
+      if (!description) return
 
-      // Check if there's already a running timer
-      let currentEntry: null | TimeEntry
-      try {
-        currentEntry = await client.getCurrentTimeEntry()
-      } catch (error) {
-        this.handleError(error, 'Failed to check current timer')
-        return
-      }
+      // Get available data
+      const result = await this.fetchTasksAndProjects(client)
+      if (!result.tasks || !result.projects) return
+      const {projects, tasks} = result
 
-      if (currentEntry) {
-        this.logWarning(`Timer is already running: "${currentEntry.description || 'Untitled'}"`)
-        this.log('Use `tog stop` to stop the current timer before starting a new one.')
-        return
-      }
+      // Handle project/task selection
+      const {selectedProject, selectedTask} = await this.selectProjectAndTask(flags, tasks, projects)
 
-      // Get timer description (from flag or prompt)
-      let description: string
-      if (flags.description) {
-        description = flags.description
-        this.log(`Using description: "${description}"`)
-      } else {
-        this.log('Let\'s start a new timer!')
-        try {
-          description = await promptForDescription()
-        } catch (error) {
-          this.handleError(error, 'Failed to get timer description')
-          return
-        }
-      }
-
-      // Fetch available tasks and projects
-      let tasks: Task[]
-      let projects: Project[]
-
-      try {
-        [tasks, projects] = await withSpinner('Fetching available tasks and projects...', async () => Promise.all([client.getTasks(), client.getProjects()]), {
-          log: this.log.bind(this),
-          warn: this.warn.bind(this)
-        })
-      } catch (error) {
-        this.handleError(error, 'Failed to fetch tasks/projects')
-        return
-      }
-
-      // Handle project/task selection (from flags or interactive)
-      let selectedProject: Project | undefined
-      let selectedTask: Task | undefined
-
-      // Project selection
-      if (flags.project) {
-        try {
-          const foundProject = this.findProjectByNameOrId(projects, flags.project)
-          if (!foundProject) {
-            this.handleError(new Error(`Project "${flags.project}" not found`), 'Project lookup failed')
-            return
-          }
-
-          selectedProject = foundProject
-          this.log(`Using project: ${selectedProject.name}`)
-        } catch (error) {
-          this.handleError(error, 'Project lookup failed')
-          return
-        }
-      }
-
-      // Task selection
-      if (flags.task) {
-        try {
-          const foundTask = this.findTaskByNameOrId(tasks, flags.task, selectedProject?.id)
-          if (!foundTask) {
-            const projectContext = selectedProject ? ` in project "${selectedProject.name}"` : ''
-            this.handleError(new Error(`Task "${flags.task}"${projectContext} not found`), 'Task lookup failed')
-            return
-          }
-
-          selectedTask = foundTask
-          this.log(`Using task: ${foundTask.name}`)
-
-          // If task is found but no project was specified, use the task's project
-          if (!selectedProject && foundTask.project_id) {
-            selectedProject = projects.find(p => p.id === foundTask.project_id)
-          }
-        } catch (error) {
-          this.handleError(error, 'Task lookup failed')
-          return
-        }
-      }
-
-      // If no flags provided and we have tasks/projects, use interactive selection
-      if (!flags.project && !flags.task && (tasks.length > 0 || projects.length > 0)) {
-        try {
-          const selectedChoice = await promptForTaskSelection(tasks, projects)
-          selectedProject = selectedChoice.project_id ? projects.find(p => p.id === selectedChoice.project_id) : undefined
-          selectedTask = selectedChoice.task_id ? tasks.find(t => t.id === selectedChoice.task_id) : undefined
-          this.logSuccess(`Selected: ${selectedChoice.display}`)
-        } catch (error) {
-          this.handleError(error, 'Failed to select task/project')
-          return
-        }
-      }
-
-      // Create time entry with selected task/project
-      const timeEntryData: {
-        created_with: string
-        description: string
-        duration: number
-        project_id?: number
-        start: string
-        task_id?: number
-        workspace_id: number
-      } = {
-        created_with: 'tog-cli',
-        description,
-        duration: -1, // Indicates a running timer
-        start: new Date().toISOString(),
-        workspace_id: config.workspaceId,
-      }
-
-      if (selectedTask) {
-        timeEntryData.task_id = selectedTask.id
-      }
-
-      if (selectedProject) {
-        timeEntryData.project_id = selectedProject.id
-      }
-
-      const timeEntry = await withSpinner('Creating timer...', () =>
-        client.createTimeEntry(config.workspaceId, timeEntryData)
-      , {
-        log: this.log.bind(this),
-        warn: this.warn.bind(this)
-      })
-
-      if (timeEntry) {
-        this.logSuccess('Timer started successfully!')
-        this.log(`Description: "${description}"`)
-
-        if (selectedProject) {
-          this.log(`Project: ${selectedProject.name}`)
-        }
-
-        if (selectedTask) {
-          this.log(`Task: ${selectedTask.name}`)
-        }
-      } else {
-        this.handleError(new Error('Failed to start timer. Please try again.'), 'Timer creation failed')
-      }
+      // Create and start timer
+      await this.createTimer({client, config, description, selectedProject, selectedTask})
 
     } catch (error) {
       this.handleError(error, 'Failed to start timer')
     }
+  }
+
+
+  private async checkForRunningTimer(client: TogglClient): Promise<boolean> {
+    try {
+      const currentEntry = await client.getCurrentTimeEntry()
+      if (currentEntry) {
+        this.logWarning(`Timer is already running: "${currentEntry.description || 'Untitled'}"`)
+        this.log('Use `tog stop` to stop the current timer before starting a new one.')
+        return true
+      }
+
+      return false
+    } catch (error) {
+      this.handleError(error, 'Failed to check current timer')
+      return true // Return true to stop execution
+    }
+  }
+
+  private async createTimer(options: {
+    client: TogglClient;
+    config: TogglConfig;
+    description: string;
+    selectedProject?: Project;
+    selectedTask?: Task;
+  }): Promise<void> {
+    const {client, config, description, selectedProject, selectedTask} = options
+    const timeEntryData = {
+      created_with: 'tog-cli',
+      description,
+      duration: -1,
+      start: new Date().toISOString(),
+      workspace_id: config.workspaceId,
+      ...(selectedTask && {task_id: selectedTask.id}),
+      ...(selectedProject && {project_id: selectedProject.id})
+    }
+
+    const timeEntry = await withSpinner('Creating timer...', () =>
+      client.createTimeEntry(config.workspaceId, timeEntryData), {
+        log: this.log.bind(this),
+        warn: this.warn.bind(this)
+      })
+
+    if (timeEntry) {
+      this.logSuccess('Timer started successfully!')
+      this.log(`Description: "${description}"`)
+
+      if (selectedProject) {
+        this.log(`Project: ${selectedProject.name}`)
+      }
+
+      if (selectedTask) {
+        this.log(`Task: ${selectedTask.name}`)
+      }
+    } else {
+      this.handleError(new Error('Failed to start timer. Please try again.'), 'Timer creation failed')
+    }
+  }
+
+  private async fetchTasksAndProjects(client: TogglClient): Promise<{projects: null | Project[]; tasks: null | Task[],}> {
+    try {
+      const [tasks, projects] = await withSpinner('Fetching available tasks and projects...',
+        async () => Promise.all([client.getTasks(), client.getProjects()]), {
+          log: this.log.bind(this),
+          warn: this.warn.bind(this)
+        })
+      return {projects, tasks}
+    } catch (error) {
+      this.handleError(error, 'Failed to fetch tasks/projects')
+      return {projects: null, tasks: null}
+    }
+  }
+
+  private findProjectById(projects: Project[], projectId: number): Project | undefined {
+    return projects.find(p => p.id === projectId)
   }
 
   private findProjectByNameOrId(projects: Project[], input: string): null | Project {
@@ -273,5 +202,104 @@ static override flags = {
     // Multiple partial matches - this is ambiguous
     const names = matches.map(t => t.name).join(', ')
     throw new Error(`Multiple tasks match "${input}": ${names}. Please be more specific.`)
+  }
+
+  private async getTimerDescription(flags: {description?: string}): Promise<null | string> {
+    if (flags.description) {
+      this.log(`Using description: "${flags.description}"`)
+      return flags.description
+    }
+
+    this.log('Let\'s start a new timer!')
+    try {
+      return await promptForDescription()
+    } catch (error) {
+      this.handleError(error, 'Failed to get timer description')
+      return null
+    }
+  }
+
+  private async selectInteractively(tasks: Task[], projects: Project[]): Promise<null | {project?: Project, task?: Task}> {
+    try {
+      const selectedChoice = await promptForTaskSelection(tasks, projects)
+      const selectedProject = selectedChoice.project_id ? projects.find(p => p.id === selectedChoice.project_id) : undefined
+      const selectedTask = selectedChoice.task_id ? tasks.find(t => t.id === selectedChoice.task_id) : undefined
+
+      this.logSuccess(`Selected: ${selectedChoice.display}`)
+      return {project: selectedProject, task: selectedTask}
+    } catch (error) {
+      this.handleError(error, 'Failed to select task/project')
+      return null
+    }
+  }
+
+  private async selectProjectAndTask(flags: {project?: string, task?: string}, tasks: Task[], projects: Project[]): Promise<{selectedProject?: Project, selectedTask?: Task}> {
+    let selectedProject: Project | undefined
+    let selectedTask: Task | undefined
+
+    // Project selection
+    if (flags.project) {
+      const result = await this.selectProjectByFlag(projects, flags.project)
+      if (!result) return {}
+      selectedProject = result
+    }
+
+    // Task selection
+    if (flags.task) {
+      const result = await this.selectTaskByFlag(tasks, projects, flags.task, selectedProject)
+      if (!result) return {}
+      selectedTask = result.task
+      selectedProject = result.project || selectedProject
+    }
+
+    // Interactive selection if no flags
+    if (!flags.project && !flags.task && (tasks.length > 0 || projects.length > 0)) {
+      const result = await this.selectInteractively(tasks, projects)
+      if (!result) return {}
+      selectedProject = result.project
+      selectedTask = result.task
+    }
+
+    return {selectedProject, selectedTask}
+  }
+
+  private async selectProjectByFlag(projects: Project[], projectFlag: string): Promise<null | Project> {
+    try {
+      const foundProject = this.findProjectByNameOrId(projects, projectFlag)
+      if (!foundProject) {
+        this.handleError(new Error(`Project "${projectFlag}" not found`), 'Project lookup failed')
+        return null
+      }
+
+      this.log(`Using project: ${foundProject.name}`)
+      return foundProject
+    } catch (error) {
+      this.handleError(error, 'Project lookup failed')
+      return null
+    }
+  }
+
+  private async selectTaskByFlag(tasks: Task[], projects: Project[], taskFlag: string, selectedProject?: Project): Promise<null | {project?: Project; task: Task,}> {
+    try {
+      const foundTask = this.findTaskByNameOrId(tasks, taskFlag, selectedProject?.id)
+      if (!foundTask) {
+        const projectContext = selectedProject ? ` in project "${selectedProject.name}"` : ''
+        this.handleError(new Error(`Task "${taskFlag}"${projectContext} not found`), 'Task lookup failed')
+        return null
+      }
+
+      this.log(`Using task: ${foundTask.name}`)
+
+      // Auto-select project if task has one but no project was specified
+      let taskProject = selectedProject
+      if (!taskProject && foundTask.project_id) {
+        taskProject = this.findProjectById(projects, foundTask.project_id)
+      }
+
+      return {project: taskProject, task: foundTask}
+    } catch (error) {
+      this.handleError(error, 'Task lookup failed')
+      return null
+    }
   }
 }
