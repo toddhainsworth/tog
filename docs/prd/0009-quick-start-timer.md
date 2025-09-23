@@ -43,15 +43,15 @@ interface StartFlags {
 ```
 
 ## Acceptance Criteria
-- [ ] Command accepts `-d`/`--description` flag for timer description
-- [ ] Command accepts `-p`/`--project` flag for project selection
-- [ ] Command accepts `-t`/`--task` flag for task selection
-- [ ] Flags bypass interactive prompts when provided
-- [ ] Project/task can be specified by name (partial match) or ID
-- [ ] Clear error messages for invalid project/task names
-- [ ] Backward compatibility - interactive mode still works without flags
-- [ ] Help text updated to show new flag options
-- [ ] Examples in help text demonstrate flag usage
+- [x] Command accepts `-d`/`--description` flag for timer description
+- [x] Command accepts `-p`/`--project` flag for project selection
+- [x] Command accepts `-t`/`--task` flag for task selection
+- [x] Flags bypass interactive prompts when provided
+- [x] Project/task can be specified by name (partial match) or ID
+- [x] Clear error messages for invalid project/task names
+- [x] Backward compatibility - interactive mode still works without flags
+- [x] Help text updated to show new flag options
+- [x] Examples in help text demonstrate flag usage
 
 ## Dependencies
 - None - builds on existing timer start functionality
@@ -64,4 +64,4 @@ interface StartFlags {
 
 ---
 
-**Status:** Draft - Awaiting approval
+**Status:** Completed
