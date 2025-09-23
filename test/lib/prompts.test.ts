@@ -41,9 +41,8 @@ describe('prompts', () => {
       }
 
       // Build choices from projects without tasks
-      const projectsWithoutTasks = mockProjects.filter(p =>
-        !mockTasks.some(t => t.project_id === p.id)
-      )
+      const taskProjectIds = new Set(mockTasks.map(t => t.project_id))
+      const projectsWithoutTasks = mockProjects.filter(p => !taskProjectIds.has(p.id))
 
       for (const project of projectsWithoutTasks) {
         const displayName = `📁 ${project.name}`
