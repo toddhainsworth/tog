@@ -46,16 +46,16 @@ interface EditFlags {
 ```
 
 ## Acceptance Criteria
-- [ ] Command checks for running timer and shows error if none exists
-- [ ] Interactive mode shows current values as defaults
-- [ ] Can update description via flag or prompt
-- [ ] Can update project via flag or prompt
-- [ ] Can update task via flag or prompt
-- [ ] Can clear project/task assignments
-- [ ] Changes are immediately reflected in Toggl
-- [ ] Success message shows what was changed
-- [ ] Original start time is preserved
-- [ ] Help text includes usage examples
+- [x] Command checks for running timer and shows error if none exists
+- [x] Interactive mode shows current values as defaults
+- [x] Can update description via flag or prompt
+- [x] Can update project via flag or prompt
+- [x] Can update task via flag or prompt
+- [x] Can clear project/task assignments
+- [x] Changes are immediately reflected in Toggl
+- [x] Success message shows what was changed
+- [x] Original start time is preserved
+- [x] Help text includes usage examples
 
 ## Dependencies
 - None - builds on existing timer and API functionality
@@ -68,4 +68,4 @@ interface EditFlags {
 
 ---
 
-**Status:** Draft - Awaiting approval
+**Status:** Completed

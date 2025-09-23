@@ -20,10 +20,10 @@ interface TimeEntryPayload {
   created_with: string
   description?: string
   duration?: number
-  project_id?: number
+  project_id?: null | number
   start: string
   stop?: string
-  task_id?: number
+  task_id?: null | number
   workspace_id?: number
 }
 
@@ -141,6 +141,19 @@ export class TogglClient {
       // For stop operations, return false to indicate failure
       // The caller can decide how to handle this
       return false
+    }
+  }
+
+  async updateTimeEntry(workspaceId: number, timeEntryId: number, updates: Partial<TimeEntryPayload>): Promise<TimeEntry> {
+    try {
+      const response = await this.client.put(`/workspaces/${workspaceId}/time_entries/${timeEntryId}`, updates)
+      return TimeEntrySchema.assert(response.data)
+    } catch (error) {
+      if (error instanceof Error && 'name' in error && error.name === 'ArkTypeError') {
+        throw TogglValidationError.invalidResponse(error.message)
+      }
+
+      throw createApiErrorFromAxios(error, `/workspaces/${workspaceId}/time_entries/${timeEntryId}`)
     }
   }
 }
