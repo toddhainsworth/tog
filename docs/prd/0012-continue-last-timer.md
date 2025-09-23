@@ -23,22 +23,15 @@ Enable users to quickly restart their most recent timer with the same descriptio
 - Start new timer with identical description, project, and task
 - Warn if current timer is already running
 - Show helpful message if no previous timer exists
-- Option to modify description before continuing
 - Clear success confirmation with timer details
 
 ### Code Structure
 - `src/commands/continue.ts` - New command implementation
-- `src/lib/toggl-client.ts` - Add method to fetch recent time entries
+- `src/lib/toggl-client.ts` - Add method to fetch most recent time entry
 - Add tests for continue command functionality
 
 ### Data Models
 ```typescript
-// Command flags
-interface ContinueFlags {
-  edit?: boolean;  // Allow editing description before continuing
-  last?: number;   // Continue nth most recent timer (default: 1)
-}
-
 // Use existing TimeEntry model
 // New entry copies: description, project_id, task_id, tags
 // New entry gets: new start time, duration: -1
@@ -50,8 +43,6 @@ interface ContinueFlags {
 - [ ] Creates new running timer with same metadata
 - [ ] Handles case when timer is already running with appropriate message
 - [ ] Handles case when no previous timer exists
-- [ ] Optional `--edit` flag allows modifying description
-- [ ] Optional `--last n` flag continues nth most recent timer
 - [ ] Success message confirms timer started with details
 - [ ] Help text includes usage examples
 
@@ -62,7 +53,7 @@ interface ContinueFlags {
 - Consider showing elapsed time since last timer stopped
 - Could add interactive selection from recent timers in future
 - Useful for pomodoro-style work patterns
-- Consider flag to continue but switch project/task
+- Future enhancement: could add flags to modify description or select specific timer
 
 ---
 

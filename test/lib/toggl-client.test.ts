@@ -198,6 +198,81 @@ describe('TogglClient', () => {
     })
   })
 
+  describe('getMostRecentTimeEntry', () => {
+    it('should return most recent time entry when entries exist', async () => {
+      const mockEntry = {
+        at: '2024-01-01T12:00:00Z',
+        description: 'Most recent task',
+        duration: 3600,
+        id: 123,
+        start: '2024-01-01T11:00:00Z',
+        stop: '2024-01-01T12:00:00Z',
+        workspace_id: 456,
+      }
+      sandbox.stub(axios, 'create').returns({
+        get: sandbox.stub().resolves({data: [mockEntry]}),
+      } as unknown as AxiosInstance)
+
+      const client = new TogglClient('test-token')
+      const result = await client.getMostRecentTimeEntry()
+
+      expect(result).to.deep.equal(mockEntry)
+    })
+
+    it('should return null when no time entries exist', async () => {
+      sandbox.stub(axios, 'create').returns({
+        get: sandbox.stub().resolves({data: []}),
+      } as unknown as AxiosInstance)
+
+      const client = new TogglClient('test-token')
+      const result = await client.getMostRecentTimeEntry()
+
+      expect(result).to.be.null
+    })
+
+    it('should return null when response data is null', async () => {
+      sandbox.stub(axios, 'create').returns({
+        get: sandbox.stub().resolves({data: null}),
+      } as unknown as AxiosInstance)
+
+      const client = new TogglClient('test-token')
+      const result = await client.getMostRecentTimeEntry()
+
+      expect(result).to.be.null
+    })
+
+    it('should pass correct query parameters', async () => {
+      const getSpy = sandbox.stub().resolves({data: []})
+      sandbox.stub(axios, 'create').returns({
+        get: getSpy,
+      } as unknown as AxiosInstance)
+
+      const client = new TogglClient('test-token')
+      await client.getMostRecentTimeEntry()
+
+      expect(getSpy.calledWith('/me/time_entries', {
+        params: {
+          page_size: 1,
+        },
+      })).to.be.true
+    })
+
+    it('should handle API errors', async () => {
+      sandbox.stub(axios, 'create').returns({
+        get: sandbox.stub().rejects(new Error('API Error')),
+      } as unknown as AxiosInstance)
+
+      const client = new TogglClient('test-token')
+
+      try {
+        await client.getMostRecentTimeEntry()
+        expect.fail('Should have thrown an error')
+      } catch (error) {
+        expect(error).to.be.instanceOf(Error)
+      }
+    })
+  })
+
   describe('API authentication', () => {
     it('should properly encode API token in Basic auth header', () => {
       const token = 'test-token-123'

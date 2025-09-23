@@ -81,6 +81,25 @@ export class TogglClient {
     }
   }
 
+  async getMostRecentTimeEntry(): Promise<null | TimeEntry> {
+    try {
+      const response = await this.client.get('/me/time_entries', {
+        params: {
+          page_size: 1,
+        },
+      })
+      const data = response.data || []
+      const entries = TimeEntriesArraySchema.assert(data)
+      return entries.length > 0 ? entries[0] : null
+    } catch (error) {
+      if (error instanceof Error && 'name' in error && error.name === 'ArkTypeError') {
+        throw TogglValidationError.invalidResponse(error.message)
+      }
+
+      throw createApiErrorFromAxios(error, '/me/time_entries')
+    }
+  }
+
   async getProjects(): Promise<Project[]> {
     try {
       const response = await this.client.get('/me/projects')
