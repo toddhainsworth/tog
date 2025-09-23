@@ -156,8 +156,9 @@ export function aggregateTimeEntriesByProject(entries: TimeEntry[], projects: Pr
 
     totalSeconds += entrySeconds
 
-    if (projectMap.has(projectName)) {
-      projectMap.get(projectName)!.totalSeconds += entrySeconds
+    const existingProject = projectMap.get(projectName)
+    if (existingProject) {
+      existingProject.totalSeconds += entrySeconds
     } else {
       projectMap.set(projectName, {
         projectName,
@@ -189,11 +190,12 @@ export function groupTimeEntriesByDay(entries: TimeEntry[], projects: Project[] 
     const entryDate = new Date(entry.start)
     const dateKey = entryDate.toISOString().split('T')[0] // YYYY-MM-DD format
 
-    if (!dayMap.has(dateKey)) {
-      dayMap.set(dateKey, [])
+    const existingDay = dayMap.get(dateKey)
+    if (existingDay) {
+      existingDay.push(entry)
+    } else {
+      dayMap.set(dateKey, [entry])
     }
-
-    dayMap.get(dateKey)!.push(entry)
   }
 
   // Convert to DailySummary array
@@ -233,13 +235,16 @@ export function aggregateWeeklyProjectSummary(entries: TimeEntry[], projects: Pr
 
     totalSeconds += entrySeconds
 
-    if (!projectMap.has(projectName)) {
-      projectMap.set(projectName, {days: new Set(), totalSeconds: 0})
+    const existingProjectData = projectMap.get(projectName)
+    if (existingProjectData) {
+      existingProjectData.totalSeconds += entrySeconds
+      existingProjectData.days.add(entryDate)
+    } else {
+      projectMap.set(projectName, {
+        days: new Set([entryDate]),
+        totalSeconds: entrySeconds,
+      })
     }
-
-    const projectData = projectMap.get(projectName)!
-    projectData.totalSeconds += entrySeconds
-    projectData.days.add(entryDate)
   }
 
   // Convert to WeeklyProjectSummary array

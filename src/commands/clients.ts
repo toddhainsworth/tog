@@ -187,7 +187,10 @@ export default class Clients extends BaseCommand {
           clientProjectMap.set(project.client_name, [])
         }
 
-        clientProjectMap.get(project.client_name)!.push(project)
+        const projectList = clientProjectMap.get(project.client_name)
+        if (projectList) {
+          projectList.push(project)
+        }
       } else {
         orphanedProjects.push(project)
       }
@@ -199,7 +202,10 @@ export default class Clients extends BaseCommand {
           projectTaskMap.set(task.project_id, [])
         }
 
-        projectTaskMap.get(task.project_id)!.push(task)
+        const taskList = projectTaskMap.get(task.project_id)
+        if (taskList) {
+          taskList.push(task)
+        }
       } else {
         orphanedTasks.push(task)
       }
