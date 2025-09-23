@@ -50,15 +50,15 @@ interface SearchableSelectOptions {
 ```
 
 ## Acceptance Criteria
-- [ ] Typing filters the list in real-time
-- [ ] Search is case-insensitive
-- [ ] Partial matches work (e.g., "api" matches "API Integration")
-- [ ] ESC key clears search filter
-- [ ] Arrow keys navigate filtered results
-- [ ] Visual feedback shows when search is active
-- [ ] "No matches found" message when filter yields empty results
-- [ ] Works for project selection in start command
-- [ ] Works for task selection in start command
+- [x] Typing filters the list in real-time
+- [x] Search is case-insensitive
+- [x] Partial matches work (e.g., "api" matches "API Integration")
+- [x] ESC key clears search filter
+- [x] Arrow keys navigate filtered results
+- [x] Visual feedback shows when search is active
+- [x] "No matches found" message when filter yields empty results
+- [x] Works for project selection in start command
+- [x] Works for task selection in start command
 - [ ] Works for client selection if implemented
 
 ## Dependencies
@@ -73,4 +73,4 @@ interface SearchableSelectOptions {
 
 ---
 
-**Status:** Draft - Awaiting approval
+**Status:** Completed

@@ -984,7 +984,7 @@
 
 "@inquirer/search@^3.1.3":
   version "3.1.3"
-  resolved "https://registry.npmjs.org/@inquirer/search/-/search-3.1.3.tgz"
+  resolved "https://registry.yarnpkg.com/@inquirer/search/-/search-3.1.3.tgz#3a4d725c596617ab9a516906fea9d8347ea5c28f"
   integrity sha512-D5T6ioybJJH0IiSUK/JXcoRrrm8sXwzrVMjibuPs+AgxmogKslaafy1oxFiorNI4s3ElSkeQZbhYQgLqiL8h6Q==
   dependencies:
     "@inquirer/core" "^10.2.2"

@@ -1,4 +1,5 @@
-import {confirm, input, select} from '@inquirer/prompts'
+import {confirm, input} from '@inquirer/prompts'
+import search from '@inquirer/search'
 import ora from 'ora'
 
 import type {Project, Task, Workspace} from './validation.js'
@@ -107,14 +108,44 @@ export async function promptForTaskSelection(
     throw new Error('No tasks or projects available for selection')
   }
 
-  const selection = await select({
-    choices: choices.map(choice => ({
-      name: choice.name,
-      value: choice.value,
-    })),
+  // Use search for better UX with filtering capability
+  const selection = await search({
     message: `${EMOJIS.LOADING} Select a ${tasks.length > 0 ? 'task or project' : 'project'}:`,
     pageSize: Math.min(15, choices.length),
+    async source(input) {
+      // If no input, return all choices
+      if (!input) {
+        return choices.map(choice => ({
+          name: choice.name,
+          value: choice.value,
+        }))
+      }
+
+      // Filter choices based on input (case-insensitive partial match)
+      const searchTerm = input.toLowerCase()
+      const filtered = choices.filter(choice =>
+        choice.name.toLowerCase().includes(searchTerm)
+      )
+
+      // Return filtered choices or show no matches message
+      if (filtered.length === 0) {
+        return [{
+          name: 'No matches found',
+          value: null,
+        }]
+      }
+
+      return filtered.map(choice => ({
+        name: choice.name,
+        value: choice.value,
+      }))
+    },
   })
+
+  // Handle case where no match was found
+  if (selection === null) {
+    throw new Error('No valid selection made')
+  }
 
   return selection
 }
@@ -146,14 +177,46 @@ export async function promptForWorkspaceSelection(
     value: workspace.id
   }))
 
-  return select({
-    choices: choices.map(choice => ({
-      name: choice.name,
-      value: choice.value,
-    })),
+  // Use search for better UX with filtering capability
+  const selection = await search({
     message: `${EMOJIS.LOADING} Select default workspace:`,
     pageSize: Math.min(10, choices.length),
+    async source(input) {
+      // If no input, return all choices
+      if (!input) {
+        return choices.map(choice => ({
+          name: choice.name,
+          value: choice.value,
+        }))
+      }
+
+      // Filter choices based on input (case-insensitive partial match)
+      const searchTerm = input.toLowerCase()
+      const filtered = choices.filter(choice =>
+        choice.name.toLowerCase().includes(searchTerm)
+      )
+
+      // Return filtered choices or show no matches message
+      if (filtered.length === 0) {
+        return [{
+          name: 'No matches found',
+          value: null,
+        }]
+      }
+
+      return filtered.map(choice => ({
+        name: choice.name,
+        value: choice.value,
+      }))
+    },
   })
+
+  // Handle case where no match was found
+  if (selection === null) {
+    throw new Error('No valid workspace selected')
+  }
+
+  return selection
 }
 
 // Loading utilities for better UX during async operations with oclif integration
