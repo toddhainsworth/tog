@@ -3,12 +3,17 @@ import {createSandbox} from 'sinon'
 
 import {
   aggregateTimeEntriesByProject,
+  aggregateWeeklyProjectSummary,
   calculateElapsedSeconds,
   calculatePercentage,
   formatDuration,
   formatStartTime,
   formatTimeEntry,
+  formatWeekRange,
+  getCurrentWeekDateRange,
+  getPreviousWeekDateRange,
   getTodayDateRange,
+  groupTimeEntriesByDay,
 } from '../../src/lib/time-utils.js'
 
 describe('Time utilities', () => {
@@ -325,6 +330,186 @@ describe('Time utilities', () => {
     it('should round to nearest integer', () => {
       expect(calculatePercentage(1, 3)).to.equal(33) // 33.33% rounds to 33
       expect(calculatePercentage(2, 3)).to.equal(67) // 66.67% rounds to 67
+    })
+  })
+
+  describe('getCurrentWeekDateRange', () => {
+    it('should return current week (Monday to Sunday)', () => {
+      // Test for a Tuesday (day 2)
+      const tuesday = new Date('2024-01-16T14:30:00Z') // This is a Tuesday
+      sandbox.useFakeTimers(tuesday.getTime())
+
+      const range = getCurrentWeekDateRange()
+
+      // Should start on Monday and end on Sunday
+      expect(range.start_date).to.include('2024-01-15') // Monday
+      expect(range.end_date).to.include('2024-01-21') // Sunday
+    })
+
+    it('should handle Sunday correctly', () => {
+      // Test for a Sunday (day 0)
+      const sunday = new Date('2024-01-21T14:30:00Z') // This is a Sunday
+      sandbox.useFakeTimers(sunday.getTime())
+
+      const range = getCurrentWeekDateRange()
+
+      // Should start on Monday and end on same Sunday
+      expect(range.start_date).to.include('2024-01-15') // Monday
+      expect(range.end_date).to.include('2024-01-21') // Sunday
+    })
+  })
+
+  describe('getPreviousWeekDateRange', () => {
+    it('should return previous week dates', () => {
+      const tuesday = new Date('2024-01-16T14:30:00Z') // This is a Tuesday
+      sandbox.useFakeTimers(tuesday.getTime())
+
+      const range = getPreviousWeekDateRange()
+
+      // Should be one week earlier
+      expect(range.start_date).to.include('2024-01-08') // Previous Monday
+      expect(range.end_date).to.include('2024-01-14') // Previous Sunday
+    })
+  })
+
+  describe('formatWeekRange', () => {
+    it('should format week range nicely', () => {
+      const range = {
+        end_date: '2024-01-21T23:59:59.999Z',
+        start_date: '2024-01-15T00:00:00.000Z',
+      }
+
+      const result = formatWeekRange(range)
+      expect(result).to.include('Jan 15')
+      expect(result).to.include('Jan 21')
+      expect(result).to.include('2024')
+    })
+  })
+
+  describe('groupTimeEntriesByDay', () => {
+    const projects = [
+      {active: true, id: 1, name: 'Project A', workspace_id: 123},
+    ]
+
+    it('should group time entries by day', () => {
+      const entries = [
+        {
+          at: '2024-01-15T10:00:00Z',
+          duration: 3600,
+          id: 1,
+          project_id: 1,
+          start: '2024-01-15T09:00:00Z',
+          stop: '2024-01-15T10:00:00Z',
+          workspace_id: 123,
+        },
+        {
+          at: '2024-01-15T15:00:00Z',
+          duration: 1800,
+          id: 2,
+          project_id: 1,
+          start: '2024-01-15T14:30:00Z',
+          stop: '2024-01-15T15:00:00Z',
+          workspace_id: 123,
+        },
+        {
+          at: '2024-01-16T11:00:00Z',
+          duration: 7200,
+          id: 3,
+          project_id: 1,
+          start: '2024-01-16T09:00:00Z',
+          stop: '2024-01-16T11:00:00Z',
+          workspace_id: 123,
+        },
+      ]
+
+      const result = groupTimeEntriesByDay(entries, projects)
+
+      expect(result).to.have.length(2) // 2 days
+      expect(result[0].date).to.equal('2024-01-15')
+      expect(result[0].entries).to.have.length(2)
+      expect(result[0].totalSeconds).to.equal(5400) // 1.5 hours total
+      expect(result[1].date).to.equal('2024-01-16')
+      expect(result[1].entries).to.have.length(1)
+      expect(result[1].totalSeconds).to.equal(7200) // 2 hours
+    })
+
+    it('should handle empty entries', () => {
+      const result = groupTimeEntriesByDay([], projects)
+      expect(result).to.have.length(0)
+    })
+  })
+
+  describe('aggregateWeeklyProjectSummary', () => {
+    const projects = [
+      {active: true, id: 1, name: 'Project A', workspace_id: 123},
+      {active: true, id: 2, name: 'Project B', workspace_id: 123},
+    ]
+
+    it('should aggregate weekly project summary with days worked', () => {
+      const entries = [
+        {
+          at: '2024-01-15T10:00:00Z',
+          duration: 3600, // 1 hour
+          id: 1,
+          project_id: 1,
+          start: '2024-01-15T09:00:00Z',
+          stop: '2024-01-15T10:00:00Z',
+          workspace_id: 123,
+        },
+        {
+          at: '2024-01-16T11:00:00Z',
+          duration: 7200, // 2 hours
+          id: 2,
+          project_id: 1,
+          start: '2024-01-16T09:00:00Z',
+          stop: '2024-01-16T11:00:00Z',
+          workspace_id: 123,
+        },
+        {
+          at: '2024-01-15T15:00:00Z',
+          duration: 1800, // 30 minutes
+          id: 3,
+          project_id: 2,
+          start: '2024-01-15T14:30:00Z',
+          stop: '2024-01-15T15:00:00Z',
+          workspace_id: 123,
+        },
+      ]
+
+      const result = aggregateWeeklyProjectSummary(entries, projects)
+
+      expect(result).to.have.length(2)
+
+      const projectA = result.find(p => p.projectName === 'Project A')
+      const projectB = result.find(p => p.projectName === 'Project B')
+
+      expect(projectA?.totalSeconds).to.equal(10_800) // 3 hours
+      expect(projectA?.daysWorked).to.equal(2) // 2 different days
+      expect(projectA?.dailyAverage).to.equal('01:30:00') // 1.5 hours average
+
+      expect(projectB?.totalSeconds).to.equal(1800) // 30 minutes
+      expect(projectB?.daysWorked).to.equal(1) // 1 day
+      expect(projectB?.dailyAverage).to.equal('00:30:00') // 30 minutes average
+    })
+
+    it('should handle entries with no project', () => {
+      const entries = [
+        {
+          at: '2024-01-15T10:00:00Z',
+          duration: 3600,
+          id: 1,
+          project_id: undefined,
+          start: '2024-01-15T09:00:00Z',
+          stop: '2024-01-15T10:00:00Z',
+          workspace_id: 123,
+        },
+      ]
+
+      const result = aggregateWeeklyProjectSummary(entries, projects)
+
+      expect(result).to.have.length(1)
+      expect(result[0].projectName).to.equal('No Project')
+      expect(result[0].daysWorked).to.equal(1)
     })
   })
 

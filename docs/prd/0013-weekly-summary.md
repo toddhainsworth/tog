@@ -66,16 +66,16 @@ interface WeeklyProjectSummary {
 ```
 
 ## Acceptance Criteria
-- [ ] Command shows current week by default (Monday-Sunday)
-- [ ] `--last` flag shows previous week
-- [ ] Time entries grouped by day with daily totals
-- [ ] Each day shows individual time entries
-- [ ] Project summary shows week totals with percentages
-- [ ] Week date range displayed in header
-- [ ] Grand total for week displayed prominently
-- [ ] Empty days shown with "No entries" message
-- [ ] Currently running timer included if applicable
-- [ ] Tables properly formatted and aligned
+- [x] Command shows current week by default (Monday-Sunday)
+- [x] `--last` flag shows previous week
+- [x] Time entries grouped by day with daily totals
+- [x] Each day shows individual time entries
+- [x] Project summary shows week totals with percentages
+- [x] Week date range displayed in header
+- [x] Grand total for week displayed prominently
+- [x] Empty days shown with "No entries" message
+- [x] Currently running timer included if applicable
+- [x] Tables properly formatted and aligned
 
 ## Dependencies
 - PRD 0011: Today's Summary Command (reuses aggregation patterns)
@@ -88,4 +88,4 @@ interface WeeklyProjectSummary {
 
 ---
 
-**Status:** Draft - Awaiting approval
+**Status:** ✅ Implemented
