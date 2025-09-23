@@ -10,29 +10,31 @@ import {
   getConfigFilePath,
   loadConfig,
   saveConfig,
+  setConfigPath,
   type TogglConfig,
 } from '../../src/lib/config.js'
 
 describe('Config module', () => {
   let sandbox: ReturnType<typeof createSandbox>
-  let configPath: string
+  let testConfigPath: string
 
   beforeEach(() => {
     sandbox = createSandbox()
-    configPath = join(os.homedir(), '.togrc')
 
-    // Clean up any existing config
-    if (fs.existsSync(configPath)) {
-      fs.unlinkSync(configPath)
-    }
+    // Use a temporary test config file instead of real ~/.togrc
+    testConfigPath = join(os.tmpdir(), `test-togrc-${Date.now()}-${Math.random().toString(36).slice(7)}`)
+    setConfigPath(testConfigPath)
   })
 
   afterEach(() => {
     sandbox.restore()
 
-    // Clean up test config
-    if (fs.existsSync(configPath)) {
-      fs.unlinkSync(configPath)
+    // Reset to default path
+    setConfigPath(undefined)
+
+    // Clean up test config file
+    if (fs.existsSync(testConfigPath)) {
+      fs.unlinkSync(testConfigPath)
     }
   })
 
@@ -42,7 +44,7 @@ describe('Config module', () => {
     })
 
     it('should return true when config exists', () => {
-      fs.writeFileSync(configPath, JSON.stringify({
+      fs.writeFileSync(testConfigPath, JSON.stringify({
         apiToken: 'test-token-at-least-32-characters-long',
         workspaceId: 12_345,
       }))
@@ -60,14 +62,14 @@ describe('Config module', () => {
         apiToken: 'test-token-at-least-32-characters-long',
         workspaceId: 12_345,
       }
-      fs.writeFileSync(configPath, JSON.stringify(testConfig))
+      fs.writeFileSync(testConfigPath, JSON.stringify(testConfig))
 
       const config = loadConfig()
       expect(config).to.deep.equal(testConfig)
     })
 
     it('should return null for invalid config format', () => {
-      fs.writeFileSync(configPath, JSON.stringify({
+      fs.writeFileSync(testConfigPath, JSON.stringify({
         apiToken: 'short', // Invalid: too short
         workspaceId: 12_345,
       }))
@@ -76,7 +78,7 @@ describe('Config module', () => {
     })
 
     it('should return null for malformed JSON', () => {
-      fs.writeFileSync(configPath, 'not valid json')
+      fs.writeFileSync(testConfigPath, 'not valid json')
       expect(loadConfig()).to.be.null
     })
   })
@@ -90,8 +92,8 @@ describe('Config module', () => {
 
       saveConfig(testConfig)
 
-      expect(fs.existsSync(configPath)).to.be.true
-      const savedData = JSON.parse(fs.readFileSync(configPath, 'utf8'))
+      expect(fs.existsSync(testConfigPath)).to.be.true
+      const savedData = JSON.parse(fs.readFileSync(testConfigPath, 'utf8'))
       expect(savedData).to.deep.equal(testConfig)
     })
 
@@ -108,25 +110,25 @@ describe('Config module', () => {
       saveConfig(oldConfig)
       saveConfig(newConfig)
 
-      const savedData = JSON.parse(fs.readFileSync(configPath, 'utf8'))
+      const savedData = JSON.parse(fs.readFileSync(testConfigPath, 'utf8'))
       expect(savedData).to.deep.equal(newConfig)
     })
   })
 
   describe('deleteConfig', () => {
     it('should delete existing config file', () => {
-      fs.writeFileSync(configPath, JSON.stringify({
+      fs.writeFileSync(testConfigPath, JSON.stringify({
         apiToken: 'test-token-at-least-32-characters-long',
         workspaceId: 12_345,
       }))
 
-      expect(fs.existsSync(configPath)).to.be.true
+      expect(fs.existsSync(testConfigPath)).to.be.true
       deleteConfig()
-      expect(fs.existsSync(configPath)).to.be.false
+      expect(fs.existsSync(testConfigPath)).to.be.false
     })
 
     it('should not throw when config does not exist', () => {
-      expect(fs.existsSync(configPath)).to.be.false
+      expect(fs.existsSync(testConfigPath)).to.be.false
       expect(() => deleteConfig()).to.not.throw()
     })
   })

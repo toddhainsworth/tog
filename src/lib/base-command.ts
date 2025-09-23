@@ -71,4 +71,12 @@ export abstract class BaseCommand extends Command {
   protected logWarning(message: string): void {
     this.log(`${EMOJIS.WARNING} ${message}`)
   }
+
+  /**
+   * Set config directly (for testing)
+   */
+  protected setConfig(config: TogglConfig): void {
+    this.togglConfig = config
+    this.client = null // Reset client to use new config
+  }
 }

@@ -8,8 +8,15 @@ const CONFIG_FILE = '.togrc'
 
 export type TogglConfig = typeof ConfigSchema.infer
 
+// Allow overriding config path for testing
+let configPath: string | undefined
+
+export function setConfigPath(path: string | undefined): void {
+  configPath = path
+}
+
 function getConfigPath(): string {
-  return join(os.homedir(), CONFIG_FILE)
+  return configPath || join(os.homedir(), CONFIG_FILE)
 }
 
 export function configExists(): boolean {
