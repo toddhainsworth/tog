@@ -1,7 +1,7 @@
 {
   "name": "tog",
   "description": "Toggl CLI",
-  "version": "0.2.2",
+  "version": "0.3.0",
   "author": "Todd Hainsworth",
   "bin": {
     "tog": "./bin/run.js"
