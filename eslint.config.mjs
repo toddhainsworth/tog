@@ -22,5 +22,12 @@ export default [
       // Disable all perfectionist rules
       'perfectionist/*': 'off',
     }
+  },
+  {
+    files: ['loader.mjs'],
+    rules: {
+      // Allow experimental module.register for Node.js 22+ loader
+      'n/no-unsupported-features/node-builtins': 'off',
+    }
   }
 ]
