@@ -1,3 +1,4 @@
+import type {Config} from '@oclif/core'
 import type sinon from 'sinon'
 
 import {expect} from 'chai'
@@ -7,7 +8,7 @@ import {BaseCommand} from '../../src/lib/base-command.js'
 
 // Minimal Config interface for testing - only includes properties actually used by tests
 interface MinimalConfig {
-  pjson: { name: string; oclif: {}; version: string }
+  pjson: { name: string; oclif: Record<string, unknown>; version: string }
   root: string
 }
 
@@ -52,7 +53,7 @@ describe('BaseCommand Debug Logging', () => {
       pjson: { name: 'test', oclif: {}, version: '1.0.0' },
       root: '/test'
     }
-    command = new TestCommand([], mockConfig as any) // oclif requires full Config but we only need minimal properties
+    command = new TestCommand([], mockConfig as unknown as Config) // oclif requires full Config but we only need minimal properties
     logToStderrStub = sandbox.stub(command, 'logToStderr')
     sandbox.stub(command, 'error').throws(new Error('Command error'))
   })

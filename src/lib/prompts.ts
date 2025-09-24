@@ -112,7 +112,7 @@ export async function promptForTaskSelection(
   const selection = await search({
     message: `${EMOJIS.LOADING} Select a ${tasks.length > 0 ? 'task or project' : 'project'}:`,
     pageSize: Math.min(15, choices.length),
-    async source(input: string | undefined): Promise<Array<{name: string; value: TaskChoice['value'] | null}>> {
+    async source(input: string | undefined): Promise<Array<{name: string; value: null | TaskChoice['value']}>> {
       // If no input, return all choices
       if (!input) {
         return choices.map(choice => ({
@@ -172,6 +172,7 @@ export async function promptForWorkspaceSelection(
     if (!workspace) {
       throw new Error('Workspace data is unexpectedly missing')
     }
+
     return workspace.id
   }
 
@@ -185,7 +186,7 @@ export async function promptForWorkspaceSelection(
   const selection = await search({
     message: `${EMOJIS.LOADING} Select default workspace:`,
     pageSize: Math.min(10, choices.length),
-    async source(input: string | undefined): Promise<Array<{name: string; value: number | null}>> {
+    async source(input: string | undefined): Promise<Array<{name: string; value: null | number}>> {
       // If no input, return all choices
       if (!input) {
         return choices.map(choice => ({
