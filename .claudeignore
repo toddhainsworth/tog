@@ -1,0 +1,7 @@
+# Testing exclusions - Commands do not require tests in this oclif CLI project
+test/commands/
+!test/lib/
+
+# Command test pattern exclusions
+**/commands/**/*.test.ts
+**/commands/**/*.spec.ts
