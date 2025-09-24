@@ -1,4 +1,5 @@
 import {Flags} from '@oclif/core'
+import dayjs from 'dayjs'
 import ora from 'ora'
 
 import type {DailySummary, DateRange} from '../lib/time-utils.js'
@@ -123,7 +124,7 @@ static override flags = {
     for (let i = 0; i < 7; i++) {
       const currentDate = new Date(startDate)
       currentDate.setDate(startDate.getDate() + i)
-      const dateKey = currentDate.toISOString().split('T')[0]
+      const dateKey = dayjs(currentDate).format('YYYY-MM-DD')
 
       const existingDay = existingDaysMap.get(dateKey)
       if (existingDay) {

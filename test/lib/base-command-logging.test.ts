@@ -5,6 +5,12 @@ import {createSandbox} from 'sinon'
 
 import {BaseCommand} from '../../src/lib/base-command.js'
 
+// Minimal Config interface for testing - only includes properties actually used by tests
+interface MinimalConfig {
+  pjson: { name: string; oclif: {}; version: string }
+  root: string
+}
+
 // Concrete test command that extends BaseCommand
 class TestCommand extends BaseCommand {
   static override baseFlags = BaseCommand.baseFlags
@@ -41,8 +47,12 @@ describe('BaseCommand Debug Logging', () => {
     sandbox = createSandbox()
     // Save original argv
     originalArgv = process.argv
-    // Create a minimal config for oclif Command
-    command = new TestCommand([], { pjson: { name: 'test', oclif: {}, version: '1.0.0' }, root: '/test' } as unknown as any)
+    // Create a minimal config for oclif Command with proper typing
+    const mockConfig: MinimalConfig = {
+      pjson: { name: 'test', oclif: {}, version: '1.0.0' },
+      root: '/test'
+    }
+    command = new TestCommand([], mockConfig as any) // oclif requires full Config but we only need minimal properties
     logToStderrStub = sandbox.stub(command, 'logToStderr')
     sandbox.stub(command, 'error').throws(new Error('Command error'))
   })

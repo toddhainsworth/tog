@@ -66,10 +66,10 @@ describe('DataSanitizer', () => {
       ]
 
       const result = DataSanitizer.sanitize(data) as Array<{apiToken?: string; name: string; token?: string;}>
-      expect(result[0].name).to.equal('item1')
-      expect(result[0].token).to.equal('***6789')
-      expect(result[1].name).to.equal('item2')
-      expect(result[1].apiToken).to.equal('***4321')
+      expect(result[0]?.name).to.equal('item1')
+      expect(result[0]?.token).to.equal('***6789')
+      expect(result[1]?.name).to.equal('item2')
+      expect(result[1]?.apiToken).to.equal('***4321')
     })
 
     it('should handle case insensitive matching', () => {
@@ -117,10 +117,10 @@ describe('DataSanitizer', () => {
           }
         }>;
       }
-      expect(result.users[0].id).to.equal(1)
-      expect(result.users[0].profile.name).to.equal('John')
-      expect(result.users[0].profile.auth.apiToken).to.equal('***6789')
-      expect(result.users[0].profile.auth.refreshToken).to.equal('***4321')
+      expect(result.users[0]?.id).to.equal(1)
+      expect(result.users[0]?.profile.name).to.equal('John')
+      expect(result.users[0]?.profile.auth.apiToken).to.equal('***6789')
+      expect(result.users[0]?.profile.auth.refreshToken).to.equal('***4321')
       expect(result.settings.api.token).to.equal('***6789')
       expect(result.settings.api.timeout).to.equal(5000)
     })
