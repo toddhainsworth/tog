@@ -1,4 +1,5 @@
 import axios, {type AxiosInstance} from 'axios'
+import dayjs from 'dayjs'
 
 import {createApiErrorFromAxios, TogglValidationError} from './errors.js'
 import {
@@ -195,8 +196,8 @@ export class TogglClient {
       // The Reports API v3 expects dates in YYYY-MM-DD format, not ISO strings
       const formattedParams = {
         ...searchParams,
-        end_date: searchParams.end_date ? searchParams.end_date.split('T')[0] : undefined,
-        start_date: searchParams.start_date ? searchParams.start_date.split('T')[0] : undefined,
+        end_date: searchParams.end_date ? dayjs(searchParams.end_date).format('YYYY-MM-DD') : undefined,
+        start_date: searchParams.start_date ? dayjs(searchParams.start_date).format('YYYY-MM-DD') : undefined,
       }
 
       const response = await this.reportsClient.post(`/workspace/${workspaceId}/search/time_entries`, formattedParams)

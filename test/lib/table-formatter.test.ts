@@ -13,6 +13,7 @@ describe('Table formatter utilities', () => {
     it('should create a table for time entries', () => {
       const entries: TimeEntrySummary[] = [
         {
+          date: 'Sep 24',
           description: 'Working on feature',
           duration: '01:30:00',
           endTime: '10:30',
@@ -20,6 +21,7 @@ describe('Table formatter utilities', () => {
           startTime: '09:00',
         },
         {
+          date: 'Sep 24',
           description: 'Bug fixing',
           duration: '00:45:30',
           endTime: 'Running',
@@ -47,6 +49,7 @@ describe('Table formatter utilities', () => {
     it('should handle entries without projects', () => {
       const entries: TimeEntrySummary[] = [
         {
+          date: 'Sep 24',
           description: 'No project task',
           duration: '01:00:00',
           endTime: '10:00',

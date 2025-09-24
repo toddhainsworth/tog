@@ -86,6 +86,11 @@ export function getCurrentYearDateRange(): DateRange {
   }
 }
 
+/**
+ * Get date range for searching all time entries.
+ * Uses 2006-01-01 as start date since Toggl was founded in 2006,
+ * ensuring we capture the earliest possible time entries.
+ */
 export function getAllTimeSearchRange(): DateRange {
   return {
     end_date: dayjs().endOf('day').toISOString(),
@@ -208,8 +213,7 @@ export function groupTimeEntriesByDay(entries: TimeEntry[], projects: Project[] 
 
   // Group entries by date
   for (const entry of entries) {
-    const entryDate = new Date(entry.start)
-    const dateKey = entryDate.toISOString().split('T')[0] // YYYY-MM-DD format
+    const dateKey = new Date(entry.start).toISOString().split('T')[0]
 
     const existingDay = dayMap.get(dateKey)
     if (existingDay) {
