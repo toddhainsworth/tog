@@ -14,6 +14,15 @@ This is a Toggl CLI tool built with oclif framework. The project uses TypeScript
 - **Test single file**: `yarn test test/path/to/specific.test.ts`
 - **Development workflow**: Tests automatically run linting via `posttest` script
 
+## CI/CD
+
+The project includes GitHub Actions workflows for quality gates:
+
+- **Lint Workflow** (`.github/workflows/lint.yml`): Runs ESLint on all PRs targeting main
+- **Test Workflow** (`.github/workflows/test.yml`): Runs full test suite on all PRs targeting main
+- Both workflows use Node.js 22 with Yarn caching for fast, reproducible builds
+- Workflows use `yarn install --frozen-lockfile` to ensure consistent dependencies
+
 ## Testing Policy
 
 **CRITICAL FOR CODE REVIEWS**: This project uses selective testing:

@@ -697,9 +697,9 @@ Debug mode provides:
 - **API Request Details**: Shows what requests are being made to the Toggl API
 - **Error Information**: Full stack traces and error context when things go wrong
 - **Data Flow**: Detailed logging of data transformations and processing
-- **Sensitive Data Protection**: Automatically masks API tokens and other sensitive information in logs
+- **Sensitive Data Protection**: Automatically masks API tokens and other sensitive information in logs using DataSanitizer
 
-The debug output uses structured logging with sanitized data to help diagnose issues without exposing sensitive information like your API token.
+The debug output uses structured logging with sanitized data to help diagnose issues without exposing sensitive information like your API token. The DataSanitizer automatically masks keys containing: `apitoken`, `api_token`, `token`, `password`, `secret`, `key`, `auth`, `authorization`.
 
 ### Common Issues
 
@@ -768,6 +768,21 @@ While Claude Code handled most development tasks effectively, several challenges
 - Required clarification when multiple valid implementation approaches existed
 - Best performance came with clear, specific requirements rather than open-ended tasks
 
+**Git Workflow Adherence:**
+- Attempted to use `git add .` which violated explicit user rules about never using bulk git commands
+- Required immediate correction to use specific file additions (e.g., `git add tsconfig.json src/lib/base-command.ts`)
+- Shows importance of closely following documented workflow preferences, even for seemingly simple tasks
+
+**TypeScript Strict Mode Challenges:**
+- Adding `noUncheckedIndexedAccess` broke existing tests that assumed array access would return defined values
+- Required systematic fixing of test files using optional chaining (`foo?.bar`) pattern
+- Demonstrated value of incremental TypeScript strictness adoption and thorough testing
+
+**CI/CD Configuration Issues:**
+- Initially configured GitHub workflows with Node.js 20, causing workflow failures
+- Required quick correction to Node.js 22 (now LTS) based on current platform support
+- Shows need to verify infrastructure requirements match current best practices
+
 **Test Environment Considerations:**
 - Created tests that inadvertently affected production data (deleting user's `.togrc` file)
 - Required implementing configurable file paths and isolated temporary test environments
@@ -777,6 +792,7 @@ While Claude Code handled most development tasks effectively, several challenges
 - UTC date handling for week boundaries required multiple iterations to get timezone-consistent behavior
 - Table design needed simplification from 6 columns to 2 based on user feedback about visual noise
 - Build verification caught TypeScript compilation issues that passing tests missed
+- Timezone-dependent test failures required DayJS UTC plugin implementation for consistent date grouping across environments
 
 **Mitigation Strategies:**
 - **CLAUDE.md documentation** provided persistent project context and standards
@@ -791,5 +807,16 @@ This experiment demonstrates that AI can now handle the full software developmen
 ## Development Workflow
 
 This project uses a structured AI-assisted development workflow documented in [DEVELOPMENT.md](./docs/DEVELOPMENT.md). The workflow includes PRD-driven feature development, GitHub issue integration, comprehensive code review, and quality gates to ensure high-quality deliverables.
+
+### CI/CD Quality Gates
+
+All pull requests automatically run quality checks via GitHub Actions:
+
+- **Lint Checks**: ESLint validation for code quality and consistency
+- **Test Suite**: Full test suite execution (168 tests) with comprehensive coverage
+- **Node.js 22**: Modern runtime environment with latest language features
+- **Reproducible Builds**: Frozen lockfiles ensure consistent dependency resolution
+
+These automated checks ensure code quality and prevent regressions before code reaches the main branch.
 
 For technical implementation details and coding standards, see [CLAUDE.md](./CLAUDE.md).
