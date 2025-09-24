@@ -1,6 +1,9 @@
+import dayjs from 'dayjs'
+
 import type {Project, TimeEntry} from './validation.js'
 
 export interface TimeEntrySummary {
+  date: string
   description: string
   duration: string
   endTime: string
@@ -57,18 +60,36 @@ export function calculateElapsedSeconds(startTime: string): number {
 }
 
 export function getTodayDateRange(): DateRange {
-  const now = new Date()
-
-  // Get start and end of day in local time
-  const startOfDay = new Date(now)
-  startOfDay.setHours(0, 0, 0, 0)
-
-  const endOfDay = new Date(now)
-  endOfDay.setHours(23, 59, 59, 999)
+  const today = dayjs()
 
   return {
-    end_date: endOfDay.toISOString(),
-    start_date: startOfDay.toISOString(),
+    end_date: today.endOf('day').toISOString(),
+    start_date: today.startOf('day').toISOString(),
+  }
+}
+
+export function getCurrentMonthDateRange(): DateRange {
+  const currentMonth = dayjs()
+
+  return {
+    end_date: currentMonth.endOf('month').toISOString(),
+    start_date: currentMonth.startOf('month').toISOString(),
+  }
+}
+
+export function getCurrentYearDateRange(): DateRange {
+  const currentYear = dayjs()
+
+  return {
+    end_date: currentYear.endOf('year').toISOString(),
+    start_date: currentYear.startOf('year').toISOString(),
+  }
+}
+
+export function getAllTimeSearchRange(): DateRange {
+  return {
+    end_date: dayjs().endOf('day').toISOString(),
+    start_date: dayjs('2006-01-01').startOf('day').toISOString(),
   }
 }
 
@@ -136,6 +157,7 @@ export function formatTimeEntry(entry: TimeEntry, projects: Project[] = []): Tim
   }
 
   return {
+    date: dayjs(entry.start).format('MMM DD'),
     description: entry.description || 'No description',
     duration,
     endTime,
