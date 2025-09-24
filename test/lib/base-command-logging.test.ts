@@ -41,8 +41,12 @@ describe('BaseCommand Debug Logging', () => {
     sandbox = createSandbox()
     // Save original argv
     originalArgv = process.argv
-    // Create a minimal config for oclif Command
-    command = new TestCommand([], { pjson: { name: 'test', oclif: {}, version: '1.0.0' }, root: '/test' } as unknown as any)
+    // Create a minimal config for oclif Command with type assertion
+    const mockConfig = {
+      pjson: { name: 'test', oclif: {}, version: '1.0.0' },
+      root: '/test'
+    } as any // Type assertion for test environment - the full Config interface is extensive
+    command = new TestCommand([], mockConfig)
     logToStderrStub = sandbox.stub(command, 'logToStderr')
     sandbox.stub(command, 'error').throws(new Error('Command error'))
   })

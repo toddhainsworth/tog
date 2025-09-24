@@ -76,7 +76,7 @@ export default class Edit extends BaseCommand {
 
     try {
       const updatedEntry = await withSpinner('Updating timer...', () =>
-        client.updateTimeEntry(currentEntry.workspace_id!, currentEntry.id!, updatePayload), {
+        client.updateTimeEntry(currentEntry.workspace_id, currentEntry.id, updatePayload), {
           log: this.log.bind(this),
           warn: this.warn.bind(this)
         })
@@ -122,7 +122,7 @@ export default class Edit extends BaseCommand {
     }
 
     if (matches.length === 1) {
-      return matches[0]
+      return matches[0] ?? null
     }
 
     const exactMatch = matches.find(p =>
@@ -161,7 +161,7 @@ export default class Edit extends BaseCommand {
     }
 
     if (matches.length === 1) {
-      return matches[0]
+      return matches[0] ?? null
     }
 
     const exactMatch = matches.find(t =>

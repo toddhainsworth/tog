@@ -168,7 +168,11 @@ export async function promptForWorkspaceSelection(
   }
 
   if (workspaces.length === 1) {
-    return workspaces[0].id
+    const workspace = workspaces[0]
+    if (!workspace) {
+      throw new Error('Workspace data is unexpectedly missing')
+    }
+    return workspace.id
   }
 
   const choices = workspaces.map(workspace => ({

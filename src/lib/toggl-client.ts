@@ -137,7 +137,7 @@ export class TogglClient {
       })
       const data = response.data || []
       const entries = TimeEntriesArraySchema.assert(data)
-      return entries.length > 0 ? entries[0] : null
+      return entries.length > 0 ? (entries[0] ?? null) : null
     } catch (error) {
       if (error instanceof Error && 'name' in error && error.name === 'ArkTypeError') {
         throw TogglValidationError.invalidResponse(error.message)

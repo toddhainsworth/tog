@@ -79,6 +79,7 @@ export default class Clients extends BaseCommand {
 
     for (let i = 0; i < sortedOrphanedProjects.length; i++) {
       const project = sortedOrphanedProjects[i]
+      if (!project) continue
       const isLastProject = i === sortedOrphanedProjects.length - 1 && orphanedTasks.length === 0
       const projectPrefix = isLastProject ? '└── ' : '├── '
 
@@ -89,6 +90,7 @@ export default class Clients extends BaseCommand {
 
       for (let j = 0; j < projectTasks.length; j++) {
         const task = projectTasks[j]
+        if (!task) continue
         const isLastTask = j === projectTasks.length - 1
         const taskPrefix = isLastProject
           ? (isLastTask ? '    └── ' : '    ├── ')
@@ -101,6 +103,7 @@ export default class Clients extends BaseCommand {
     const sortedOrphanedTasks = orphanedTasks.sort((a, b) => a.name.localeCompare(b.name))
     for (let i = 0; i < sortedOrphanedTasks.length; i++) {
       const task = sortedOrphanedTasks[i]
+      if (!task) continue
       const isLastTask = i === sortedOrphanedTasks.length - 1
       const taskPrefix = isLastTask ? '└── ' : '├── '
 
@@ -113,6 +116,7 @@ export default class Clients extends BaseCommand {
   private displayProjectsWithTasks(projects: Project[], projectTaskMap: Map<number, Task[]>): void {
     for (let i = 0; i < projects.length; i++) {
       const project = projects[i]
+      if (!project) continue
       const isLastProject = i === projects.length - 1
       const projectPrefix = isLastProject ? '└── ' : '├── '
 
@@ -123,6 +127,7 @@ export default class Clients extends BaseCommand {
 
       for (let j = 0; j < projectTasks.length; j++) {
         const task = projectTasks[j]
+        if (!task) continue
         const isLastTask = j === projectTasks.length - 1
         const taskPrefix = isLastProject
           ? (isLastTask ? '    └── ' : '    ├── ')

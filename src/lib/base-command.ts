@@ -9,7 +9,7 @@ import {TogglClient} from './toggl-client.js'
  * Base command class providing common functionality for all Toggl CLI commands
  */
 export abstract class BaseCommand extends Command {
-  static baseFlags = {
+  static override baseFlags = {
     debug: Flags.boolean({
       description: 'Show debug output including full error details',
       hidden: true, // Hide from help unless specifically requested

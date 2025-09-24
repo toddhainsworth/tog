@@ -1,7 +1,9 @@
 {
-  "extends": "../tsconfig",
+  "extends": "../tsconfig.json",
   "compilerOptions": {
-    "noEmit": true
+    "noEmit": true,
+    // Disable strict array access checking in tests for simpler test code
+    "noUncheckedIndexedAccess": false
   },
   "references": [
     {"path": ".."}

@@ -143,7 +143,7 @@ static override flags = {
     }
 
     if (matches.length === 1) {
-      return matches[0]
+      return matches[0] ?? null
     }
 
     // Multiple matches - look for exact match first
@@ -188,7 +188,7 @@ static override flags = {
     }
 
     if (matches.length === 1) {
-      return matches[0]
+      return matches[0] ?? null
     }
 
     // Multiple matches - look for exact match first
