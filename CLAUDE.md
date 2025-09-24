@@ -328,3 +328,4 @@ This project follows the AI-assisted development workflow documented in `docs/DE
 - Feature branching with proper naming conventions
 - Comprehensive code review process
 - Quality gates and branch protection
+- Ensure you include "Fixes #<issue id>" in the PR description
