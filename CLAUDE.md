@@ -47,6 +47,7 @@ This is a Toggl CLI tool built with oclif framework. The project uses TypeScript
 - Uses Mocha with TypeScript support via ts-node
 - Tests have 60-second timeout configured
 - Use `@oclif/test` for oclif-specific testing utilities
+- **Command tests are NOT required**: Focus on unit testing core logic in lib/ files rather than command integration tests
 
 ## Configuration Management
 

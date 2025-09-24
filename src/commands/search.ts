@@ -96,8 +96,28 @@ export default class Search extends BaseCommand {
       this.logSuccess(`Total time found: ${formatGrandTotal(totalSeconds)}`)
 
     } catch (error) {
-      spinner.fail(`Failed to search time entries for "${args.query}"`)
-      this.handleError(error, 'Error searching time entries', flags.debug)
+      // More specific error message based on error type
+      if (error instanceof Error) {
+        if (error.message.includes('HTTP 401') || error.message.includes('Unauthorized')) {
+          spinner.fail('Authentication failed - check your API token')
+          this.handleError(error, 'Authentication error', flags.debug)
+        } else if (error.message.includes('HTTP 403') || error.message.includes('Forbidden')) {
+          spinner.fail('Access denied - insufficient permissions for Reports API')
+          this.handleError(error, 'Permission error', flags.debug)
+        } else if (error.message.includes('HTTP 429') || error.message.includes('rate limit')) {
+          spinner.fail('Rate limit exceeded - please wait before searching again')
+          this.handleError(error, 'Rate limit error', flags.debug)
+        } else if (error.message.includes('network') || error.message.includes('connect')) {
+          spinner.fail('Network connection failed - check your internet connection')
+          this.handleError(error, 'Network error', flags.debug)
+        } else {
+          spinner.fail(`Search failed for "${args.query}"`)
+          this.handleError(error, 'Search error', flags.debug)
+        }
+      } else {
+        spinner.fail(`Failed to search time entries for "${args.query}"`)
+        this.handleError(error, 'Unknown search error', flags.debug)
+      }
     }
   }
 }

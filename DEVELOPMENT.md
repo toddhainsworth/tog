@@ -80,8 +80,9 @@ Our development process follows a structured approach that combines Product Requ
 
 **PR Creation:**
 - Create PR targeting `main` branch
-- PR title should reference GitHub issue: `GH-XXX: Feature description`
-- Include GitHub issue number in PR description for automatic linking
+- PR title should be descriptive: `Feature description`
+- **PR description must include linking keywords**: Add `Closes #XXX` in the description body
+- This ensures automatic issue linking and closure when merged (keywords in title alone don't work)
 - PR description should summarize implementation approach and key changes
 
 **PR Merge & Cleanup:**

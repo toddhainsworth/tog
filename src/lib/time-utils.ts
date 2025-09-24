@@ -89,7 +89,7 @@ export function getCurrentYearDateRange(): DateRange {
 export function getAllTimeSearchRange(): DateRange {
   return {
     end_date: dayjs().endOf('day').toISOString(),
-    start_date: dayjs('2006-01-01').startOf('day').toISOString(),
+    start_date: dayjs('2006-01-01').startOf('day').toISOString(), // Toggl founded in 2006
   }
 }
 
