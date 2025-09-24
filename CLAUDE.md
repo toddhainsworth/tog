@@ -242,7 +242,7 @@ Brief description of the feature and its purpose.
 - Use `yarn version` command for automated version bumping if preferred
 
 ## Documentation
-- PRDs (Product Requirements Documents) follow the new workflow in `DEVELOPMENT.md`
+- PRDs (Product Requirements Documents) follow the new workflow in `docs/DEVELOPMENT.md`
 - Local PRDs are kept in `docs/prd/` for development reference (not committed)
 - GitHub issues serve as the source of truth for approved PRDs
 
@@ -323,7 +323,7 @@ Claude Code performs comprehensive self-review before human review, focusing on:
 
 ### Development Workflow
 
-This project follows the AI-assisted development workflow documented in `DEVELOPMENT.md`, which includes:
+This project follows the AI-assisted development workflow documented in `docs/DEVELOPMENT.md`, which includes:
 - PRD-driven feature development with GitHub issue integration
 - Feature branching with proper naming conventions
 - Comprehensive code review process

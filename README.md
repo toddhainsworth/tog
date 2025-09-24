@@ -763,6 +763,6 @@ This experiment demonstrates that AI can now handle the full software developmen
 
 ## Development Workflow
 
-This project uses a structured AI-assisted development workflow documented in [DEVELOPMENT.md](./DEVELOPMENT.md). The workflow includes PRD-driven feature development, GitHub issue integration, comprehensive code review, and quality gates to ensure high-quality deliverables.
+This project uses a structured AI-assisted development workflow documented in [DEVELOPMENT.md](./docs/DEVELOPMENT.md). The workflow includes PRD-driven feature development, GitHub issue integration, comprehensive code review, and quality gates to ensure high-quality deliverables.
 
 For technical implementation details and coding standards, see [CLAUDE.md](./CLAUDE.md).
