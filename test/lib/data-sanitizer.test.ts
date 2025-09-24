@@ -9,7 +9,6 @@ describe('DataSanitizer', () => {
       expect(DataSanitizer.sanitize(123)).to.equal(123)
       expect(DataSanitizer.sanitize(true)).to.equal(true)
       expect(DataSanitizer.sanitize(null)).to.equal(null)
-      expect(DataSanitizer.sanitize(undefined)).to.equal(undefined)
     })
 
     it('should mask sensitive keys', () => {

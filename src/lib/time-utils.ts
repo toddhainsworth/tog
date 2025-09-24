@@ -1,4 +1,7 @@
 import dayjs from 'dayjs'
+import utc from 'dayjs/plugin/utc'
+
+dayjs.extend(utc)
 
 import type {Project, TimeEntry} from './validation.js'
 
@@ -213,7 +216,7 @@ export function groupTimeEntriesByDay(entries: TimeEntry[], projects: Project[] 
 
   // Group entries by date
   for (const entry of entries) {
-    const dateKey = dayjs(entry.start).format('YYYY-MM-DD')
+    const dateKey = dayjs.utc(entry.start).format('YYYY-MM-DD')
 
     const existingDay = dayMap.get(dateKey)
     if (existingDay) {
@@ -256,7 +259,7 @@ export function aggregateWeeklyProjectSummary(entries: TimeEntry[], projects: Pr
     const project = entry.project_id ? projects.find(p => p.id === entry.project_id) : undefined
     const projectName = project?.name || 'No Project'
     const entrySeconds = entry.stop ? entry.duration : calculateElapsedSeconds(entry.start)
-    const entryDate = dayjs(entry.start).format('YYYY-MM-DD')
+    const entryDate = dayjs.utc(entry.start).format('YYYY-MM-DD')
 
     totalSeconds += entrySeconds
 
