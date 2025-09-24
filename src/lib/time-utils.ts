@@ -59,13 +59,12 @@ export function calculateElapsedSeconds(startTime: string): number {
 export function getTodayDateRange(): DateRange {
   const now = new Date()
 
-  // Get start and end of day in UTC
-  const year = now.getUTCFullYear()
-  const month = now.getUTCMonth()
-  const date = now.getUTCDate()
+  // Get start and end of day in local time
+  const startOfDay = new Date(now)
+  startOfDay.setHours(0, 0, 0, 0)
 
-  const startOfDay = new Date(Date.UTC(year, month, date, 0, 0, 0, 0))
-  const endOfDay = new Date(Date.UTC(year, month, date, 23, 59, 59, 999))
+  const endOfDay = new Date(now)
+  endOfDay.setHours(23, 59, 59, 999)
 
   return {
     end_date: endOfDay.toISOString(),
@@ -76,17 +75,17 @@ export function getTodayDateRange(): DateRange {
 export function getCurrentWeekDateRange(): DateRange {
   const now = new Date()
 
-  // Get current week (Monday to Sunday) in UTC
-  const dayOfWeek = now.getUTCDay()
+  // Get current week (Monday to Sunday) in local time
+  const dayOfWeek = now.getDay()
   const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek // Sunday is 0, Monday is 1
 
   const monday = new Date(now)
-  monday.setUTCDate(now.getUTCDate() + mondayOffset)
-  monday.setUTCHours(0, 0, 0, 0)
+  monday.setDate(now.getDate() + mondayOffset)
+  monday.setHours(0, 0, 0, 0)
 
   const sunday = new Date(monday)
-  sunday.setUTCDate(monday.getUTCDate() + 6)
-  sunday.setUTCHours(23, 59, 59, 999)
+  sunday.setDate(monday.getDate() + 6)
+  sunday.setHours(23, 59, 59, 999)
 
   return {
     end_date: sunday.toISOString(),
@@ -97,12 +96,12 @@ export function getCurrentWeekDateRange(): DateRange {
 export function getPreviousWeekDateRange(): DateRange {
   const currentWeek = getCurrentWeekDateRange()
 
-  // Subtract 7 days from both start and end using UTC
+  // Subtract 7 days from both start and end using local time
   const previousStart = new Date(currentWeek.start_date)
-  previousStart.setUTCDate(previousStart.getUTCDate() - 7)
+  previousStart.setDate(previousStart.getDate() - 7)
 
   const previousEnd = new Date(currentWeek.end_date)
-  previousEnd.setUTCDate(previousEnd.getUTCDate() - 7)
+  previousEnd.setDate(previousEnd.getDate() - 7)
 
   return {
     end_date: previousEnd.toISOString(),

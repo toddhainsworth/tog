@@ -99,10 +99,22 @@ describe('Time utilities', () => {
 
       const range = getTodayDateRange()
 
-      expect(range.start_date).to.include('2024-01-15')
-      expect(range.end_date).to.include('2024-01-15')
-      expect(range.start_date).to.match(/\.000Z$/)
-      expect(range.end_date).to.match(/\.999Z$/)
+      // The start and end should be for the same day in local time
+      const start = new Date(range.start_date)
+      const end = new Date(range.end_date)
+
+      // Check that it's the beginning and end of day
+      expect(start.getHours()).to.equal(0)
+      expect(start.getMinutes()).to.equal(0)
+      expect(start.getSeconds()).to.equal(0)
+      expect(end.getHours()).to.equal(23)
+      expect(end.getMinutes()).to.equal(59)
+      expect(end.getSeconds()).to.equal(59)
+
+      // Check dates are for the same day
+      expect(start.getDate()).to.equal(end.getDate())
+      expect(start.getMonth()).to.equal(end.getMonth())
+      expect(start.getFullYear()).to.equal(end.getFullYear())
     })
   })
 
@@ -340,10 +352,25 @@ describe('Time utilities', () => {
       sandbox.useFakeTimers(tuesday.getTime())
 
       const range = getCurrentWeekDateRange()
+      const start = new Date(range.start_date)
+      const end = new Date(range.end_date)
 
-      // Should start on Monday and end on Sunday
-      expect(range.start_date).to.include('2024-01-15') // Monday
-      expect(range.end_date).to.include('2024-01-21') // Sunday
+      // Monday should be day 1, Sunday should be day 0
+      const startDay = start.getDay()
+      const endDay = end.getDay()
+      expect(startDay).to.equal(1) // Monday
+      expect(endDay).to.equal(0) // Sunday
+
+      // Should span 7 days (Monday through Sunday inclusive)
+      // But the time difference is about 6.99 days due to 23:59:59
+      const daysDiff = (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)
+      expect(Math.floor(daysDiff)).to.equal(6)
+
+      // Start should be beginning of day, end should be end of day
+      expect(start.getHours()).to.equal(0)
+      expect(start.getMinutes()).to.equal(0)
+      expect(end.getHours()).to.equal(23)
+      expect(end.getMinutes()).to.equal(59)
     })
 
     it('should handle Sunday correctly', () => {
@@ -352,10 +379,17 @@ describe('Time utilities', () => {
       sandbox.useFakeTimers(sunday.getTime())
 
       const range = getCurrentWeekDateRange()
+      const start = new Date(range.start_date)
+      const end = new Date(range.end_date)
 
-      // Should start on Monday and end on same Sunday
-      expect(range.start_date).to.include('2024-01-15') // Monday
-      expect(range.end_date).to.include('2024-01-21') // Sunday
+      // Monday should be day 1, Sunday should be day 0
+      expect(start.getDay()).to.equal(1) // Monday
+      expect(end.getDay()).to.equal(0) // Sunday
+
+      // Should span 7 days (Monday through Sunday inclusive)
+      // But the time difference is about 6.99 days due to 23:59:59
+      const daysDiff = (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)
+      expect(Math.floor(daysDiff)).to.equal(6)
     })
   })
 
@@ -364,11 +398,20 @@ describe('Time utilities', () => {
       const tuesday = new Date('2024-01-16T14:30:00Z') // This is a Tuesday
       sandbox.useFakeTimers(tuesday.getTime())
 
-      const range = getPreviousWeekDateRange()
+      const currentRange = getCurrentWeekDateRange()
+      const previousRange = getPreviousWeekDateRange()
 
-      // Should be one week earlier
-      expect(range.start_date).to.include('2024-01-08') // Previous Monday
-      expect(range.end_date).to.include('2024-01-14') // Previous Sunday
+      const currentStart = new Date(currentRange.start_date)
+      const previousStart = new Date(previousRange.start_date)
+      const previousEnd = new Date(previousRange.end_date)
+
+      // Should be exactly 7 days earlier
+      const daysDiff = Math.round((currentStart.getTime() - previousStart.getTime()) / (1000 * 60 * 60 * 24))
+      expect(daysDiff).to.equal(7)
+
+      // Previous week should also be Monday to Sunday
+      expect(previousStart.getDay()).to.equal(1) // Monday
+      expect(previousEnd.getDay()).to.equal(0) // Sunday
     })
   })
 
