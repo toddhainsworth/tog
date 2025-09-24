@@ -16,6 +16,7 @@
     "arktype": "^2.1.22",
     "axios": "^1.12.2",
     "cli-table3": "^0.6.5",
+    "dayjs": "^1.11.18",
     "ora": "^9.0.0"
   },
   "devDependencies": {

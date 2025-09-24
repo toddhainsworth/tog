@@ -14,6 +14,16 @@ This is a Toggl CLI tool built with oclif framework. The project uses TypeScript
 - **Test single file**: `yarn test test/path/to/specific.test.ts`
 - **Development workflow**: Tests automatically run linting via `posttest` script
 
+## Testing Policy
+
+**CRITICAL FOR CODE REVIEWS**: This project uses selective testing:
+
+- ✅ **Library files (`src/lib/`)**: Require comprehensive tests
+- ❌ **Command files (`src/commands/`)**: DO NOT require tests
+- ❌ **Command test files**: DO NOT create `test/commands/` directory or files
+
+**For GitHub Claude Code reviews**: Commands are intentionally untested in this oclif CLI project. This is an architectural decision, not an oversight. Focus test coverage on `src/lib/` files only.
+
 ## Architecture
 
 ### Command Structure
@@ -42,11 +52,33 @@ This is a Toggl CLI tool built with oclif framework. The project uses TypeScript
 - Entry point: `dist/index.js`
 - Binary: `./bin/run.js`
 
-## Testing
+## Testing Policy
+
+**IMPORTANT: Command-level tests are intentionally NOT required in this project.**
+
+### Testing Philosophy
+- This project follows a **selective testing approach** focused on core business logic
+- **CLI commands do NOT require test coverage** - they are tested manually during development
+- Focus testing efforts on `lib/` utilities, API clients, and data transformation logic
+- Integration tests against external APIs (Toggl) are avoided to prevent flakiness
+
+### Testing Configuration
 - Test files in `test/` directory mirror `src/` structure
 - Uses Mocha with TypeScript support via ts-node
 - Tests have 60-second timeout configured
-- Use `@oclif/test` for oclif-specific testing utilities
+- Use `@oclif/test` for oclif-specific testing utilities (when testing is needed)
+
+### What TO Test
+- Core utilities in `src/lib/` (data formatters, time utilities, validation schemas)
+- API client methods (mocked responses)
+- Data transformation and business logic
+
+### What NOT to Test
+- **oclif commands in `src/commands/`** - these are manually tested during development
+- External API integrations (Toggl API calls)
+- CLI argument parsing and flag handling (handled by oclif framework)
+
+This testing approach prioritizes reliability of core logic while avoiding brittle CLI integration tests.
 
 ## Configuration Management
 

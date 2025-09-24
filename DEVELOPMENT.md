@@ -50,7 +50,16 @@ Our development process follows a structured approach that combines Product Requ
 - Follow TypeScript safety guidelines and testing best practices
 - Run full test suite, linting, and build verification before completion
 
-### 4. Code Review Process
+### 4. User Testing & Validation
+
+**Implementation Testing:**
+- Claude Code completes implementation and quality checks
+- **IMPORTANT: Wait for user to test the implementation before committing**
+- User tests functionality to verify it works as expected
+- User provides feedback on any issues or adjustments needed
+- Only proceed to commit after user confirms implementation is working
+
+### 5. Code Review Process
 
 **Claude Code Self-Review:**
 - Perform comprehensive self-review focusing on:
@@ -67,12 +76,13 @@ Our development process follows a structured approach that combines Product Requ
 - Provides feedback on any issues or improvements needed
 - Human approval required before merge
 
-### 5. Pull Request & Integration
+### 6. Pull Request & Integration
 
 **PR Creation:**
 - Create PR targeting `main` branch
-- PR title should reference GitHub issue: `GH-XXX: Feature description`
-- Include GitHub issue number in PR description for automatic linking
+- PR title should be descriptive: `Feature description`
+- **PR description must include linking keywords**: Add `Closes #XXX` in the description body
+- This ensures automatic issue linking and closure when merged (keywords in title alone don't work)
 - PR description should summarize implementation approach and key changes
 
 **PR Merge & Cleanup:**
@@ -88,11 +98,12 @@ Our development process follows a structured approach that combines Product Requ
 - [ ] GitHub issue created with full requirements
 - [ ] Feature branch created with proper naming
 
-### Pre-Review
+### Pre-Commit
 - [ ] All tests passing (`yarn test`)
 - [ ] Linting clean (`yarn lint`)
 - [ ] Build successful (`yarn build`)
 - [ ] Claude Code self-review completed
+- [ ] User has tested implementation and confirmed it works
 
 ### Pre-Merge
 - [ ] Human code review approved

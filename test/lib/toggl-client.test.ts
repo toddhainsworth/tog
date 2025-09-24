@@ -289,16 +289,18 @@ describe('TogglClient', () => {
       expect((capturedConfig as {headers: {Authorization: string}}).headers.Authorization).to.equal(expectedAuth)
     })
 
-    it('should use correct API base URL', () => {
-      let capturedConfig: unknown
+    it('should use correct API base URLs', () => {
+      const capturedConfigs: unknown[] = []
       sandbox.stub(axios, 'create').callsFake((config) => {
-        capturedConfig = config
+        capturedConfigs.push(config)
         return {get: sandbox.stub().resolves({data: {id: 1}})} as unknown as AxiosInstance
       })
 
       const client = new TogglClient('test-token')
       expect(client).to.be.instanceOf(TogglClient)
-      expect((capturedConfig as {baseURL: string}).baseURL).to.equal('https://api.track.toggl.com/api/v9')
+      expect(capturedConfigs).to.have.length(2)
+      expect((capturedConfigs[0] as {baseURL: string}).baseURL).to.equal('https://api.track.toggl.com/api/v9')
+      expect((capturedConfigs[1] as {baseURL: string}).baseURL).to.equal('https://api.track.toggl.com/reports/api/v3')
     })
   })
 })

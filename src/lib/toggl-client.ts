@@ -1,4 +1,5 @@
 import axios, {type AxiosInstance} from 'axios'
+import dayjs from 'dayjs'
 
 import {createApiErrorFromAxios, TogglValidationError} from './errors.js'
 import {
@@ -6,6 +7,7 @@ import {
   ClientsArraySchema,
   type Project,
   ProjectsArraySchema,
+  ReportsSearchResponseSchema,
   type Task,
   TasksArraySchema,
   TimeEntriesArraySchema,
@@ -28,12 +30,29 @@ interface TimeEntryPayload {
   workspace_id?: number
 }
 
+interface SearchTimeEntriesPayload {
+  description?: string
+  end_date?: string
+  page_size?: number
+  start_date?: string
+}
+
+
 export class TogglClient {
   private client: AxiosInstance
+  private reportsClient: AxiosInstance
 
   constructor(apiToken: string) {
     this.client = axios.create({
       baseURL: 'https://api.track.toggl.com/api/v9',
+      headers: {
+        Authorization: `Basic ${Buffer.from(`${apiToken}:api_token`, 'utf8').toString('base64')}`,
+        'Content-Type': 'application/json',
+      },
+    })
+
+    this.reportsClient = axios.create({
+      baseURL: 'https://api.track.toggl.com/reports/api/v3',
       headers: {
         Authorization: `Basic ${Buffer.from(`${apiToken}:api_token`, 'utf8').toString('base64')}`,
         'Content-Type': 'application/json',
@@ -172,6 +191,31 @@ export class TogglClient {
     }
   }
 
+  async searchTimeEntries(workspaceId: number, searchParams: SearchTimeEntriesPayload): Promise<TimeEntry[]> {
+    try {
+      // The Reports API v3 expects dates in YYYY-MM-DD format, not ISO strings
+      const formattedParams = {
+        ...searchParams,
+        end_date: searchParams.end_date ? dayjs(searchParams.end_date).format('YYYY-MM-DD') : undefined,
+        start_date: searchParams.start_date ? dayjs(searchParams.start_date).format('YYYY-MM-DD') : undefined,
+      }
+
+      const response = await this.reportsClient.post(`/workspace/${workspaceId}/search/time_entries`, formattedParams)
+
+      // Validate the response structure
+      const validatedGroups = ReportsSearchResponseSchema.assert(response.data || [])
+
+      // Extract and convert to standard TimeEntry format
+      return this.extractTimeEntriesFromGroups(validatedGroups, workspaceId)
+    } catch (error) {
+      if (error instanceof Error && 'name' in error && error.name === 'ArkTypeError') {
+        throw TogglValidationError.invalidResponse(error.message)
+      }
+
+      throw createApiErrorFromAxios(error, `/workspace/${workspaceId}/search/time_entries`)
+    }
+  }
+
   async stopTimeEntry(workspaceId: number, timeEntryId: number): Promise<boolean> {
     try {
       await this.client.patch(`/workspaces/${workspaceId}/time_entries/${timeEntryId}/stop`)
@@ -194,5 +238,32 @@ export class TogglClient {
 
       throw createApiErrorFromAxios(error, `/workspaces/${workspaceId}/time_entries/${timeEntryId}`)
     }
+  }
+
+  private extractTimeEntriesFromGroups(groupedData: typeof ReportsSearchResponseSchema.infer, workspaceId: number): TimeEntry[] {
+    const timeEntries: TimeEntry[] = []
+
+    for (const group of groupedData) {
+      for (const entry of group.time_entries) {
+        // Convert Reports API format to standard TimeEntry format
+        // Note: Use null instead of undefined for optional fields to match TimeEntry schema
+        const timeEntry: TimeEntry = {
+          at: entry.at,
+          description: group.description || '',
+          duration: entry.seconds,
+          id: entry.id,
+          project_id: group.project_id ?? undefined, // Keep undefined for project_id
+          start: entry.start,
+          stop: entry.stop ?? undefined, // Keep undefined for stop
+          task_id: group.task_id ?? null, // Use null for task_id
+          workspace_id: entry.workspace_id || workspaceId,
+        }
+
+        // Validate the converted entry matches our TimeEntry schema
+        timeEntries.push(TimeEntrySchema.assert(timeEntry))
+      }
+    }
+
+    return timeEntries
   }
 }

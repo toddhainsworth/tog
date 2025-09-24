@@ -69,6 +69,7 @@ export const TimeEntriesArraySchema = type(TimeEntrySchema, '[]')
 // eslint-disable-next-line unicorn/prefer-string-raw
 export const WorkspaceSelectionSchema = type('string&/^[1-9]\\d*$/')
 export const TimerDescriptionSchema = type('string>=1')
+export const SearchQuerySchema = type('string>=1')
 
 // Configuration validation (enhanced version of what's in config.ts)
 export const ApiTokenSchema = type('string>=32')
@@ -77,6 +78,44 @@ export const ConfigSchema = type({
   apiToken: ApiTokenSchema,
   workspaceId: WorkspaceIdSchema,
 })
+
+// Search validation schemas
+export const SearchTimeEntriesPayloadSchema = type({
+  'description?': 'string',
+  'end_date?': 'string',
+  'page_size?': 'number>0',
+  'start_date?': 'string',
+})
+
+// Reports API returns a different structure with grouped entries
+export const ReportsTimeEntrySchema = type({
+  at: 'string',
+  'at_tz?': 'string',
+  id: 'number',
+  seconds: 'number',
+  start: 'string',
+  stop: 'string|null',
+  'time_end?': 'string|null',
+  'time_start?': 'string',
+  'workspace_id?': 'number',
+})
+
+export const ReportsGroupedEntrySchema = type({
+  'billable?': 'boolean',
+  'billable_amount_in_cents?': 'number|null',
+  'currency?': 'string',
+  'description?': 'string',
+  'hourly_rate_in_cents?': 'number|null',
+  'project_id?': 'number|null',
+  row_number: 'number',
+  'tag_ids?': 'number[]|null',
+  'task_id?': 'number|null',
+  time_entries: type(ReportsTimeEntrySchema, '[]'),
+  user_id: 'number',
+  'username?': 'string',
+})
+
+export const ReportsSearchResponseSchema = type(ReportsGroupedEntrySchema, '[]')
 
 export type TimeEntry = typeof TimeEntrySchema.infer
 export type Workspace = typeof WorkspaceSchema.infer

@@ -96,3 +96,25 @@ export function createWeeklyProjectSummaryTable(projects: WeeklyProjectSummary[]
 
   return table.toString()
 }
+
+export function createSearchResultsTable(entries: TimeEntrySummary[]): string {
+  const table = new Table({
+    colWidths: [12, 25, 40, 12],
+    head: ['Date', 'Project', 'Description', 'Duration'],
+    style: {
+      border: ['gray'],
+      head: ['cyan'],
+    },
+  })
+
+  for (const entry of entries) {
+    table.push([
+      entry.date,
+      entry.projectName || '-',
+      entry.description,
+      entry.duration,
+    ])
+  }
+
+  return table.toString()
+}
