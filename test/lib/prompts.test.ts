@@ -58,11 +58,11 @@ describe('prompts', () => {
 
       // Verify choice structure
       expect(choices).to.have.lengthOf(3)
-      expect(choices[0].name).to.include('API Development')
-      expect(choices[0].value.task_id).to.equal(1)
-      expect(choices[1].name).to.include('Frontend Work')
-      expect(choices[2].name).to.include('Mobile App')
-      expect(choices[2].value.task_id).to.be.undefined
+      expect(choices[0]?.name).to.include('API Development')
+      expect(choices[0]?.value.task_id).to.equal(1)
+      expect(choices[1]?.name).to.include('Frontend Work')
+      expect(choices[2]?.name).to.include('Mobile App')
+      expect(choices[2]?.value.task_id).to.be.undefined
     })
 
     it('should filter choices based on search input', () => {
@@ -79,8 +79,8 @@ describe('prompts', () => {
       )
 
       expect(filtered).to.have.lengthOf(1)
-      expect(filtered[0].name).to.include('Frontend Work')
-      expect(filtered[0].name).to.include('Frontend Project')
+      expect(filtered[0]?.name).to.include('Frontend Work')
+      expect(filtered[0]?.name).to.include('Frontend Project')
     })
 
     it('should handle empty search returning all choices', () => {
@@ -117,8 +117,8 @@ describe('prompts', () => {
         [{name: 'No matches found', value: null}] :
         filtered
 
-      expect(result[0].name).to.equal('No matches found')
-      expect(result[0].value).to.be.null
+      expect(result[0]?.name).to.equal('No matches found')
+      expect(result[0]?.value).to.be.null
     })
   })
 
@@ -142,8 +142,8 @@ describe('prompts', () => {
       )
 
       expect(filtered).to.have.lengthOf(1)
-      expect(filtered[0].name).to.equal('Client Projects')
-      expect(filtered[0].value).to.equal(3)
+      expect(filtered[0]?.name).to.equal('Client Projects')
+      expect(filtered[0]?.value).to.equal(3)
     })
 
     it('should handle partial matches', () => {
@@ -165,8 +165,8 @@ describe('prompts', () => {
       )
 
       expect(filtered).to.have.lengthOf(2)
-      expect(filtered[0].name).to.include('Development')
-      expect(filtered[1].name).to.include('DevOps')
+      expect(filtered[0]?.name).to.include('Development')
+      expect(filtered[1]?.name).to.include('DevOps')
     })
   })
 })

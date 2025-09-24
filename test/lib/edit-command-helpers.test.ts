@@ -19,7 +19,7 @@ function findProjectByNameOrId(projects: Project[], input: string): null | Proje
   }
 
   if (matches.length === 1) {
-    return matches[0]
+    return matches[0] ?? null
   }
 
   const exactMatch = matches.find(p =>
@@ -58,7 +58,7 @@ function findTaskByNameOrId(tasks: Task[], input: string, projectId?: number): n
   }
 
   if (matches.length === 1) {
-    return matches[0]
+    return matches[0] ?? null
   }
 
   const exactMatch = matches.find(t =>

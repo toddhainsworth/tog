@@ -21,7 +21,7 @@ function findProjectByNameOrId(projects: Project[], input: string): null | Proje
   }
 
   if (matches.length === 1) {
-    return matches[0]
+    return matches[0] ?? null
   }
 
   // Multiple matches - look for exact match first
@@ -66,7 +66,7 @@ function findTaskByNameOrId(tasks: Task[], input: string, projectId?: number): n
   }
 
   if (matches.length === 1) {
-    return matches[0]
+    return matches[0] ?? null
   }
 
   // Multiple matches - look for exact match first

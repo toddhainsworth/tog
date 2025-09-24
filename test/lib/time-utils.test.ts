@@ -272,8 +272,8 @@ describe('Time utilities', () => {
       const result = aggregateTimeEntriesByProject(entries, projects)
 
       expect(result).to.have.length(1)
-      expect(result[0].projectName).to.equal('No Project')
-      expect(result[0].percentage).to.equal(100)
+      expect(result[0]?.projectName).to.equal('No Project')
+      expect(result[0]?.percentage).to.equal(100)
     })
 
     it('should handle running time entries', () => {
@@ -295,8 +295,8 @@ describe('Time utilities', () => {
       const result = aggregateTimeEntriesByProject(entries, projects)
 
       expect(result).to.have.length(1)
-      expect(result[0].totalSeconds).to.equal(3600) // 1 hour elapsed
-      expect(result[0].percentage).to.equal(100)
+      expect(result[0]?.totalSeconds).to.equal(3600) // 1 hour elapsed
+      expect(result[0]?.percentage).to.equal(100)
     })
 
     it('should sort projects by total time descending', () => {
@@ -323,8 +323,8 @@ describe('Time utilities', () => {
 
       const result = aggregateTimeEntriesByProject(entries, projects)
 
-      expect(result[0].projectName).to.equal('Project B') // 3 hours
-      expect(result[1].projectName).to.equal('Project A') // 1 hour
+      expect(result[0]?.projectName).to.equal('Project B') // 3 hours
+      expect(result[1]?.projectName).to.equal('Project A') // 1 hour
     })
   })
 
@@ -468,12 +468,12 @@ describe('Time utilities', () => {
       const result = groupTimeEntriesByDay(entries, projects)
 
       expect(result).to.have.length(2) // 2 days
-      expect(result[0].date).to.equal('2024-01-15')
-      expect(result[0].entries).to.have.length(2)
-      expect(result[0].totalSeconds).to.equal(5400) // 1.5 hours total
-      expect(result[1].date).to.equal('2024-01-16')
-      expect(result[1].entries).to.have.length(1)
-      expect(result[1].totalSeconds).to.equal(7200) // 2 hours
+      expect(result[0]?.date).to.equal('2024-01-15')
+      expect(result[0]?.entries).to.have.length(2)
+      expect(result[0]?.totalSeconds).to.equal(5400) // 1.5 hours total
+      expect(result[1]?.date).to.equal('2024-01-16')
+      expect(result[1]?.entries).to.have.length(1)
+      expect(result[1]?.totalSeconds).to.equal(7200) // 2 hours
     })
 
     it('should handle empty entries', () => {
@@ -551,8 +551,8 @@ describe('Time utilities', () => {
       const result = aggregateWeeklyProjectSummary(entries, projects)
 
       expect(result).to.have.length(1)
-      expect(result[0].projectName).to.equal('No Project')
-      expect(result[0].daysWorked).to.equal(1)
+      expect(result[0]?.projectName).to.equal('No Project')
+      expect(result[0]?.daysWorked).to.equal(1)
     })
   })
 
