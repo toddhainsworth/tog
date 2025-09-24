@@ -68,6 +68,66 @@ This is a Toggl CLI tool built with oclif framework. The project uses TypeScript
 - Always use `npx oclif generate command <name>` to create new commands
 - This ensures proper oclif structure and includes test files
 
+### PRD Template
+
+Use this template for all new Product Requirements Documents:
+
+```markdown
+# PRD: [Feature Name]
+
+## Overview
+Brief description of the feature and its purpose.
+
+## Objectives
+- Primary goal
+- Secondary goals
+- Success metrics
+
+## User Stories
+- As a [user type], I want [goal] so that [benefit]
+- Additional user stories as needed
+
+## Technical Requirements
+### Functional Requirements
+- Specific functionality that must be implemented
+- Input/output specifications
+- Integration requirements
+
+### Non-Functional Requirements
+- Performance requirements
+- Security considerations
+- Usability requirements
+
+## Implementation Approach
+### Architecture
+- High-level design decisions
+- Component structure
+- Data flow
+
+### Technical Considerations
+- Dependencies and libraries
+- API integrations
+- Testing strategy
+
+## Acceptance Criteria
+- [ ] Specific, testable criteria for feature completion
+- [ ] Edge cases and error handling
+- [ ] Performance benchmarks
+
+## Risk Assessment
+### Technical Risks
+- Potential technical challenges
+- Mitigation strategies
+
+### Timeline Considerations
+- Implementation complexity
+- Dependencies on other work
+
+## Future Considerations
+- Potential extensions or improvements
+- Scalability considerations
+```
+
 ### Type Validation
 - Use arktype for runtime validation: `type("string>=32")` for API tokens
 - Use arktype's `infer` for generating TypeScript types from schemas
@@ -150,7 +210,9 @@ This is a Toggl CLI tool built with oclif framework. The project uses TypeScript
 - Use `yarn version` command for automated version bumping if preferred
 
 ## Documentation
-- PRDs (Product Requirements Documents) are stored in `docs/prd/`
+- PRDs (Product Requirements Documents) follow the new workflow in `DEVELOPMENT.md`
+- Local PRDs are kept in `docs/prd/` for development reference (not committed)
+- GitHub issues serve as the source of truth for approved PRDs
 
 ## Development Best Practices
 
@@ -197,3 +259,40 @@ This is a Toggl CLI tool built with oclif framework. The project uses TypeScript
 - **Start with essential information first** - initial weekly table had too many columns
 - **Iterate based on feedback** - simplified from 6 columns to 2 (Day + Duration) based on user input
 - **Prioritize readability over completeness** in table displays
+
+### Code Review Process
+
+Claude Code performs comprehensive self-review before human review, focusing on:
+
+1. **Security** (highest priority)
+   - No exposed secrets, API keys, or sensitive data
+   - Secure API usage patterns and input validation
+   - Proper authentication and authorization handling
+
+2. **Performance**
+   - Efficient algorithms and data structures
+   - Proper resource management and cleanup
+   - Minimal API calls and optimal caching
+
+3. **Code Quality**
+   - TypeScript safety (no `any`, avoid non-null assertions)
+   - Clean architecture following established patterns
+   - Maintainable and readable code structure
+
+4. **Testing Coverage**
+   - Comprehensive test coverage including edge cases
+   - Test environment isolation (no production data contamination)
+   - Proper test cleanup and resource management
+
+**Process:**
+- Claude documents self-review findings and improvements
+- Self-review is thorough but human retains final sign-off authority
+- Human performs final strategic review in GitHub PR
+
+### Development Workflow
+
+This project follows the AI-assisted development workflow documented in `DEVELOPMENT.md`, which includes:
+- PRD-driven feature development with GitHub issue integration
+- Feature branching with proper naming conventions
+- Comprehensive code review process
+- Quality gates and branch protection

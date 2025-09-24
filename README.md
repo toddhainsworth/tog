@@ -760,3 +760,9 @@ While Claude Code handled most development tasks effectively, several challenges
 - **Build verification** ensured TypeScript compilation remained clean
 
 This experiment demonstrates that AI can now handle the full software development lifecycle for real-world applications while maintaining high code quality through structured human oversight, continuous testing, and immediate feedback on problematic patterns.
+
+## Development Workflow
+
+This project uses a structured AI-assisted development workflow documented in [DEVELOPMENT.md](./DEVELOPMENT.md). The workflow includes PRD-driven feature development, GitHub issue integration, comprehensive code review, and quality gates to ensure high-quality deliverables.
+
+For technical implementation details and coding standards, see [CLAUDE.md](./CLAUDE.md).

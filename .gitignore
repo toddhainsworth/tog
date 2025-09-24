@@ -21,5 +21,8 @@ pnpm-lock.yaml
 # Local utility scripts with secrets
 /util
 
+# PRDs are kept local - GitHub issues serve as shared PRD source of truth
+/docs/prd/
+
 
 
