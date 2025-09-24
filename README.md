@@ -69,7 +69,7 @@ $ npm install -g tog
 $ tog COMMAND
 running command...
 $ tog (--version)
-tog/0.2.2 darwin-arm64 node-v22.17.0
+tog/0.5.0 darwin-arm64 node-v22.17.0
 $ tog --help [COMMAND]
 USAGE
   $ tog COMMAND
@@ -123,7 +123,7 @@ EXAMPLES
   $ tog clients --tree
 ```
 
-_See code: [src/commands/clients.ts](https://github.com/toddhainsworth/tog/blob/v0.2.2/src/commands/clients.ts)_
+_See code: [src/commands/clients.ts](https://github.com/toddhainsworth/tog/blob/v0.5.0/src/commands/clients.ts)_
 
 ## `tog continue`
 
@@ -140,7 +140,7 @@ EXAMPLES
   $ tog continue
 ```
 
-_See code: [src/commands/continue.ts](https://github.com/toddhainsworth/tog/blob/v0.2.2/src/commands/continue.ts)_
+_See code: [src/commands/continue.ts](https://github.com/toddhainsworth/tog/blob/v0.5.0/src/commands/continue.ts)_
 
 ## `tog current`
 
@@ -157,7 +157,7 @@ EXAMPLES
   $ tog current
 ```
 
-_See code: [src/commands/current.ts](https://github.com/toddhainsworth/tog/blob/v0.2.2/src/commands/current.ts)_
+_See code: [src/commands/current.ts](https://github.com/toddhainsworth/tog/blob/v0.5.0/src/commands/current.ts)_
 
 ## `tog edit`
 
@@ -190,7 +190,7 @@ EXAMPLES
   $ tog edit -d "New desc" -p "Project" -t "Task"
 ```
 
-_See code: [src/commands/edit.ts](https://github.com/toddhainsworth/tog/blob/v0.2.2/src/commands/edit.ts)_
+_See code: [src/commands/edit.ts](https://github.com/toddhainsworth/tog/blob/v0.5.0/src/commands/edit.ts)_
 
 ## `tog help [COMMAND]`
 
@@ -232,7 +232,7 @@ EXAMPLES
   $ tog init --validate
 ```
 
-_See code: [src/commands/init.ts](https://github.com/toddhainsworth/tog/blob/v0.2.2/src/commands/init.ts)_
+_See code: [src/commands/init.ts](https://github.com/toddhainsworth/tog/blob/v0.5.0/src/commands/init.ts)_
 
 ## `tog nuke`
 
@@ -249,7 +249,7 @@ EXAMPLES
   $ tog nuke
 ```
 
-_See code: [src/commands/nuke.ts](https://github.com/toddhainsworth/tog/blob/v0.2.2/src/commands/nuke.ts)_
+_See code: [src/commands/nuke.ts](https://github.com/toddhainsworth/tog/blob/v0.5.0/src/commands/nuke.ts)_
 
 ## `tog ping`
 
@@ -269,7 +269,7 @@ EXAMPLES
   $ tog ping
 ```
 
-_See code: [src/commands/ping.ts](https://github.com/toddhainsworth/tog/blob/v0.2.2/src/commands/ping.ts)_
+_See code: [src/commands/ping.ts](https://github.com/toddhainsworth/tog/blob/v0.5.0/src/commands/ping.ts)_
 
 ## `tog plugins`
 
@@ -576,7 +576,7 @@ EXAMPLES
   $ tog projects
 ```
 
-_See code: [src/commands/projects.ts](https://github.com/toddhainsworth/tog/blob/v0.2.2/src/commands/projects.ts)_
+_See code: [src/commands/projects.ts](https://github.com/toddhainsworth/tog/blob/v0.5.0/src/commands/projects.ts)_
 
 ## `tog start`
 
@@ -604,7 +604,7 @@ EXAMPLES
   $ tog start -d "Feature work" -p "Frontend" -t "Login system"
 ```
 
-_See code: [src/commands/start.ts](https://github.com/toddhainsworth/tog/blob/v0.2.2/src/commands/start.ts)_
+_See code: [src/commands/start.ts](https://github.com/toddhainsworth/tog/blob/v0.5.0/src/commands/start.ts)_
 
 ## `tog stop`
 
@@ -621,7 +621,7 @@ EXAMPLES
   $ tog stop
 ```
 
-_See code: [src/commands/stop.ts](https://github.com/toddhainsworth/tog/blob/v0.2.2/src/commands/stop.ts)_
+_See code: [src/commands/stop.ts](https://github.com/toddhainsworth/tog/blob/v0.5.0/src/commands/stop.ts)_
 
 ## `tog tasks`
 
@@ -638,7 +638,7 @@ EXAMPLES
   $ tog tasks
 ```
 
-_See code: [src/commands/tasks.ts](https://github.com/toddhainsworth/tog/blob/v0.2.2/src/commands/tasks.ts)_
+_See code: [src/commands/tasks.ts](https://github.com/toddhainsworth/tog/blob/v0.5.0/src/commands/tasks.ts)_
 
 ## `tog today`
 
@@ -655,7 +655,7 @@ EXAMPLES
   $ tog today
 ```
 
-_See code: [src/commands/today.ts](https://github.com/toddhainsworth/tog/blob/v0.2.2/src/commands/today.ts)_
+_See code: [src/commands/today.ts](https://github.com/toddhainsworth/tog/blob/v0.5.0/src/commands/today.ts)_
 
 ## `tog week`
 
@@ -677,8 +677,35 @@ EXAMPLES
   $ tog week --last
 ```
 
-_See code: [src/commands/week.ts](https://github.com/toddhainsworth/tog/blob/v0.2.2/src/commands/week.ts)_
+_See code: [src/commands/week.ts](https://github.com/toddhainsworth/tog/blob/v0.5.0/src/commands/week.ts)_
 <!-- commandsstop -->
+
+## Troubleshooting
+
+### Debug Mode
+
+If you encounter issues with the CLI, you can enable debug mode to get detailed information about what's happening:
+
+```bash
+# Add --debug flag to any command to see detailed debug output
+tog start --debug
+tog current --debug
+tog ping --debug
+```
+
+Debug mode provides:
+- **API Request Details**: Shows what requests are being made to the Toggl API
+- **Error Information**: Full stack traces and error context when things go wrong
+- **Data Flow**: Detailed logging of data transformations and processing
+- **Sensitive Data Protection**: Automatically masks API tokens and other sensitive information in logs
+
+The debug output uses structured logging with sanitized data to help diagnose issues without exposing sensitive information like your API token.
+
+### Common Issues
+
+- **API Token Invalid**: Use `tog ping` to test your API token connection
+- **Configuration Missing**: Run `tog init` to set up your API token
+- **Network Issues**: Debug mode will show specific API error messages
 
 ## 🤖 AI-Powered Development Experiment
 

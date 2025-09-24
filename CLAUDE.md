@@ -171,6 +171,13 @@ Brief description of the feature and its purpose.
 - Use `this.logInfo()`, `this.logSuccess()`, `this.logWarning()` for consistent messaging with emojis
 - Error handling system includes typed errors in `src/lib/errors.ts`
 
+### Structured Logging
+- **Debug Logging**: BaseCommand provides `logDebug()` and `logDebugError()` methods for detailed debug output
+- **Debug Flag**: All commands inherit a hidden `--debug` flag that enables verbose logging
+- **Data Sanitization**: Logs automatically sanitize sensitive information using `DataSanitizer` class
+- **TogglClient Integration**: API client includes debug logging for requests, responses, and errors
+- **Security-First**: API tokens and other sensitive keys are automatically masked in debug output
+
 ### Interactive Prompts
 - Use `@inquirer/prompts` for user input: `confirm`, `input`, `select`
 - Prompt utilities available in `src/lib/prompts.ts`
@@ -292,6 +299,24 @@ Brief description of the feature and its purpose.
 - **Iterate based on feedback** - simplified from 6 columns to 2 (Day + Duration) based on user input
 - **Prioritize readability over completeness** in table displays
 
+### Logging and Debug Practices
+- **Use DataSanitizer**: Always sanitize data in logs using `DataSanitizer.sanitize()` before output
+- **Leverage oclif's logging**: Use `this.logDebug()`, `this.logDebugError()` from BaseCommand rather than console methods
+- **Sensitive Data Protection**: The DataSanitizer automatically masks keys containing: `apitoken`, `api_token`, `token`, `password`, `secret`, `key`, `auth`, `authorization`
+- **Debug Flag Pattern**: Access debug mode via `process.argv.includes('--debug')` for simple implementation
+- **Structured Debug Output**: Include context data with debug messages for better troubleshooting
+  ```typescript
+  // Good: Structured debug logging
+  this.logDebug('Creating time entry', {
+    hasDescription: Boolean(description),
+    hasProjectId: Boolean(projectId),
+    workspaceId
+  })
+
+  // Avoid: Direct console usage
+  console.log('Creating time entry with description:', description)  // Exposes data
+  ```
+
 ### Code Review Process
 
 Claude Code performs comprehensive self-review before human review, focusing on:
@@ -328,3 +353,4 @@ This project follows the AI-assisted development workflow documented in `docs/DE
 - Feature branching with proper naming conventions
 - Comprehensive code review process
 - Quality gates and branch protection
+- Ensure you include "Fixes #<issue id>" in the PR description

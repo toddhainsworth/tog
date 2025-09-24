@@ -1,6 +1,7 @@
 import {Command, Flags} from '@oclif/core'
 
 import {loadConfig, type TogglConfig} from './config.js'
+import {DataSanitizer} from './data-sanitizer.js'
 import {EMOJIS} from './emojis.js'
 import {TogglClient} from './toggl-client.js'
 
@@ -25,7 +26,10 @@ export abstract class BaseCommand extends Command {
   protected getClient(): TogglClient {
     if (!this.client) {
       const config = this.togglConfig || this.loadConfigOrExit()
-      this.client = new TogglClient(config.apiToken)
+      const debugLogger = {
+        debug: (message: string, data?: Record<string, unknown>) => this.logDebug(`[TogglClient] ${message}`, data)
+      }
+      this.client = new TogglClient(config.apiToken, debugLogger)
     }
 
     return this.client
@@ -39,11 +43,10 @@ export abstract class BaseCommand extends Command {
    */
   protected handleError(error: unknown, context: string, debug?: boolean): never {
     if (debug) {
-      // In debug mode, show the full error details
-      console.error('Debug: Full error details:', error)
-      if (error instanceof Error && 'stack' in error) {
-        console.error('Debug: Stack trace:', error.stack)
-      }
+      // In debug mode, show the full error details using oclif's logToStderr
+      this.logDebugError('Full error details', error instanceof Error ? error : new Error(String(error)), {
+        context,
+      })
     }
 
     const message = error instanceof Error ? error.message : String(error)
@@ -62,6 +65,50 @@ export abstract class BaseCommand extends Command {
 
     this.togglConfig = config
     return config
+  }
+
+  /**
+   * Log debug message when debug flag is enabled
+   * Uses oclif's logToStderr for proper output handling
+   * @param message Debug message
+   * @param data Optional structured data (will be sanitized)
+   */
+  protected logDebug(message: string, data?: Record<string, unknown>): void {
+    // Access debug flag directly from argv - simpler than overriding parse
+    if (!process.argv.includes('--debug')) return
+
+    let output = `🔍 DEBUG: ${message}`
+    if (data && Object.keys(data).length > 0) {
+      const sanitizedData = DataSanitizer.sanitize(data)
+      output += ` ${JSON.stringify(sanitizedData)}`
+    }
+
+    this.logToStderr(output)
+  }
+
+  /**
+   * Log debug error with full details when debug flag is enabled
+   * @param message Debug message
+   * @param error Error object
+   * @param data Optional structured data (will be sanitized)
+   */
+  protected logDebugError(message: string, error: Error, data?: Record<string, unknown>): void {
+    // Access debug flag directly from argv - simpler than overriding parse
+    if (!process.argv.includes('--debug')) return
+
+    let output = `🔍 DEBUG: ${message}`
+    output += `\n  Error: ${error.message}`
+
+    if (data && Object.keys(data).length > 0) {
+      const sanitizedData = DataSanitizer.sanitize(data)
+      output += `\n  Data: ${JSON.stringify(sanitizedData)}`
+    }
+
+    if (error.stack) {
+      output += `\n  Stack: ${error.stack}`
+    }
+
+    this.logToStderr(output)
   }
 
   /**

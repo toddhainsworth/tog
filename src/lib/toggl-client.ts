@@ -38,11 +38,17 @@ interface SearchTimeEntriesPayload {
 }
 
 
+export interface DebugLogger {
+  debug(message: string, data?: Record<string, unknown>): void
+}
+
 export class TogglClient {
   private client: AxiosInstance
+  private logger?: DebugLogger
   private reportsClient: AxiosInstance
 
-  constructor(apiToken: string) {
+  constructor(apiToken: string, logger?: DebugLogger) {
+    this.logger = logger
     this.client = axios.create({
       baseURL: 'https://api.track.toggl.com/api/v9',
       headers: {
@@ -62,9 +68,21 @@ export class TogglClient {
 
   async createTimeEntry(workspaceId: number, timeEntry: TimeEntryPayload): Promise<TimeEntry> {
     try {
+      this.logger?.debug('Creating time entry', {
+        hasDescription: Boolean(timeEntry.description),
+        hasProjectId: Boolean(timeEntry.project_id),
+        hasTaskId: Boolean(timeEntry.task_id),
+        workspaceId
+      })
       const response = await this.client.post(`/workspaces/${workspaceId}/time_entries?meta=true`, timeEntry)
-      return TimeEntrySchema.assert(response.data)
+      const result = TimeEntrySchema.assert(response.data)
+      this.logger?.debug('Time entry created', { entryId: result.id })
+      return result
     } catch (error) {
+      this.logger?.debug('Failed to create time entry', {
+        error: error instanceof Error ? error.message : String(error),
+        workspaceId
+      })
       if (error instanceof Error && 'name' in error && error.name === 'ArkTypeError') {
         throw TogglValidationError.invalidResponse(error.message)
       }
@@ -89,9 +107,19 @@ export class TogglClient {
 
   async getCurrentTimeEntry(): Promise<null | TimeEntry> {
     try {
+      this.logger?.debug('Fetching current time entry')
       const {data} = await this.client.get('/me/time_entries/current')
-      return data ? TimeEntrySchema.assert(data) : null
+      const result = data ? TimeEntrySchema.assert(data) : null
+      this.logger?.debug('Current time entry result', {
+        entryId: result?.id,
+        hasEntry: Boolean(result),
+        isRunning: result ? !result.stop : false
+      })
+      return result
     } catch (error) {
+      this.logger?.debug('Failed to fetch current time entry', {
+        error: error instanceof Error ? error.message : String(error)
+      })
       if (error instanceof Error && 'name' in error && error.name === 'ArkTypeError') {
         throw TogglValidationError.invalidResponse(error.message)
       }
@@ -181,10 +209,14 @@ export class TogglClient {
 
   async ping(): Promise<boolean> {
     try {
+      this.logger?.debug('Pinging Toggl API', { endpoint: '/me' })
       const response = await this.client.get('/me')
       const validatedUser = UserSchema.assert(response.data)
-      return validatedUser.id > 0
-    } catch {
+      const success = validatedUser.id > 0
+      this.logger?.debug('Ping result', { success, userId: validatedUser.id })
+      return success
+    } catch (error) {
+      this.logger?.debug('Ping failed', { error: error instanceof Error ? error.message : String(error) })
       // For ping, we want to return false rather than throw
       // This is used for connectivity testing
       return false
