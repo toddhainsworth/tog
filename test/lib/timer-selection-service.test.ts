@@ -1,33 +1,32 @@
 import {expect} from 'chai'
 import dayjs from 'dayjs'
-import * as sinon from 'sinon'
+import { restore, type SinonStubbedInstance } from 'sinon'
 
 import type {Favorite, Project, Task, TimeEntry} from '../../src/lib/validation.js'
 
 import {TimerSelectionService} from '../../src/lib/timer-selection-service.js'
 import {TogglClient} from '../../src/lib/toggl-client.js'
+import { createMockTogglClient, MockData } from '../helpers/test-utilities.js'
 
 describe('TimerSelectionService', () => {
-  let mockClient: sinon.SinonStubbedInstance<TogglClient>
+  let mockClient: SinonStubbedInstance<TogglClient>
   let service: TimerSelectionService
   const projects: Project[] = [
-    {active: true, id: 1, name: 'Project A', workspace_id: 1},
-    {active: true, id: 2, name: 'Project B', workspace_id: 1},
+    MockData.project({ id: 1, name: 'Project A', workspace_id: 1 }),
+    MockData.project({ id: 2, name: 'Project B', workspace_id: 1 }),
   ]
   const tasks: Task[] = [
-    {active: true, id: 10, name: 'Task 1', project_id: 1},
-    {active: true, id: 20, name: 'Task 2', project_id: 2},
+    MockData.task({ id: 10, name: 'Task 1', project_id: 1 }),
+    MockData.task({ id: 20, name: 'Task 2', project_id: 2 }),
   ]
 
   beforeEach(() => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    mockClient = sinon.createStubInstance(TogglClient) as any
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    service = new TimerSelectionService(mockClient as any, projects, tasks)
+    mockClient = createMockTogglClient()
+    service = new TimerSelectionService(mockClient, projects, tasks)
   })
 
   afterEach(() => {
-    sinon.restore()
+    restore()
   })
 
   describe('getTimerOptions', () => {

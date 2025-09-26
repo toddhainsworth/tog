@@ -182,7 +182,7 @@ export async function promptForTimerSelection(
   }
 
   // Add "Show recent timers" option if requested
-  const choices = options.map(option => ({
+  const choices: Array<{name: string; short: string; value: 'show-recent' | TimerOption}> = options.map(option => ({
     name: option.display,
     short: option.description || 'Untitled',
     value: option,
@@ -192,7 +192,7 @@ export async function promptForTimerSelection(
     choices.push({
       name: '🕐 Show recent timers instead',
       short: 'Show recent',
-      value: 'show-recent' as unknown as TimerOption,
+      value: 'show-recent' as const,
     })
   }
 

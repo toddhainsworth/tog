@@ -30,8 +30,7 @@ static override flags = {
       // Check for running timer
       const runningTimerCheck = await TimerService.checkForRunningTimer(client)
       if (runningTimerCheck.hasRunningTimer) {
-        const currentEntry = runningTimerCheck.currentEntry as null | { description?: string }
-        this.logWarning(`Timer is already running: "${currentEntry?.description || 'Untitled'}"`)
+        this.logWarning(`Timer is already running: "${runningTimerCheck.currentEntry?.description || 'Untitled'}"`)
         this.log('Use `tog stop` to stop the current timer before starting a new one.')
         return
       }

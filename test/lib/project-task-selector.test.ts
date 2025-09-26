@@ -5,20 +5,21 @@ import type { Project, Task } from '../../src/lib/validation.js'
 
 import { ProjectTaskSelector } from '../../src/lib/project-task-selector.js'
 import * as prompts from '../../src/lib/prompts.js'
+import { isError, MockData } from '../helpers/test-utilities.js'
 
 describe('ProjectTaskSelector', () => {
   const mockProjects: Project[] = [
-    { active: true, id: 1, name: 'Backend API', workspace_id: 123 },
-    { active: true, id: 2, name: 'Frontend React', workspace_id: 123 },
-    { active: true, id: 3, name: 'Mobile App', workspace_id: 123 },
-    { active: true, id: 4, name: 'Backend Services', workspace_id: 123 },
+    MockData.project({ id: 1, name: 'Backend API', workspace_id: 123 }),
+    MockData.project({ id: 2, name: 'Frontend React', workspace_id: 123 }),
+    MockData.project({ id: 3, name: 'Mobile App', workspace_id: 123 }),
+    MockData.project({ id: 4, name: 'Backend Services', workspace_id: 123 }),
   ]
 
   const mockTasks: Task[] = [
-    { active: true, id: 10, name: 'User Authentication', project_id: 1 },
-    { active: true, id: 11, name: 'API Integration', project_id: 1 },
-    { active: true, id: 12, name: 'User Interface', project_id: 2 },
-    { active: true, id: 13, name: 'User Management', project_id: 2 },
+    MockData.task({ id: 10, name: 'User Authentication', project_id: 1 }),
+    MockData.task({ id: 11, name: 'API Integration', project_id: 1 }),
+    MockData.task({ id: 12, name: 'User Interface', project_id: 2 }),
+    MockData.task({ id: 13, name: 'User Management', project_id: 2 }),
   ]
 
   let selector: ProjectTaskSelector
@@ -163,7 +164,7 @@ describe('ProjectTaskSelector', () => {
         await selector.selectProjectByFlag('nonexistent')
         expect.fail('Should have thrown an error')
       } catch (error) {
-        expect((error as Error).message).to.include('Project "nonexistent" not found')
+        expect(isError(error) && error.message).to.include('Project "nonexistent" not found')
       }
     })
 
@@ -172,7 +173,7 @@ describe('ProjectTaskSelector', () => {
         await selector.selectProjectByFlag('backend')
         expect.fail('Should have thrown an error')
       } catch (error) {
-        expect((error as Error).message).to.include('Multiple projects match "backend"')
+        expect(isError(error) && error.message).to.include('Multiple projects match "backend"')
       }
     })
   })
@@ -201,7 +202,7 @@ describe('ProjectTaskSelector', () => {
         await selector.selectTaskByFlag('User Authentication', selectedProject)
         expect.fail('Should have thrown an error')
       } catch (error) {
-        expect((error as Error).message).to.include('Task "User Authentication" does not belong to the selected project')
+        expect(isError(error) && error.message).to.include('Task "User Authentication" does not belong to the selected project')
       }
     })
 
@@ -210,7 +211,7 @@ describe('ProjectTaskSelector', () => {
         await selector.selectTaskByFlag('nonexistent')
         expect.fail('Should have thrown an error')
       } catch (error) {
-        expect((error as Error).message).to.include('Task "nonexistent" not found')
+        expect(isError(error) && error.message).to.include('Task "nonexistent" not found')
       }
     })
 
@@ -283,7 +284,7 @@ describe('ProjectTaskSelector', () => {
         await selector.selectInteractively()
         expect.fail('Should have thrown an error')
       } catch (error) {
-        expect((error as Error).message).to.include('User cancelled')
+        expect(isError(error) && error.message).to.include('User cancelled')
       }
     })
   })

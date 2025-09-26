@@ -3,50 +3,22 @@ import { match, restore, type SinonStub, type SinonStubbedInstance, stub } from 
 
 import type { TogglConfig } from '../../src/lib/config.js'
 import type { TogglClient } from '../../src/lib/toggl-client.js'
-import type { Project, Task, TimeEntry } from '../../src/lib/validation.js'
 
 import * as prompts from '../../src/lib/prompts.js'
 import { TimerService } from '../../src/lib/timer-service.js'
+import { createMockTogglClient, isError, MockData } from '../helpers/test-utilities.js'
 
 describe('TimerService', () => {
   let mockClient: SinonStubbedInstance<TogglClient>
   let mockConfig: TogglConfig
   let withSpinnerStub: SinonStub
 
-  const mockProject: Project = {
-    active: true,
-    id: 1,
-    name: 'Test Project',
-    workspace_id: 123
-  }
-
-  const mockTask: Task = {
-    active: true,
-    id: 10,
-    name: 'Test Task',
-    project_id: 1
-  }
-
-  const mockTimeEntry: TimeEntry = {
-    at: '2023-01-01T11:00:00Z',
-    description: 'Test entry',
-    duration: 3600,
-    id: 100,
-    project_id: 1,
-    start: '2023-01-01T10:00:00Z',
-    stop: '2023-01-01T11:00:00Z',
-    tags: [],
-    task_id: 10,
-    workspace_id: 123
-  }
+  const mockProject = MockData.project()
+  const mockTask = MockData.task()
+  const mockTimeEntry = MockData.timeEntry()
 
   beforeEach(() => {
-    mockClient = {
-      createTimeEntry: stub(),
-      getCurrentTimeEntry: stub(),
-      getProjects: stub(),
-      getTasks: stub()
-    } as SinonStubbedInstance<TogglClient>
+    mockClient = createMockTogglClient()
 
     mockConfig = {
       apiToken: 'test-token',
@@ -91,7 +63,7 @@ describe('TimerService', () => {
         await TimerService.checkForRunningTimer(mockClient)
         expect.fail('Should have thrown an error')
       } catch (error) {
-        expect((error as Error).message).to.include('Failed to check current timer')
+        expect(isError(error) && error.message).to.include('Failed to check current timer')
       }
     })
   })
@@ -238,7 +210,7 @@ describe('TimerService', () => {
         await TimerService.fetchTasksAndProjects(mockClient, { log() {} })
         expect.fail('Should have thrown an error')
       } catch (error) {
-        expect((error as Error).message).to.include('Failed to fetch tasks/projects')
+        expect(isError(error) && error.message).to.include('Failed to fetch tasks/projects')
       }
     })
   })

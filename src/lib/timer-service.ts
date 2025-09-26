@@ -1,6 +1,6 @@
 import type { TogglConfig } from './config.js'
 import type { TogglClient } from './toggl-client.js'
-import type { Project, Task } from './validation.js'
+import type { Project, Task, TimeEntry } from './validation.js'
 
 import { withSpinner } from './prompts.js'
 
@@ -20,7 +20,7 @@ export interface TimerCreationOptions {
 export interface TimerCreationResult {
   error?: Error
   success: boolean
-  timeEntry?: unknown
+  timeEntry?: TimeEntry
 }
 
 export const TimerService = {
@@ -28,7 +28,7 @@ export const TimerService = {
    * Checks if there is currently a running timer.
    * Returns true if a timer is running (which should block starting a new timer).
    */
-  async checkForRunningTimer(client: TogglClient): Promise<{ currentEntry?: unknown; hasRunningTimer: boolean; }> {
+  async checkForRunningTimer(client: TogglClient): Promise<{ currentEntry?: null | TimeEntry; hasRunningTimer: boolean; }> {
     try {
       const currentEntry = await client.getCurrentTimeEntry()
       return {
