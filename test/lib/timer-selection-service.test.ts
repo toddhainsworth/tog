@@ -226,6 +226,41 @@ describe('TimerSelectionService', () => {
       expect(options[0]?.description).to.equal('Ranked favorite')
       expect(options[1]?.description).to.equal('No rank favorite')
     })
+
+    it('should filter out running timers (entries without stop time)', async () => {
+      const timeEntries: TimeEntry[] = [
+        {
+          at: dayjs().toISOString(),
+          description: 'Running timer',
+          duration: 3600,
+          id: 100,
+          project_id: 1,
+          start: dayjs().subtract(1, 'hour').toISOString(),
+          // No stop time - this is a running timer
+          workspace_id: 1,
+        },
+        {
+          at: dayjs().toISOString(),
+          description: 'Completed timer',
+          duration: 3600,
+          id: 101,
+          project_id: 1,
+          start: dayjs().subtract(2, 'hour').toISOString(),
+          stop: dayjs().subtract(1, 'hour').toISOString(),
+          workspace_id: 1,
+        },
+      ]
+
+      mockClient.getFavorites.rejects(new Error('No favorites'))
+      mockClient.getTimeEntries.resolves(timeEntries)
+
+      const options = await service.getTimerOptions()
+
+      // Should only include the completed timer, not the running one
+      expect(options).to.have.lengthOf(1)
+      expect(options[0]?.description).to.equal('Completed timer')
+      expect(options[0]?.lastUsed).to.exist
+    })
   })
 
   describe('hasMultipleOptions', () => {

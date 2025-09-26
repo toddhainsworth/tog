@@ -160,10 +160,11 @@ export class TimerSelectionService {
    * Formats recent time entries into timer options with intelligent deduplication.
    *
    * **Deduplication Algorithm:**
-   * 1. Filters out entries that match existing options (favorites) by comparing:
+   * 1. Filters out running timers (entries without stop time)
+   * 2. Filters out entries that match existing options (favorites) by comparing:
    *    - description, project_id, and task_id
-   * 2. Groups remaining entries by unique combination key to prevent duplicates
-   * 3. For each unique combination, keeps only the most recent entry
+   * 3. Groups remaining entries by unique combination key to prevent duplicates
+   * 4. For each unique combination, keeps only the most recent entry
    *
    * **Performance:** O(n + m) where n = entries.length, m = existingOptions.length
    * Uses Map for O(1) lookups during grouping phase.
@@ -173,8 +174,10 @@ export class TimerSelectionService {
    * @returns Formatted timer options sorted by most recent first
    */
   private formatRecentTimers(entries: TimeEntry[], existingOptions: TimerOption[]): TimerOption[] {
-    // Filter out duplicates that match favorites
-    const uniqueEntries = entries.filter(entry => !existingOptions.some(opt =>
+    // Filter out running timers (no stop time) and duplicates that match favorites
+    const uniqueEntries = entries.filter(entry =>
+      entry.stop && // Only include stopped timers
+      !existingOptions.some(opt =>
         opt.description === entry.description &&
         opt.project_id === entry.project_id &&
         opt.task_id === entry.task_id
@@ -186,18 +189,19 @@ export class TimerSelectionService {
       const key = `${entry.description || ''}|${entry.project_id || ''}|${entry.task_id || ''}`
       const existing = groupedMap.get(key)
 
-      // Keep the most recent entry for each unique combination
-      if (!existing || new Date(entry.start) > new Date(existing.start)) {
+      // Keep the most recent entry for each unique combination (by stop time)
+      if (!existing || new Date(entry.stop!) > new Date(existing.stop!)) {
         groupedMap.set(key, entry)
       }
     }
 
     return [...groupedMap.values()]
-      .sort((a, b) => new Date(b.start).getTime() - new Date(a.start).getTime())
+      .sort((a, b) => new Date(b.stop!).getTime() - new Date(a.stop!).getTime())
       .map(entry => {
         const project = this.projects.find(p => p.id === entry.project_id)
         const task = this.tasks.find(t => t.id === entry.task_id)
-        const lastUsed = dayjs(entry.start).fromNow()
+        // Show time since stopped (when timer ended) rather than time since started
+        const lastUsed = dayjs(entry.stop).fromNow()
 
         let display = `📋 ${entry.description || 'Untitled'}`
         if (project) {
