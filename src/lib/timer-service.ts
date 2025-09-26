@@ -1,6 +1,7 @@
 import type { TogglConfig } from './config.js'
 import type { TogglClient } from './toggl-client.js'
 import type { Project, Task } from './validation.js'
+
 import { withSpinner } from './prompts.js'
 
 export interface LoggingContext {
@@ -17,33 +18,33 @@ export interface TimerCreationOptions {
 }
 
 export interface TimerCreationResult {
-  success: boolean
-  timeEntry?: any
   error?: Error
+  success: boolean
+  timeEntry?: unknown
 }
 
-export class TimerService {
+export const TimerService = {
   /**
    * Checks if there is currently a running timer.
    * Returns true if a timer is running (which should block starting a new timer).
    */
-  static async checkForRunningTimer(client: TogglClient): Promise<{ hasRunningTimer: boolean; currentEntry?: any }> {
+  async checkForRunningTimer(client: TogglClient): Promise<{ currentEntry?: unknown; hasRunningTimer: boolean; }> {
     try {
       const currentEntry = await client.getCurrentTimeEntry()
       return {
-        hasRunningTimer: Boolean(currentEntry),
-        currentEntry
+        currentEntry,
+        hasRunningTimer: Boolean(currentEntry)
       }
-    } catch (error) {
+    } catch {
       throw new Error('Failed to check current timer')
     }
-  }
+  },
 
   /**
    * Creates and starts a new timer with the given parameters.
    * Returns the created time entry or throws an error if creation fails.
    */
-  static async createTimer(options: TimerCreationOptions, context: LoggingContext): Promise<TimerCreationResult> {
+  async createTimer(options: TimerCreationOptions, context: LoggingContext): Promise<TimerCreationResult> {
     const { client, config, description, selectedProject, selectedTask } = options
 
     try {
@@ -67,27 +68,28 @@ export class TimerService {
           success: true,
           timeEntry
         }
-      } else {
-        return {
-          success: false,
-          error: new Error('Failed to start timer. Please try again.')
-        }
       }
+ 
+        return {
+          error: new Error('Failed to start timer. Please try again.'),
+          success: false
+        }
+      
     } catch (error) {
       return {
-        success: false,
-        error: error instanceof Error ? error : new Error('Unknown error occurred during timer creation')
+        error: error instanceof Error ? error : new Error('Unknown error occurred during timer creation'),
+        success: false
       }
     }
-  }
+  },
 
   /**
    * Fetches both tasks and projects from the Toggl API.
    * Returns null values if the fetch fails.
    */
-  static async fetchTasksAndProjects(client: TogglClient, context: LoggingContext): Promise<{
-    projects: Project[] | null
-    tasks: Task[] | null
+  async fetchTasksAndProjects(client: TogglClient, context: LoggingContext): Promise<{
+    projects: null | Project[]
+    tasks: null | Task[]
   }> {
     try {
       const [tasks, projects] = await withSpinner(
@@ -96,64 +98,50 @@ export class TimerService {
         context
       )
       return { projects, tasks }
-    } catch (error) {
+    } catch {
       throw new Error('Failed to fetch tasks/projects')
     }
-  }
+  },
 
   /**
    * Validates timer description input.
    */
-  static validateDescription(description: string): { isValid: boolean; error?: string } {
+  validateDescription(description: string): { error?: string; isValid: boolean; } {
     if (!description || description.trim().length === 0) {
       return {
-        isValid: false,
-        error: 'Timer description cannot be empty'
+        error: 'Timer description cannot be empty',
+        isValid: false
       }
     }
 
     if (description.trim().length > 500) {
       return {
-        isValid: false,
-        error: 'Timer description cannot exceed 500 characters'
+        error: 'Timer description cannot exceed 500 characters',
+        isValid: false
       }
     }
 
     return { isValid: true }
-  }
+  },
 
   /**
    * Validates that the project and task are compatible.
    */
-  static validateProjectTaskRelationship(project?: Project, task?: Task): { isValid: boolean; error?: string } {
+  validateProjectTaskRelationship(project?: Project, task?: Task): { error?: string; isValid: boolean; } {
     if (task && project && task.project_id !== project.id) {
       return {
-        isValid: false,
-        error: `Task "${task.name}" does not belong to project "${project.name}"`
+        error: `Task "${task.name}" does not belong to project "${project.name}"`,
+        isValid: false
       }
     }
 
     return { isValid: true }
-  }
-
-  /**
-   * Validates workspace configuration.
-   */
-  static validateWorkspaceConfig(config: TogglConfig): { isValid: boolean; error?: string } {
-    if (!config.workspaceId) {
-      return {
-        isValid: false,
-        error: 'Workspace ID is missing from configuration'
-      }
-    }
-
-    return { isValid: true }
-  }
+  },
 
   /**
    * Performs comprehensive validation of all timer creation parameters.
    */
-  static validateTimerCreation(options: TimerCreationOptions): { isValid: boolean; error?: string } {
+  validateTimerCreation(options: TimerCreationOptions): { error?: string; isValid: boolean; } {
     const { config, description, selectedProject, selectedTask } = options
 
     // Validate workspace config
@@ -175,5 +163,19 @@ export class TimerService {
     }
 
     return { isValid: true }
-  }
-}
+  },
+
+  /**
+   * Validates workspace configuration.
+   */
+  validateWorkspaceConfig(config: TogglConfig): { error?: string; isValid: boolean; } {
+    if (!config.workspaceId) {
+      return {
+        error: 'Workspace ID is missing from configuration',
+        isValid: false
+      }
+    }
+
+    return { isValid: true }
+  },
+};

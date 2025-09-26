@@ -1,8 +1,10 @@
 import {Flags} from '@oclif/core'
 
+import type { Project, Task } from '../lib/validation.js'
+
 import { BaseCommand } from '../lib/base-command.js'
-import { promptForDescription } from '../lib/prompts.js'
 import { ProjectTaskSelector } from '../lib/project-task-selector.js'
+import { promptForDescription } from '../lib/prompts.js'
 import { TimerService } from '../lib/timer-service.js'
 
 export default class Start extends BaseCommand {
@@ -28,7 +30,8 @@ static override flags = {
       // Check for running timer
       const runningTimerCheck = await TimerService.checkForRunningTimer(client)
       if (runningTimerCheck.hasRunningTimer) {
-        this.logWarning(`Timer is already running: "${runningTimerCheck.currentEntry.description || 'Untitled'}"`)
+        const currentEntry = runningTimerCheck.currentEntry as null | { description?: string }
+        this.logWarning(`Timer is already running: "${currentEntry?.description || 'Untitled'}"`)
         this.log('Use `tog stop` to stop the current timer before starting a new one.')
         return
       }
@@ -111,7 +114,7 @@ static override flags = {
     }
   }
 
-  private async selectProjectAndTask(selector: ProjectTaskSelector, flags: {project?: string, task?: string}): Promise<{selectedProject?: import('../lib/validation.js').Project, selectedTask?: import('../lib/validation.js').Task}> {
+  private async selectProjectAndTask(selector: ProjectTaskSelector, flags: {project?: string, task?: string}): Promise<{selectedProject?: Project, selectedTask?: Task}> {
     try {
       const result = await selector.selectProjectAndTask(flags)
 

@@ -1,4 +1,5 @@
 import type { Project, Task } from './validation.js'
+
 import { promptForTaskSelection } from './prompts.js'
 
 export interface ProjectTaskSelectionResult {
@@ -13,11 +14,18 @@ export class ProjectTaskSelector {
   ) {}
 
   /**
+   * Finds a project by its ID.
+   */
+  findProjectById(projectId: number): Project | undefined {
+    return this.projects.find(p => p.id === projectId)
+  }
+
+  /**
    * Finds a project by name (case-insensitive partial match) or exact ID.
    * Supports exact matches taking precedence over partial matches.
    * Throws error if multiple partial matches are found without an exact match.
    */
-  findProjectByNameOrId(input: string): Project | null {
+  findProjectByNameOrId(input: string): null | Project {
     // Try to parse as ID first
     const id = Number.parseInt(input, 10)
     if (!Number.isNaN(id)) {
@@ -56,7 +64,7 @@ export class ProjectTaskSelector {
    * Optionally filters by project ID to ensure task belongs to the specified project.
    * Supports exact matches taking precedence over partial matches.
    */
-  findTaskByNameOrId(input: string, projectId?: number): Task | null {
+  findTaskByNameOrId(input: string, projectId?: number): null | Task {
     // Try to parse as ID first
     const id = Number.parseInt(input, 10)
     if (!Number.isNaN(id)) {
@@ -102,72 +110,19 @@ export class ProjectTaskSelector {
   }
 
   /**
-   * Finds a project by its ID.
-   */
-  findProjectById(projectId: number): Project | undefined {
-    return this.projects.find(p => p.id === projectId)
-  }
-
-  /**
-   * Selects a project based on a flag input (name or ID).
-   * Returns null if project is not found or if an error occurs.
-   */
-  async selectProjectByFlag(projectFlag: string): Promise<Project | null> {
-    try {
-      const foundProject = this.findProjectByNameOrId(projectFlag)
-      if (!foundProject) {
-        throw new Error(`Project "${projectFlag}" not found`)
-      }
-
-      return foundProject
-    } catch (error) {
-      throw error
-    }
-  }
-
-  /**
-   * Selects a task based on a flag input (name or ID).
-   * Optionally constrains the search to a specific project.
-   * Returns both the task and its associated project.
-   */
-  async selectTaskByFlag(taskFlag: string, selectedProject?: Project): Promise<{ project?: Project; task: Task } | null> {
-    try {
-      const foundTask = this.findTaskByNameOrId(taskFlag, selectedProject?.id)
-      if (!foundTask) {
-        const projectContext = selectedProject ? ` in project "${selectedProject.name}"` : ''
-        throw new Error(`Task "${taskFlag}"${projectContext} not found`)
-      }
-
-      // Auto-select project if task has one but no project was specified
-      let taskProject = selectedProject
-      if (!taskProject && foundTask.project_id) {
-        taskProject = this.findProjectById(foundTask.project_id)
-      }
-
-      return { project: taskProject, task: foundTask }
-    } catch (error) {
-      throw error
-    }
-  }
-
-  /**
    * Handles interactive selection of project and task using prompts.
    * Returns null if user cancels or if an error occurs.
    */
-  async selectInteractively(): Promise<{ project?: Project; task?: Task } | null> {
-    try {
-      const selectedChoice = await promptForTaskSelection(this.tasks, this.projects)
-      const selectedProject = selectedChoice.project_id
-        ? this.projects.find(p => p.id === selectedChoice.project_id)
-        : undefined
-      const selectedTask = selectedChoice.task_id
-        ? this.tasks.find(t => t.id === selectedChoice.task_id)
-        : undefined
+  async selectInteractively(): Promise<null | { project?: Project; task?: Task }> {
+    const selectedChoice = await promptForTaskSelection(this.tasks, this.projects)
+    const selectedProject = selectedChoice.project_id
+      ? this.projects.find(p => p.id === selectedChoice.project_id)
+      : undefined
+    const selectedTask = selectedChoice.task_id
+      ? this.tasks.find(t => t.id === selectedChoice.task_id)
+      : undefined
 
-      return { project: selectedProject, task: selectedTask }
-    } catch (error) {
-      throw error
-    }
+    return { project: selectedProject, task: selectedTask }
   }
 
   /**
@@ -202,5 +157,39 @@ export class ProjectTaskSelector {
     }
 
     return { selectedProject, selectedTask }
+  }
+
+  /**
+   * Selects a project based on a flag input (name or ID).
+   * Returns null if project is not found or if an error occurs.
+   */
+  async selectProjectByFlag(projectFlag: string): Promise<null | Project> {
+    const foundProject = this.findProjectByNameOrId(projectFlag)
+    if (!foundProject) {
+      throw new Error(`Project "${projectFlag}" not found`)
+    }
+
+    return foundProject
+  }
+
+  /**
+   * Selects a task based on a flag input (name or ID).
+   * Optionally constrains the search to a specific project.
+   * Returns both the task and its associated project.
+   */
+  async selectTaskByFlag(taskFlag: string, selectedProject?: Project): Promise<null | { project?: Project; task: Task }> {
+    const foundTask = this.findTaskByNameOrId(taskFlag, selectedProject?.id)
+    if (!foundTask) {
+      const projectContext = selectedProject ? ` in project "${selectedProject.name}"` : ''
+      throw new Error(`Task "${taskFlag}"${projectContext} not found`)
+    }
+
+    // Auto-select project if task has one but no project was specified
+    let taskProject = selectedProject
+    if (!taskProject && foundTask.project_id) {
+      taskProject = this.findProjectById(foundTask.project_id)
+    }
+
+    return { project: taskProject, task: foundTask }
   }
 }

@@ -1,5 +1,5 @@
 import { expect } from 'chai'
-import sinon from 'sinon'
+import { type SinonStub, stub } from 'sinon'
 
 import type { Project, Task } from '../../src/lib/validation.js'
 
@@ -181,8 +181,8 @@ describe('ProjectTaskSelector', () => {
     it('should select task successfully', async () => {
       const result = await selector.selectTaskByFlag('User Authentication')
       expect(result).to.deep.equal({
-        task: mockTasks[0],
-        project: mockProjects[0] // Auto-selected based on task's project_id
+        project: mockProjects[0], // Auto-selected based on task's project_id
+        task: mockTasks[0]
       })
     })
 
@@ -190,8 +190,8 @@ describe('ProjectTaskSelector', () => {
       const selectedProject = mockProjects[1] // Frontend React
       const result = await selector.selectTaskByFlag('User Interface', selectedProject)
       expect(result).to.deep.equal({
-        task: mockTasks[2],
-        project: selectedProject
+        project: selectedProject,
+        task: mockTasks[2]
       })
     })
 
@@ -217,17 +217,17 @@ describe('ProjectTaskSelector', () => {
     it('should auto-select project from task when no project provided', async () => {
       const result = await selector.selectTaskByFlag('API Integration')
       expect(result).to.deep.equal({
-        task: mockTasks[1],
-        project: mockProjects[0] // Auto-selected Backend API
+        project: mockProjects[0], // Auto-selected Backend API
+        task: mockTasks[1]
       })
     })
   })
 
   describe('selectInteractively', () => {
-    let promptStub: sinon.SinonStub
+    let promptStub: SinonStub
 
     beforeEach(() => {
-      promptStub = sinon.stub(prompts, 'promptForTaskSelection')
+      promptStub = stub(prompts, 'promptForTaskSelection')
     })
 
     afterEach(() => {
@@ -289,10 +289,10 @@ describe('ProjectTaskSelector', () => {
   })
 
   describe('selectProjectAndTask', () => {
-    let promptStub: sinon.SinonStub
+    let promptStub: SinonStub
 
     beforeEach(() => {
-      promptStub = sinon.stub(prompts, 'promptForTaskSelection')
+      promptStub = stub(prompts, 'promptForTaskSelection')
     })
 
     afterEach(() => {

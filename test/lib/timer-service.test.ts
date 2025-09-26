@@ -1,17 +1,17 @@
 import { expect } from 'chai'
-import sinon from 'sinon'
+import { match, restore, type SinonStub, type SinonStubbedInstance, stub } from 'sinon'
 
-import type { Project, Task, TimeEntry } from '../../src/lib/validation.js'
 import type { TogglConfig } from '../../src/lib/config.js'
 import type { TogglClient } from '../../src/lib/toggl-client.js'
+import type { Project, Task, TimeEntry } from '../../src/lib/validation.js'
 
-import { TimerService } from '../../src/lib/timer-service.js'
 import * as prompts from '../../src/lib/prompts.js'
+import { TimerService } from '../../src/lib/timer-service.js'
 
 describe('TimerService', () => {
-  let mockClient: sinon.SinonStubbedInstance<TogglClient>
+  let mockClient: SinonStubbedInstance<TogglClient>
   let mockConfig: TogglConfig
-  let withSpinnerStub: sinon.SinonStub
+  let withSpinnerStub: SinonStub
 
   const mockProject: Project = {
     active: true,
@@ -28,36 +28,36 @@ describe('TimerService', () => {
   }
 
   const mockTimeEntry: TimeEntry = {
-    id: 100,
-    workspace_id: 123,
-    project_id: 1,
-    task_id: 10,
+    at: '2023-01-01T11:00:00Z',
     description: 'Test entry',
+    duration: 3600,
+    id: 100,
+    project_id: 1,
     start: '2023-01-01T10:00:00Z',
     stop: '2023-01-01T11:00:00Z',
-    duration: 3600,
     tags: [],
-    at: '2023-01-01T11:00:00Z'
+    task_id: 10,
+    workspace_id: 123
   }
 
   beforeEach(() => {
     mockClient = {
-      getCurrentTimeEntry: sinon.stub(),
-      createTimeEntry: sinon.stub(),
-      getTasks: sinon.stub(),
-      getProjects: sinon.stub()
-    } as any
+      createTimeEntry: stub(),
+      getCurrentTimeEntry: stub(),
+      getProjects: stub(),
+      getTasks: stub()
+    } as SinonStubbedInstance<TogglClient>
 
     mockConfig = {
       apiToken: 'test-token',
       workspaceId: 123
     }
 
-    withSpinnerStub = sinon.stub(prompts, 'withSpinner')
+    withSpinnerStub = stub(prompts, 'withSpinner')
   })
 
   afterEach(() => {
-    sinon.restore()
+    restore()
   })
 
   describe('checkForRunningTimer', () => {
@@ -67,8 +67,8 @@ describe('TimerService', () => {
       const result = await TimerService.checkForRunningTimer(mockClient)
 
       expect(result).to.deep.equal({
-        hasRunningTimer: false,
-        currentEntry: null
+        currentEntry: null,
+        hasRunningTimer: false
       })
     })
 
@@ -79,8 +79,8 @@ describe('TimerService', () => {
       const result = await TimerService.checkForRunningTimer(mockClient)
 
       expect(result).to.deep.equal({
-        hasRunningTimer: true,
-        currentEntry: runningEntry
+        currentEntry: runningEntry,
+        hasRunningTimer: true
       })
     })
 
@@ -102,7 +102,7 @@ describe('TimerService', () => {
         created_with: 'tog-cli',
         description: 'Test timer',
         duration: -1,
-        start: sinon.match.string,
+        start: match.string,
         workspace_id: 123
       }
 
@@ -113,7 +113,7 @@ describe('TimerService', () => {
         client: mockClient,
         config: mockConfig,
         description: 'Test timer'
-      }, { log: () => {} })
+      }, { log() {} })
 
       expect(result.success).to.be.true
       expect(result.timeEntry).to.equal(mockTimeEntry)
@@ -125,10 +125,10 @@ describe('TimerService', () => {
         created_with: 'tog-cli',
         description: 'Test timer',
         duration: -1,
-        start: sinon.match.string,
-        workspace_id: 123,
         project_id: 1,
-        task_id: 10
+        start: match.string,
+        task_id: 10,
+        workspace_id: 123
       }
 
       mockClient.createTimeEntry.resolves(mockTimeEntry)
@@ -140,7 +140,7 @@ describe('TimerService', () => {
         description: 'Test timer',
         selectedProject: mockProject,
         selectedTask: mockTask
-      }, { log: () => {} })
+      }, { log() {} })
 
       expect(result.success).to.be.true
       expect(mockClient.createTimeEntry).to.have.been.calledWith(123, expectedData)
@@ -151,9 +151,9 @@ describe('TimerService', () => {
         created_with: 'tog-cli',
         description: 'Test timer',
         duration: -1,
-        start: sinon.match.string,
-        workspace_id: 123,
-        project_id: 1
+        project_id: 1,
+        start: match.string,
+        workspace_id: 123
       }
 
       mockClient.createTimeEntry.resolves(mockTimeEntry)
@@ -164,7 +164,7 @@ describe('TimerService', () => {
         config: mockConfig,
         description: 'Test timer',
         selectedProject: mockProject
-      }, { log: () => {} })
+      }, { log() {} })
 
       expect(result.success).to.be.true
       expect(mockClient.createTimeEntry).to.have.been.calledWith(123, expectedData)
@@ -178,7 +178,7 @@ describe('TimerService', () => {
         client: mockClient,
         config: mockConfig,
         description: 'Test timer'
-      }, { log: () => {} })
+      }, { log() {} })
 
       expect(result.success).to.be.false
       expect(result.error?.message).to.equal('Failed to start timer. Please try again.')
@@ -192,7 +192,7 @@ describe('TimerService', () => {
         client: mockClient,
         config: mockConfig,
         description: 'Test timer'
-      }, { log: () => {} })
+      }, { log() {} })
 
       expect(result.success).to.be.false
       expect(result.error?.message).to.equal('API Error')
@@ -206,7 +206,7 @@ describe('TimerService', () => {
         client: mockClient,
         config: mockConfig,
         description: 'Test timer'
-      }, { log: () => {} })
+      }, { log() {} })
 
       expect(result.success).to.be.false
       expect(result.error?.message).to.equal('Unknown error occurred during timer creation')
@@ -222,7 +222,7 @@ describe('TimerService', () => {
       mockClient.getProjects.resolves(mockProjects)
       withSpinnerStub.callsFake(async (_, fn, __) => fn())
 
-      const result = await TimerService.fetchTasksAndProjects(mockClient, { log: () => {} })
+      const result = await TimerService.fetchTasksAndProjects(mockClient, { log() {} })
 
       expect(result).to.deep.equal({
         projects: mockProjects,
@@ -235,7 +235,7 @@ describe('TimerService', () => {
       withSpinnerStub.callsFake(async (_, fn, __) => fn())
 
       try {
-        await TimerService.fetchTasksAndProjects(mockClient, { log: () => {} })
+        await TimerService.fetchTasksAndProjects(mockClient, { log() {} })
         expect.fail('Should have thrown an error')
       } catch (error) {
         expect((error as Error).message).to.include('Failed to fetch tasks/projects')
@@ -311,7 +311,7 @@ describe('TimerService', () => {
     })
 
     it('should reject config without workspace ID', () => {
-      const invalidConfig = { ...mockConfig, workspaceId: undefined as any }
+      const invalidConfig = { ...mockConfig, workspaceId: undefined as never }
       const result = TimerService.validateWorkspaceConfig(invalidConfig)
       expect(result.isValid).to.be.false
       expect(result.error).to.equal('Workspace ID is missing from configuration')
@@ -335,7 +335,7 @@ describe('TimerService', () => {
     it('should reject invalid workspace config', () => {
       const options = {
         ...validOptions,
-        config: { ...mockConfig, workspaceId: undefined as any }
+        config: { ...mockConfig, workspaceId: undefined as never }
       }
       const result = TimerService.validateTimerCreation(options)
       expect(result.isValid).to.be.false
