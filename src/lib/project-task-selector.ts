@@ -167,6 +167,7 @@ export class ProjectTaskSelector {
     if (!selectedProject && !selectedTask) {
       return {}
     }
+
     return { selectedProject, selectedTask }
   }
 
