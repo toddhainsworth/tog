@@ -117,9 +117,34 @@ export const ReportsGroupedEntrySchema = type({
 
 export const ReportsSearchResponseSchema = type(ReportsGroupedEntrySchema, '[]')
 
+// Favorite schema
+export const FavoriteSchema = type({
+  'billable?': 'boolean',
+  'client_name?': 'string',
+  'created_at?': 'string',
+  'deleted_at?': 'string|null',
+  'description?': 'string',
+  'favorite_id?': 'number',
+  'permissions?': 'string[]|null',
+  'project_active?': 'boolean',
+  'project_billable?': 'boolean',
+  'project_color?': 'string',
+  'project_id?': 'number|null',
+  'project_name?': 'string',
+  'public?': 'boolean',
+  'rank?': 'number',
+  'tag_ids?': 'number[]|null',
+  'tags?': 'string[]|null',
+  'task_id?': 'number|null',
+  'task_name?': 'string',
+})
+
+export const FavoritesArraySchema = type(FavoriteSchema, '[]')
+
 export type TimeEntry = typeof TimeEntrySchema.infer
 export type Workspace = typeof WorkspaceSchema.infer
 export type Project = typeof ProjectSchema.infer
 export type Task = typeof TaskSchema.infer
 export type Client = typeof ClientSchema.infer
 export type User = typeof UserSchema.infer
+export type Favorite = typeof FavoriteSchema.infer
