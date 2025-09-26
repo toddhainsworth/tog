@@ -222,26 +222,6 @@ describe('ProjectTaskSelector', () => {
     })
   })
 
-  describe('selectInteractively', () => {
-    // Note: Skipping interactive tests due to ESM stubbing complexity
-
-    it.skip('should handle interactive selection successfully', async () => {
-      // Skipped due to ESM stubbing issues
-    })
-
-    it.skip('should handle selection with only project', async () => {
-      // Skipped due to ESM stubbing issues
-    })
-
-    it.skip('should handle selection with only task', async () => {
-      // Skipped due to ESM stubbing issues
-    })
-
-    it.skip('should propagate prompt errors', async () => {
-      // Skipped due to ESM stubbing issues
-    })
-  })
-
   describe('selectProjectAndTask', () => {
 
     it('should handle project flag only', async () => {
@@ -271,10 +251,6 @@ describe('ProjectTaskSelector', () => {
       })
     })
 
-    it.skip('should use interactive selection when no flags provided', async () => {
-      // Skipped due to ESM stubbing issues
-    })
-
     it('should return empty result when project lookup fails', async () => {
       const result = await selector.selectProjectAndTask({ project: 'nonexistent' })
       expect(result).to.deep.equal({})
@@ -290,7 +266,6 @@ describe('ProjectTaskSelector', () => {
       const result = await emptySelector.selectProjectAndTask({})
       expect(result).to.deep.equal({})
 
-      // Should not have called prompt (skipped due to ESM stubbing issues)
     })
   })
 })
