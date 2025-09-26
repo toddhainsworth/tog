@@ -61,6 +61,37 @@ The project includes GitHub Actions workflows for quality gates:
 - Entry point: `dist/index.js`
 - Binary: `./bin/run.js`
 
+### Service Architecture
+The project follows a service-oriented architecture where business logic is extracted into testable service classes:
+
+**Current Services:**
+- **ProjectTaskSelector** (`src/lib/project-task-selector.ts`): Handles project and task selection logic including fuzzy matching, validation, and interactive prompts
+- **TimerService** (`src/lib/timer-service.ts`): Manages timer operations including creation, validation, and API interactions
+- **TimerSelectionService** (`src/lib/timer-selection-service.ts`): Handles recent timer and favorites selection for the continue command
+
+**Service Design Patterns:**
+- Static methods for stateless operations (TimerService)
+- Instance classes for stateful operations (ProjectTaskSelector, TimerSelectionService)
+- Services accept logging context for consistent CLI integration
+- Each service focuses on a single domain entity or related functionality
+
+**Benefits:**
+- ✅ Improved testability of core business logic
+- ✅ Clear separation of concerns between CLI and business logic
+- ✅ Easier maintenance and feature additions
+- ✅ Consistent with project's testing philosophy (test lib/, not commands/)
+- ✅ Reduced command complexity (start command reduced from 305 to 137 lines)
+
+**Future Service Architecture:**
+The project is evolving toward domain-driven services where each service is responsible for its own entity type:
+- **ClientService**: Toggl API client operations and authentication
+- **ProjectService**: Project CRUD operations and management
+- **TaskService**: Task operations and project relationships
+- **TimeEntryService**: Time entry management and reporting
+- **WorkspaceService**: Workspace operations and configuration
+
+This allows services to depend on each other while maintaining clear boundaries and testability.
+
 ## Testing Policy
 
 **IMPORTANT: Command-level tests are intentionally NOT required in this project.**
@@ -261,6 +292,29 @@ Brief description of the feature and its purpose.
 - PRDs (Product Requirements Documents) follow the new workflow in `docs/DEVELOPMENT.md`
 - Local PRDs are kept in `docs/prd/` for development reference (not committed)
 - GitHub issues serve as the source of truth for approved PRDs
+
+## Refactoring Approach
+
+**Business Logic Extraction:**
+When refactoring commands to extract business logic, follow these patterns:
+
+1. **Identify Pure Business Logic**: Look for functions that perform domain operations without CLI concerns
+2. **Extract to Services**: Move business logic to appropriate service classes in `src/lib/`
+3. **Maintain CLI Interface**: Commands should focus on flag parsing, user messaging, and orchestrating service calls
+4. **Preserve User Experience**: Ensure the refactored command provides identical functionality and messaging
+5. **Add Comprehensive Tests**: New service classes must have full test coverage in `test/lib/`
+
+**Example Refactoring (Issue #19):**
+- **Before**: `start` command had 305 lines with mixed CLI and business logic
+- **After**: 137 lines focusing on CLI orchestration, business logic moved to `ProjectTaskSelector` and `TimerService`
+- **Result**: ~55% reduction in command complexity, 100% test coverage for extracted logic
+
+**Service Extraction Guidelines:**
+- Use static methods for stateless operations
+- Use instance classes when maintaining state or configuration
+- Accept logging context parameters for CLI integration
+- Design services to be composable and dependency-injectable
+- Each service should have a single responsibility
 
 ## Development Best Practices
 
