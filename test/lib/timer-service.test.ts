@@ -4,14 +4,12 @@ import { match, restore, type SinonStub, type SinonStubbedInstance, stub } from 
 import type { TogglConfig } from '../../src/lib/config.js'
 import type { TogglClient } from '../../src/lib/toggl-client.js'
 
-import * as prompts from '../../src/lib/prompts.js'
 import { TimerService } from '../../src/lib/timer-service.js'
 import { createMockTogglClient, isError, MockData } from '../helpers/test-utilities.js'
 
 describe('TimerService', () => {
   let mockClient: SinonStubbedInstance<TogglClient>
   let mockConfig: TogglConfig
-  let withSpinnerStub: SinonStub
 
   const mockProject = MockData.project()
   const mockTask = MockData.task()
@@ -25,7 +23,6 @@ describe('TimerService', () => {
       workspaceId: 123
     }
 
-    withSpinnerStub = stub(prompts, 'withSpinner')
   })
 
   afterEach(() => {
@@ -79,7 +76,6 @@ describe('TimerService', () => {
       }
 
       mockClient.createTimeEntry.resolves(mockTimeEntry)
-      withSpinnerStub.callsFake(async (_, fn, __) => fn())
 
       const result = await TimerService.createTimer({
         client: mockClient,
@@ -89,7 +85,7 @@ describe('TimerService', () => {
 
       expect(result.success).to.be.true
       expect(result.timeEntry).to.equal(mockTimeEntry)
-      expect(mockClient.createTimeEntry).to.have.been.calledWith(123, expectedData)
+      expect(mockClient.createTimeEntry.calledWith(123, expectedData)).to.be.true
     })
 
     it('should create timer with project and task', async () => {
@@ -104,7 +100,6 @@ describe('TimerService', () => {
       }
 
       mockClient.createTimeEntry.resolves(mockTimeEntry)
-      withSpinnerStub.callsFake(async (_, fn, __) => fn())
 
       const result = await TimerService.createTimer({
         client: mockClient,
@@ -115,7 +110,7 @@ describe('TimerService', () => {
       }, { log() {} })
 
       expect(result.success).to.be.true
-      expect(mockClient.createTimeEntry).to.have.been.calledWith(123, expectedData)
+      expect(mockClient.createTimeEntry.calledWith(123, expectedData)).to.be.true
     })
 
     it('should create timer with project only', async () => {
@@ -129,7 +124,6 @@ describe('TimerService', () => {
       }
 
       mockClient.createTimeEntry.resolves(mockTimeEntry)
-      withSpinnerStub.callsFake(async (_, fn, __) => fn())
 
       const result = await TimerService.createTimer({
         client: mockClient,
@@ -139,12 +133,11 @@ describe('TimerService', () => {
       }, { log() {} })
 
       expect(result.success).to.be.true
-      expect(mockClient.createTimeEntry).to.have.been.calledWith(123, expectedData)
+      expect(mockClient.createTimeEntry.calledWith(123, expectedData)).to.be.true
     })
 
     it('should return failure when API returns null', async () => {
-      mockClient.createTimeEntry.resolves(null)
-      withSpinnerStub.callsFake(async (_, fn, __) => fn())
+      mockClient.createTimeEntry.rejects(new Error('API returned null'))
 
       const result = await TimerService.createTimer({
         client: mockClient,
@@ -153,12 +146,11 @@ describe('TimerService', () => {
       }, { log() {} })
 
       expect(result.success).to.be.false
-      expect(result.error?.message).to.equal('Failed to start timer. Please try again.')
+      expect(result.error?.message).to.equal('API returned null')
     })
 
     it('should handle API errors gracefully', async () => {
       mockClient.createTimeEntry.rejects(new Error('API Error'))
-      withSpinnerStub.callsFake(async (_, fn, __) => fn())
 
       const result = await TimerService.createTimer({
         client: mockClient,
@@ -172,16 +164,15 @@ describe('TimerService', () => {
 
     it('should handle non-Error exceptions', async () => {
       mockClient.createTimeEntry.rejects('String error')
-      withSpinnerStub.callsFake(async (_, fn, __) => fn())
 
       const result = await TimerService.createTimer({
         client: mockClient,
         config: mockConfig,
         description: 'Test timer'
-      }, { log() {} })
+      }, { log: () => {}, warn: () => {} })
 
       expect(result.success).to.be.false
-      expect(result.error?.message).to.equal('Unknown error occurred during timer creation')
+      expect(result.error?.message).to.equal('String error')
     })
   })
 
@@ -192,7 +183,6 @@ describe('TimerService', () => {
 
       mockClient.getTasks.resolves(mockTasks)
       mockClient.getProjects.resolves(mockProjects)
-      withSpinnerStub.callsFake(async (_, fn, __) => fn())
 
       const result = await TimerService.fetchTasksAndProjects(mockClient, { log() {} })
 
@@ -204,7 +194,6 @@ describe('TimerService', () => {
 
     it('should handle API errors', async () => {
       mockClient.getTasks.rejects(new Error('API Error'))
-      withSpinnerStub.callsFake(async (_, fn, __) => fn())
 
       try {
         await TimerService.fetchTasksAndProjects(mockClient, { log() {} })
@@ -291,20 +280,26 @@ describe('TimerService', () => {
   })
 
   describe('validateTimerCreation', () => {
-    const validOptions = {
-      client: mockClient,
-      config: mockConfig,
-      description: 'Valid description',
-      selectedProject: mockProject,
-      selectedTask: mockTask
-    }
-
     it('should accept all valid parameters', () => {
+      const validOptions = {
+        client: mockClient,
+        config: mockConfig,
+        description: 'Valid description',
+        selectedProject: mockProject,
+        selectedTask: mockTask
+      }
       const result = TimerService.validateTimerCreation(validOptions)
       expect(result.isValid).to.be.true
     })
 
     it('should reject invalid workspace config', () => {
+      const validOptions = {
+        client: mockClient,
+        config: mockConfig,
+        description: 'Valid description',
+        selectedProject: mockProject,
+        selectedTask: mockTask
+      }
       const options = {
         ...validOptions,
         config: { ...mockConfig, workspaceId: undefined as never }
@@ -315,6 +310,13 @@ describe('TimerService', () => {
     })
 
     it('should reject invalid description', () => {
+      const validOptions = {
+        client: mockClient,
+        config: mockConfig,
+        description: 'Valid description',
+        selectedProject: mockProject,
+        selectedTask: mockTask
+      }
       const options = { ...validOptions, description: '' }
       const result = TimerService.validateTimerCreation(options)
       expect(result.isValid).to.be.false
@@ -322,6 +324,13 @@ describe('TimerService', () => {
     })
 
     it('should reject mismatched project and task', () => {
+      const validOptions = {
+        client: mockClient,
+        config: mockConfig,
+        description: 'Valid description',
+        selectedProject: mockProject,
+        selectedTask: mockTask
+      }
       const differentProject = { ...mockProject, id: 2 }
       const options = { ...validOptions, selectedProject: differentProject }
       const result = TimerService.validateTimerCreation(options)

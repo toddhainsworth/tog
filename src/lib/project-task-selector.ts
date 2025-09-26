@@ -135,17 +135,25 @@ export class ProjectTaskSelector {
 
     // Project selection
     if (flags.project) {
-      const result = await this.selectProjectByFlag(flags.project)
-      if (!result) return {}
-      selectedProject = result
+      try {
+        const result = await this.selectProjectByFlag(flags.project)
+        if (!result) return {}
+        selectedProject = result
+      } catch {
+        return {}
+      }
     }
 
     // Task selection
     if (flags.task) {
-      const result = await this.selectTaskByFlag(flags.task, selectedProject)
-      if (!result) return {}
-      selectedTask = result.task
-      selectedProject = result.project || selectedProject
+      try {
+        const result = await this.selectTaskByFlag(flags.task, selectedProject)
+        if (!result) return {}
+        selectedTask = result.task
+        selectedProject = result.project || selectedProject
+      } catch {
+        return {}
+      }
     }
 
     // Interactive selection if no flags
@@ -156,6 +164,9 @@ export class ProjectTaskSelector {
       selectedTask = result.task
     }
 
+    if (!selectedProject && !selectedTask) {
+      return {}
+    }
     return { selectedProject, selectedTask }
   }
 

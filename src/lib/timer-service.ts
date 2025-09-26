@@ -77,7 +77,7 @@ export const TimerService = {
       
     } catch (error) {
       return {
-        error: error instanceof Error ? error : new Error('Unknown error occurred during timer creation'),
+        error: error instanceof Error ? error : new Error(String(error) || 'Unknown error occurred during timer creation'),
         success: false
       }
     }
