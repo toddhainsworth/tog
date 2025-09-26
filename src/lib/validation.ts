@@ -14,7 +14,7 @@ export const TimeEntrySchema = type({
   'project_active?': 'boolean',
   'project_billable?': 'boolean',
   'project_color?': 'string',
-  'project_id?': 'number',
+  'project_id?': 'number|null',
   'project_name?': 'string',
   'server_deleted_at?': 'string|null',
   start: 'string',
