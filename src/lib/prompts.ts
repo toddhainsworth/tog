@@ -161,6 +161,18 @@ export async function promptForConfirmation(
   })
 }
 
+/**
+ * Prompts user to select a timer from available options.
+ *
+ * **Side Effect**: When showRecentOption=true, adds a special navigation option
+ * that returns the string 'show-recent' instead of a TimerOption. This enables
+ * progressive disclosure UX where favorites are shown first, with an option to
+ * switch to recent timers.
+ *
+ * @param options - Available timer options to choose from
+ * @param showRecentOption - If true, adds "Show recent timers instead" option
+ * @returns Either a selected TimerOption OR the string 'show-recent' (navigation command)
+ */
 export async function promptForTimerSelection(
   options: TimerOption[],
   showRecentOption: boolean = false
