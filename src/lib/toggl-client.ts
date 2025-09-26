@@ -5,6 +5,8 @@ import {createApiErrorFromAxios, TogglValidationError} from './errors.js'
 import {
   type Client,
   ClientsArraySchema,
+  type Favorite,
+  FavoritesArraySchema,
   type Project,
   ProjectsArraySchema,
   ReportsSearchResponseSchema,
@@ -125,6 +127,26 @@ export class TogglClient {
       }
 
       throw createApiErrorFromAxios(error, '/me/time_entries/current')
+    }
+  }
+
+  async getFavorites(): Promise<Favorite[]> {
+    try {
+      this.logger?.debug('Fetching user favorites')
+      const response = await this.client.get('/me/favorites')
+      const data = response.data || []
+      const favorites = FavoritesArraySchema.assert(data)
+      this.logger?.debug('Favorites fetched', { count: favorites.length })
+      return favorites
+    } catch (error) {
+      this.logger?.debug('Failed to fetch favorites', {
+        error: error instanceof Error ? error.message : String(error)
+      })
+      if (error instanceof Error && 'name' in error && error.name === 'ArkTypeError') {
+        throw TogglValidationError.invalidResponse(error.message)
+      }
+
+      throw createApiErrorFromAxios(error, '/me/favorites')
     }
   }
 

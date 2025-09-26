@@ -71,6 +71,18 @@ export function getTodayDateRange(): DateRange {
   }
 }
 
+export function getDateRange(date: dayjs.Dayjs): DateRange {
+  return {
+    end_date: date.endOf('day').toISOString(),
+    start_date: date.startOf('day').toISOString(),
+  }
+}
+
+export function getPastDaysDateRange(daysAgo: number): DateRange {
+  const date = dayjs().subtract(daysAgo, 'day')
+  return getDateRange(date)
+}
+
 export function getCurrentMonthDateRange(): DateRange {
   const currentMonth = dayjs()
 

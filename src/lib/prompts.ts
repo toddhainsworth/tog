@@ -2,6 +2,7 @@ import {confirm, input} from '@inquirer/prompts'
 import search from '@inquirer/search'
 import ora from 'ora'
 
+import type {TimerOption} from './timer-selection-service.js'
 import type {Project, Task, Workspace} from './validation.js'
 
 import {EMOJIS} from './emojis.js'
@@ -158,6 +159,83 @@ export async function promptForConfirmation(
     default: defaultValue,
     message: `${EMOJIS.WARNING} ${message}`
   })
+}
+
+/**
+ * Prompts user to select a timer from available options.
+ *
+ * **Side Effect**: When showRecentOption=true, adds a special navigation option
+ * that returns the string 'show-recent' instead of a TimerOption. This enables
+ * progressive disclosure UX where favorites are shown first, with an option to
+ * switch to recent timers.
+ *
+ * @param options - Available timer options to choose from
+ * @param showRecentOption - If true, adds "Show recent timers instead" option
+ * @returns Either a selected TimerOption OR the string 'show-recent' (navigation command)
+ */
+export async function promptForTimerSelection(
+  options: TimerOption[],
+  showRecentOption: boolean = false
+): Promise<'show-recent' | TimerOption> {
+  if (options.length === 0) {
+    throw new Error('No timer options available for selection')
+  }
+
+  // Add "Show recent timers" option if requested
+  const choices = options.map(option => ({
+    name: option.display,
+    short: option.description || 'Untitled',
+    value: option,
+  }))
+
+  if (showRecentOption) {
+    choices.push({
+      name: '🕐 Show recent timers instead',
+      short: 'Show recent',
+      value: 'show-recent' as unknown as TimerOption,
+    })
+  }
+
+  // Use search for better UX with filtering capability
+  const selection = await search({
+    message: `${EMOJIS.LOADING} Select a timer to continue:`,
+    pageSize: Math.min(15, choices.length),
+    async source(input: string | undefined): Promise<Array<{name: string; value: 'show-recent' | null | TimerOption}>> {
+      // If no input, return all choices
+      if (!input) {
+        return choices.map(choice => ({
+          name: choice.name,
+          value: choice.value,
+        }))
+      }
+
+      // Filter choices based on input (case-insensitive partial match)
+      const searchTerm = input.toLowerCase()
+      const filtered = choices.filter(choice =>
+        choice.name.toLowerCase().includes(searchTerm)
+      )
+
+      // Return filtered choices or show no matches message
+      if (filtered.length === 0) {
+        return [{
+          name: 'No matches found',
+          value: null,
+        }]
+      }
+
+      return filtered.map(choice => ({
+        name: choice.name,
+        value: choice.value,
+      }))
+    },
+  })
+
+  // Handle case where no match was found
+  if (selection === null) {
+    throw new Error('No valid selection made')
+  }
+
+  return selection
 }
 
 export async function promptForWorkspaceSelection(
