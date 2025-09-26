@@ -1,7 +1,5 @@
-import axios, {type AxiosInstance, isAxiosError} from 'axios'
-import dayjs from 'dayjs'
+import axios, {type AxiosInstance} from 'axios'
 
-import {DataSanitizer} from './data-sanitizer.js'
 import {createApiErrorFromAxios, TogglValidationError} from './errors.js'
 import {
   type Client,
@@ -21,7 +19,7 @@ import {
   WorkspacesArraySchema,
 } from './validation.js'
 
-interface TimeEntryPayload {
+export interface TimeEntryPayload {
   billable?: boolean
   created_with: string
   description?: string
@@ -33,25 +31,20 @@ interface TimeEntryPayload {
   workspace_id?: number
 }
 
-interface SearchTimeEntriesPayload {
+export interface SearchTimeEntriesPayload {
   description?: string
   end_date?: string
   page_size?: number
   start_date?: string
 }
 
+export interface GetTimeEntriesOptions {
+  end_date: string
+  start_date: string
+}
 
 export interface DebugLogger {
   debug(message: string, data?: Record<string, unknown>): void
-}
-
-// Helper to safely extract error response data for debugging
-function getErrorResponseData(error: unknown): unknown {
-  if (isAxiosError(error)) {
-    return error.response?.data
-  }
-
-  return undefined
 }
 
 export class TogglClient {
@@ -61,10 +54,12 @@ export class TogglClient {
 
   constructor(apiToken: string, logger?: DebugLogger) {
     this.logger = logger
+    const authHeader = `Basic ${Buffer.from(`${apiToken}:api_token`, 'utf8').toString('base64')}`
+
     this.client = axios.create({
       baseURL: 'https://api.track.toggl.com/api/v9',
       headers: {
-        Authorization: `Basic ${Buffer.from(`${apiToken}:api_token`, 'utf8').toString('base64')}`,
+        Authorization: authHeader,
         'Content-Type': 'application/json',
       },
     })
@@ -72,29 +67,20 @@ export class TogglClient {
     this.reportsClient = axios.create({
       baseURL: 'https://api.track.toggl.com/reports/api/v3',
       headers: {
-        Authorization: `Basic ${Buffer.from(`${apiToken}:api_token`, 'utf8').toString('base64')}`,
+        Authorization: authHeader,
         'Content-Type': 'application/json',
       },
     })
   }
 
+  /**
+   * Creates a new time entry in the specified workspace.
+   */
   async createTimeEntry(workspaceId: number, timeEntry: TimeEntryPayload): Promise<TimeEntry> {
     try {
-      this.logger?.debug('Creating time entry', {
-        hasDescription: Boolean(timeEntry.description),
-        hasProjectId: Boolean(timeEntry.project_id),
-        hasTaskId: Boolean(timeEntry.task_id),
-        workspaceId
-      })
       const response = await this.client.post(`/workspaces/${workspaceId}/time_entries?meta=true`, timeEntry)
-      const result = TimeEntrySchema.assert(response.data)
-      this.logger?.debug('Time entry created', { entryId: result.id })
-      return result
+      return TimeEntrySchema.assert(response.data)
     } catch (error) {
-      this.logger?.debug('Failed to create time entry', {
-        error: error instanceof Error ? error.message : String(error),
-        workspaceId
-      })
       if (error instanceof Error && 'name' in error && error.name === 'ArkTypeError') {
         throw TogglValidationError.invalidResponse(error.message)
       }
@@ -103,6 +89,9 @@ export class TogglClient {
     }
   }
 
+  /**
+   * Fetches all clients for the authenticated user.
+   */
   async getClients(): Promise<Client[]> {
     try {
       const response = await this.client.get('/me/clients')
@@ -117,21 +106,15 @@ export class TogglClient {
     }
   }
 
+  /**
+   * Fetches the current running time entry, if any.
+   */
   async getCurrentTimeEntry(): Promise<null | TimeEntry> {
     try {
-      this.logger?.debug('Fetching current time entry')
-      const {data} = await this.client.get('/me/time_entries/current')
-      const result = data ? TimeEntrySchema.assert(data) : null
-      this.logger?.debug('Current time entry result', {
-        entryId: result?.id,
-        hasEntry: Boolean(result),
-        isRunning: result ? !result.stop : false
-      })
-      return result
+      const response = await this.client.get('/me/time_entries/current')
+      const {data} = response
+      return data ? TimeEntrySchema.assert(data) : null
     } catch (error) {
-      this.logger?.debug('Failed to fetch current time entry', {
-        error: error instanceof Error ? error.message : String(error)
-      })
       if (error instanceof Error && 'name' in error && error.name === 'ArkTypeError') {
         throw TogglValidationError.invalidResponse(error.message)
       }
@@ -140,18 +123,15 @@ export class TogglClient {
     }
   }
 
+  /**
+   * Fetches all favorites for the authenticated user.
+   */
   async getFavorites(): Promise<Favorite[]> {
     try {
-      this.logger?.debug('Fetching user favorites')
       const response = await this.client.get('/me/favorites')
       const data = response.data || []
-      const favorites = FavoritesArraySchema.assert(data)
-      this.logger?.debug('Favorites fetched', { count: favorites.length })
-      return favorites
+      return FavoritesArraySchema.assert(data)
     } catch (error) {
-      this.logger?.debug('Failed to fetch favorites', {
-        error: error instanceof Error ? error.message : String(error)
-      })
       if (error instanceof Error && 'name' in error && error.name === 'ArkTypeError') {
         throw TogglValidationError.invalidResponse(error.message)
       }
@@ -160,12 +140,13 @@ export class TogglClient {
     }
   }
 
+  /**
+   * Fetches the most recent time entry.
+   */
   async getMostRecentTimeEntry(): Promise<null | TimeEntry> {
     try {
       const response = await this.client.get('/me/time_entries', {
-        params: {
-          page_size: 1,
-        },
+        params: { page_size: 1 }
       })
       const data = response.data || []
       const entries = TimeEntriesArraySchema.assert(data)
@@ -179,18 +160,16 @@ export class TogglClient {
     }
   }
 
+
+  /**
+   * Fetches all projects for the authenticated user.
+   */
   async getProjects(): Promise<Project[]> {
     try {
-      this.logger?.debug('Fetching projects')
       const response = await this.client.get('/me/projects')
       const data = response.data || []
-      this.logger?.debug('Projects fetched', { count: data.length })
       return ProjectsArraySchema.assert(data)
     } catch (error) {
-      this.logger?.debug('Failed to fetch projects', {
-        error: error instanceof Error ? error.message : String(error),
-        response: DataSanitizer.sanitize(getErrorResponseData(error))
-      })
       if (error instanceof Error && 'name' in error && error.name === 'ArkTypeError') {
         throw TogglValidationError.invalidResponse(error.message)
       }
@@ -199,6 +178,9 @@ export class TogglClient {
     }
   }
 
+  /**
+   * Fetches all tasks for the authenticated user.
+   */
   async getTasks(): Promise<Task[]> {
     try {
       const response = await this.client.get('/me/tasks?meta=true')
@@ -212,33 +194,27 @@ export class TogglClient {
     }
   }
 
-  async getTimeEntries(startDate: string, endDate: string): Promise<TimeEntry[]> {
+  /**
+   * Fetches time entries for a given date range.
+   */
+  async getTimeEntries(options: GetTimeEntriesOptions): Promise<TimeEntry[]>
+  async getTimeEntries(startDate: string, endDate: string): Promise<TimeEntry[]>
+  async getTimeEntries(optionsOrStartDate: GetTimeEntriesOptions | string, endDate?: string): Promise<TimeEntry[]> {
     try {
-      this.logger?.debug('Fetching time entries', {
-        endDate,
-        endpoint: '/me/time_entries',
-        startDate
-      })
-      const response = await this.client.get('/me/time_entries', {
-        params: {
-          end_date: endDate,
-          start_date: startDate,
-        },
-      })
+      const params = typeof optionsOrStartDate === 'string'
+        ? {
+          end_date: endDate!,
+          start_date: optionsOrStartDate,
+        }
+        : {
+          end_date: optionsOrStartDate.end_date,
+          start_date: optionsOrStartDate.start_date,
+        }
+
+      const response = await this.client.get('/me/time_entries', { params })
       const data = response.data || []
-      this.logger?.debug('Time entries fetched', {
-        count: data.length,
-        endDate,
-        startDate
-      })
       return TimeEntriesArraySchema.assert(data)
     } catch (error) {
-      this.logger?.debug('Failed to fetch time entries', {
-        endDate,
-        error: error instanceof Error ? error.message : String(error),
-        response: DataSanitizer.sanitize(getErrorResponseData(error)),
-        startDate
-      })
       if (error instanceof Error && 'name' in error && error.name === 'ArkTypeError') {
         throw TogglValidationError.invalidResponse(error.message)
       }
@@ -247,6 +223,9 @@ export class TogglClient {
     }
   }
 
+  /**
+   * Fetches all workspaces for the authenticated user.
+   */
   async getWorkspaces(): Promise<Workspace[]> {
     try {
       const response = await this.client.get('/me/workspaces')
@@ -261,38 +240,53 @@ export class TogglClient {
     }
   }
 
+  /**
+   * Tests API connectivity and token validity.
+   * Returns false instead of throwing errors for connectivity testing.
+   */
   async ping(): Promise<boolean> {
     try {
-      this.logger?.debug('Pinging Toggl API', { endpoint: '/me' })
       const response = await this.client.get('/me')
       const validatedUser = UserSchema.assert(response.data)
-      const success = validatedUser.id > 0
-      this.logger?.debug('Ping result', { success, userId: validatedUser.id })
-      return success
-    } catch (error) {
-      this.logger?.debug('Ping failed', { error: error instanceof Error ? error.message : String(error) })
+      return validatedUser.id > 0
+    } catch {
       // For ping, we want to return false rather than throw
       // This is used for connectivity testing
       return false
     }
   }
 
+  /**
+   * Searches time entries using the Reports API.
+   * Returns converted TimeEntry array for backward compatibility.
+   */
   async searchTimeEntries(workspaceId: number, searchParams: SearchTimeEntriesPayload): Promise<TimeEntry[]> {
     try {
-      // The Reports API v3 expects dates in YYYY-MM-DD format, not ISO strings
-      const formattedParams = {
-        ...searchParams,
-        end_date: searchParams.end_date ? dayjs(searchParams.end_date).format('YYYY-MM-DD') : undefined,
-        start_date: searchParams.start_date ? dayjs(searchParams.start_date).format('YYYY-MM-DD') : undefined,
-      }
-
-      const response = await this.reportsClient.post(`/workspace/${workspaceId}/search/time_entries`, formattedParams)
-
-      // Validate the response structure
+      const response = await this.reportsClient.post(`/workspace/${workspaceId}/search/time_entries`, searchParams)
       const validatedGroups = ReportsSearchResponseSchema.assert(response.data || [])
 
-      // Extract and convert to standard TimeEntry format
-      return this.extractTimeEntriesFromGroups(validatedGroups, workspaceId)
+      // Convert Reports API format to standard TimeEntry format for backward compatibility
+      const timeEntries: TimeEntry[] = []
+
+      for (const group of validatedGroups) {
+        for (const entry of group.time_entries) {
+          const timeEntry: TimeEntry = {
+            at: entry.at,
+            description: group.description || '',
+            duration: entry.seconds,
+            id: entry.id,
+            project_id: group.project_id ?? undefined,
+            start: entry.start,
+            stop: entry.stop ?? undefined,
+            task_id: group.task_id ?? null,
+            workspace_id: entry.workspace_id || workspaceId,
+          }
+
+          timeEntries.push(TimeEntrySchema.assert(timeEntry))
+        }
+      }
+
+      return timeEntries
     } catch (error) {
       if (error instanceof Error && 'name' in error && error.name === 'ArkTypeError') {
         throw TogglValidationError.invalidResponse(error.message)
@@ -302,6 +296,10 @@ export class TogglClient {
     }
   }
 
+  /**
+   * Stops a running time entry.
+   * Returns true on success, false on failure.
+   */
   async stopTimeEntry(workspaceId: number, timeEntryId: number): Promise<boolean> {
     try {
       await this.client.patch(`/workspaces/${workspaceId}/time_entries/${timeEntryId}/stop`)
@@ -313,6 +311,9 @@ export class TogglClient {
     }
   }
 
+  /**
+   * Updates an existing time entry.
+   */
   async updateTimeEntry(workspaceId: number, timeEntryId: number, updates: Partial<TimeEntryPayload>): Promise<TimeEntry> {
     try {
       const response = await this.client.put(`/workspaces/${workspaceId}/time_entries/${timeEntryId}`, updates)
@@ -326,30 +327,4 @@ export class TogglClient {
     }
   }
 
-  private extractTimeEntriesFromGroups(groupedData: typeof ReportsSearchResponseSchema.infer, workspaceId: number): TimeEntry[] {
-    const timeEntries: TimeEntry[] = []
-
-    for (const group of groupedData) {
-      for (const entry of group.time_entries) {
-        // Convert Reports API format to standard TimeEntry format
-        // Note: Use null instead of undefined for optional fields to match TimeEntry schema
-        const timeEntry: TimeEntry = {
-          at: entry.at,
-          description: group.description || '',
-          duration: entry.seconds,
-          id: entry.id,
-          project_id: group.project_id ?? undefined, // Keep undefined for project_id
-          start: entry.start,
-          stop: entry.stop ?? undefined, // Keep undefined for stop
-          task_id: group.task_id ?? null, // Use null for task_id
-          workspace_id: entry.workspace_id || workspaceId,
-        }
-
-        // Validate the converted entry matches our TimeEntry schema
-        timeEntries.push(TimeEntrySchema.assert(timeEntry))
-      }
-    }
-
-    return timeEntries
-  }
 }

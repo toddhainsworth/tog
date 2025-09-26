@@ -94,7 +94,16 @@ export const ClientService = {
       context?.debug?.('Clients fetched successfully', { count: clients.length })
       return clients
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error)
+      let errorMessage: string
+      if (error instanceof Error) {
+        // If it's an Error but message is empty, check other properties or toString
+        errorMessage = error.message || error.toString() || 'Unknown error'
+      } else if (typeof error === 'string') {
+        errorMessage = error
+      } else {
+        errorMessage = JSON.stringify(error)
+      }
+
       context?.debug?.('Failed to fetch clients', { error: errorMessage })
       context?.warn?.('Failed to fetch clients')
       return []
@@ -113,7 +122,11 @@ export const ClientService = {
     totalClients: number
   }> {
     try {
-      const clients = await this.getClients(togglClient, context)
+      // Call the client API directly to ensure errors are propagated
+      context?.debug?.('Fetching user clients for statistics')
+      const clients = await togglClient.getClients()
+      context?.debug?.('Clients fetched successfully for statistics', { count: clients.length })
+
       const clientsWithCounts = this.getClientsWithProjectCounts(clients, projects)
 
       const totalClients = clients.length
@@ -122,8 +135,9 @@ export const ClientService = {
       const totalProjects = clientsWithCounts.reduce((sum, c) => sum + c.projectCount, 0)
       const averageProjectsPerClient = totalClients > 0 ? totalProjects / totalClients : 0
 
-      // Get top 5 clients by project count
+      // Get top 5 clients by project count (only include clients with projects)
       const topClientsByProjects = clientsWithCounts
+        .filter(c => c.projectCount > 0)
         .sort((a, b) => b.projectCount - a.projectCount)
         .slice(0, 5)
         .map(c => ({
@@ -139,7 +153,16 @@ export const ClientService = {
         totalClients
       }
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error)
+      let errorMessage: string
+      if (error instanceof Error) {
+        // If it's an Error but message is empty, check other properties or toString
+        errorMessage = error.message || error.toString() || 'Unknown error'
+      } else if (typeof error === 'string') {
+        errorMessage = error
+      } else {
+        errorMessage = JSON.stringify(error)
+      }
+
       context?.debug?.('Failed to get client statistics', { error: errorMessage })
       return {
         averageProjectsPerClient: 0,
@@ -183,7 +206,8 @@ export const ClientService = {
     try {
       context?.debug?.('Selecting client', { input })
 
-      const clients = await this.getClients(togglClient, context)
+      // Call the client API directly to ensure errors are propagated
+      const clients = await togglClient.getClients()
 
       if (clients.length === 0) {
         return {
@@ -211,7 +235,16 @@ export const ClientService = {
         success: true
       }
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error)
+      let errorMessage: string
+      if (error instanceof Error) {
+        // If it's an Error but message is empty, check other properties or toString
+        errorMessage = error.message || error.toString() || 'Unknown error'
+      } else if (typeof error === 'string') {
+        errorMessage = error
+      } else {
+        errorMessage = JSON.stringify(error)
+      }
+
       context?.debug?.('Client selection failed', { error: errorMessage, input })
       return {
         error: errorMessage,
@@ -239,7 +272,8 @@ export const ClientService = {
     }
 
     try {
-      const clients = await this.getClients(togglClient, context)
+      // Call the client API directly to ensure errors are propagated
+      const clients = await togglClient.getClients()
       const client = this.findClientById(clients, clientId)
 
       if (!client) {
@@ -259,7 +293,16 @@ export const ClientService = {
         success: true
       }
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error)
+      let errorMessage: string
+      if (error instanceof Error) {
+        // If it's an Error but message is empty, check other properties or toString
+        errorMessage = error.message || error.toString() || 'Unknown error'
+      } else if (typeof error === 'string') {
+        errorMessage = error
+      } else {
+        errorMessage = JSON.stringify(error)
+      }
+
       context?.debug?.('Client validation failed', { clientId, error: errorMessage })
       return {
         error: `Failed to validate client: ${errorMessage}`,

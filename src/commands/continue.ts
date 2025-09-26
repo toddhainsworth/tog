@@ -1,7 +1,10 @@
 import type {Project, Task} from '../lib/validation.js'
 
 import {BaseCommand} from '../lib/base-command.js'
-import {promptForTimerSelection, withSpinner} from '../lib/prompts.js'
+import {ProjectService} from '../lib/project-service.js'
+import {promptForTimerSelection} from '../lib/prompts.js'
+import {TaskService} from '../lib/task-service.js'
+import {TimeEntryService} from '../lib/time-entry-service.js'
 import {type TimerOption, TimerSelectionService} from '../lib/timer-selection-service.js'
 
 export default class Continue extends BaseCommand {
@@ -14,31 +17,30 @@ export default class Continue extends BaseCommand {
     try {
       const config = this.loadConfigOrExit()
       const client = this.getClient()
+      const timeEntryService = new TimeEntryService(client, this.getLoggingContext())
 
       // Check for running timer
-      const currentEntry = await client.getCurrentTimeEntry()
-      if (currentEntry) {
-        this.logWarning(`Timer is already running: "${currentEntry.description || 'Untitled'}"`)
+      const currentResult = await timeEntryService.getCurrentTimeEntry()
+      if (currentResult.error) {
+        this.handleError(new Error(currentResult.error), 'Failed to check for running timer')
+        return
+      }
+
+      if (currentResult.timeEntry) {
+        this.logWarning(`Timer is already running: "${currentResult.timeEntry.description || 'Untitled'}"`)
         this.log('Use `tog stop` to stop the current timer before continuing a previous one.')
         return
       }
 
       // Get projects and tasks for context
-      const [projects, tasks] = await withSpinner('Loading timer options...', () =>
-        Promise.all([client.getProjects(), client.getTasks()]), {
-          log: this.log.bind(this),
-          warn: this.warn.bind(this),
-        })
+      const projects = await ProjectService.getProjects(client, this.getLoggingContext())
+      const tasks = await TaskService.getTasks(client, this.getLoggingContext())
 
       // Initialize timer selection service
       const selectionService = new TimerSelectionService(client, projects, tasks)
 
       // Get timer options with favorites and recent timers
-      const timerOptions = await withSpinner('Fetching favorites and recent timers...', () =>
-        selectionService.getTimerOptions(), {
-          log: this.log.bind(this),
-          warn: this.warn.bind(this),
-        })
+      const timerOptions = await selectionService.getTimerOptions()
 
       // Handle different scenarios
       if (selectionService.hasNoOptions(timerOptions)) {
@@ -87,27 +89,29 @@ export default class Continue extends BaseCommand {
 
   private async createContinuedTimer(timerOption: TimerOption, workspaceId: number): Promise<void> {
     const client = this.getClient()
+    const timeEntryService = new TimeEntryService(client, this.getLoggingContext())
 
-    const timeEntryData = {
-      created_with: 'tog-cli',
+    // Get projects and tasks to find the objects for the timer option
+    const projects = await ProjectService.getProjects(client, this.getLoggingContext())
+    const tasks = await TaskService.getTasks(client, this.getLoggingContext())
+
+    // Find the project and task objects if they exist
+    const project = timerOption.project_id ?
+      ProjectService.findProjectById(projects, timerOption.project_id) || undefined : undefined
+    const task = timerOption.task_id ?
+      TaskService.findTaskById(tasks, timerOption.task_id) || undefined : undefined
+
+    const createResult = await timeEntryService.createTimeEntry({
       description: timerOption.description || '',
-      duration: -1,
-      project_id: timerOption.project_id || undefined,
-      start: new Date().toISOString(),
-      task_id: timerOption.task_id || undefined,
-      workspace_id: workspaceId,
-    }
+      project,
+      task,
+      workspaceId
+    })
 
-    const timeEntry = await withSpinner('Creating timer...', () =>
-      client.createTimeEntry(workspaceId, timeEntryData), {
-        log: this.log.bind(this),
-        warn: this.warn.bind(this),
-      })
-
-    if (timeEntry) {
+    if (createResult.success && createResult.timeEntry) {
       this.logSuccess('Timer continued successfully!')
     } else {
-      this.handleError(new Error('Failed to continue timer. Please try again.'), 'Timer creation failed')
+      this.handleError(new Error(createResult.error?.message || 'Failed to continue timer'), 'Timer creation failed')
     }
   }
 

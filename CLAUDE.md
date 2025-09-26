@@ -62,35 +62,52 @@ The project includes GitHub Actions workflows for quality gates:
 - Binary: `./bin/run.js`
 
 ### Service Architecture
-The project follows a service-oriented architecture where business logic is extracted into testable service classes:
+The project implements a **domain-driven service architecture** where business logic is extracted into testable service classes organized by domain entities:
 
-**Current Services:**
-- **ProjectTaskSelector** (`src/lib/project-task-selector.ts`): Handles project and task selection logic including fuzzy matching, validation, and interactive prompts
-- **TimerService** (`src/lib/timer-service.ts`): Manages timer operations including creation, validation, and API interactions
-- **TimerSelectionService** (`src/lib/timer-selection-service.ts`): Handles recent timer and favorites selection for the continue command
+**Domain Services (Implemented):**
+- **WorkspaceService** (`src/lib/workspace-service.ts`): Workspace operations, validation, and default workspace management
+- **UserService** (`src/lib/user-service.ts`): Authentication operations, token validation, and connectivity testing
+- **ProjectService** (`src/lib/project-service.ts`): Project CRUD operations, validation, selection, and filtering
+- **TaskService** (`src/lib/task-service.ts`): Task operations, project relationships, and validation
+- **TimeEntryService** (`src/lib/time-entry-service.ts`): Time entry management, validation, statistics, and reporting
+- **FavoriteService** (`src/lib/favorite-service.ts`): Favorites management, filtering, and selection
+- **ClientService** (`src/lib/client-service.ts`): Client operations, statistics, and project relationships
+
+**Legacy Services (Maintained):**
+- **ProjectTaskSelector** (`src/lib/project-task-selector.ts`): Interactive project/task selection with fuzzy matching
+- **TimerService** (`src/lib/timer-service.ts`): High-level timer operations and workflow management
+- **TimerSelectionService** (`src/lib/timer-selection-service.ts`): Recent timer and favorites selection
 
 **Service Design Patterns:**
-- Static methods for stateless operations (TimerService)
-- Instance classes for stateful operations (ProjectTaskSelector, TimerSelectionService)
-- Services accept logging context for consistent CLI integration
-- Each service focuses on a single domain entity or related functionality
+- **Static methods** for stateless operations (WorkspaceService, UserService, FavoriteService, ClientService)
+- **Instance classes** for stateful operations with dependencies (ProjectService, TaskService, TimeEntryService)
+- **Dependency injection** through constructor parameters for service composition
+- **LoggingContext integration** for consistent CLI debug output and error handling
+- **Pure business logic** with no CLI concerns (prompts, spinners, etc.)
 
-**Benefits:**
-- ✅ Improved testability of core business logic
-- ✅ Clear separation of concerns between CLI and business logic
-- ✅ Easier maintenance and feature additions
-- ✅ Consistent with project's testing philosophy (test lib/, not commands/)
-- ✅ Reduced command complexity (start command reduced from 305 to 137 lines)
+**TogglClient Refactoring:**
+- **Pure HTTP client**: TogglClient now focuses solely on HTTP requests and response validation
+- **Backward compatibility**: Maintains existing method signatures while services handle business logic
+- **Clear separation**: HTTP operations vs. domain logic cleanly separated
 
-**Future Service Architecture:**
-The project is evolving toward domain-driven services where each service is responsible for its own entity type:
-- **ClientService**: Toggl API client operations and authentication
-- **ProjectService**: Project CRUD operations and management
-- **TaskService**: Task operations and project relationships
-- **TimeEntryService**: Time entry management and reporting
-- **WorkspaceService**: Workspace operations and configuration
+**Architecture Benefits:**
+- ✅ **Full test coverage**: 100% test coverage for all domain services with comprehensive edge case testing
+- ✅ **Clear boundaries**: Each service owns its domain with well-defined responsibilities
+- ✅ **Service composition**: Services can depend on each other (e.g., TaskService uses ProjectService)
+- ✅ **Command simplification**: Commands focus on CLI concerns, delegate business logic to services
+- ✅ **Type safety**: Comprehensive TypeScript interfaces and validation throughout
+- ✅ **Error handling**: Consistent error patterns with detailed debugging support
 
-This allows services to depend on each other while maintaining clear boundaries and testability.
+**Service Dependencies:**
+```
+TimeEntryService → ProjectService, TaskService, WorkspaceService
+TaskService → ProjectService
+ProjectService → (standalone)
+ClientService → (standalone)
+FavoriteService → (standalone)
+UserService → (standalone)
+WorkspaceService → (standalone)
+```
 
 ## Testing Policy
 

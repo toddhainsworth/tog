@@ -2,7 +2,9 @@ import {Args, Flags} from '@oclif/core'
 import ora from 'ora'
 
 import {BaseCommand} from '../lib/base-command.js'
+import {ProjectService} from '../lib/project-service.js'
 import {createSearchResultsTable, formatGrandTotal} from '../lib/table-formatter.js'
+import {TimeEntryService} from '../lib/time-entry-service.js'
 import {
   formatTimeEntry,
   getAllTimeSearchRange,
@@ -41,6 +43,7 @@ export default class Search extends BaseCommand {
     const {args, flags} = await this.parse(Search)
     const config = this.loadConfigOrExit()
     const client = this.getClient()
+    const timeEntryService = new TimeEntryService(client, this.getLoggingContext())
 
     let dateRange
     let scopeDescription
@@ -59,15 +62,24 @@ export default class Search extends BaseCommand {
     const spinner = ora(`Searching for "${args.query}" in ${scopeDescription}...`).start()
 
     try {
-      const [searchResults, projects] = await Promise.all([
-        client.searchTimeEntries(config.workspaceId, {
-          description: args.query, // Use original query, not lowercased
-          end_date: dateRange.end_date,
-          page_size: 1000,
-          start_date: dateRange.start_date,
+      const [searchResult, projects] = await Promise.all([
+        timeEntryService.searchTimeEntries({
+          description: args.query,
+          endDate: dateRange.end_date,
+          pageSize: 1000,
+          startDate: dateRange.start_date,
+          workspaceId: config.workspaceId
         }),
-        client.getProjects(),
+        ProjectService.getProjects(client, this.getLoggingContext()),
       ])
+
+      if (searchResult.error) {
+        spinner.fail('Failed to search time entries')
+        this.handleError(new Error(searchResult.error), 'Search error', flags.debug)
+        return
+      }
+
+      const searchResults = searchResult.timeEntries
 
       spinner.succeed(`Found ${searchResults.length} time ${searchResults.length === 1 ? 'entry' : 'entries'} for "${args.query}" in ${scopeDescription}`)
 

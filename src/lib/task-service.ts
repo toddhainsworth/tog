@@ -129,6 +129,13 @@ export class TaskService {
   }
 
   /**
+   * Sorts tasks alphabetically by name.
+   */
+  static sortTasksByName(tasks: Task[]): Task[] {
+    return [...tasks].sort((a, b) => a.name.localeCompare(b.name))
+  }
+
+  /**
    * Validates project-task relationship compatibility.
    */
   static validateProjectTaskRelationship(project?: Project, task?: Task): {

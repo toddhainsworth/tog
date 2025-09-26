@@ -45,7 +45,7 @@ export const FavoriteService = {
     // Case-insensitive description matching
     const lowercaseInput = input.toLowerCase()
     const matches = favorites.filter(f =>
-      f.description && f.description.toLowerCase().includes(lowercaseInput)
+      f.description !== undefined && f.description !== null && f.description.toLowerCase().includes(lowercaseInput)
     )
 
     if (matches.length === 0) {
@@ -58,7 +58,7 @@ export const FavoriteService = {
 
     // Multiple matches - look for exact match first
     const exactMatch = matches.find(f =>
-      f.description && f.description.toLowerCase() === lowercaseInput
+      f.description !== undefined && f.description !== null && f.description.toLowerCase() === lowercaseInput
     )
     if (exactMatch) {
       return exactMatch
@@ -102,7 +102,9 @@ export const FavoriteService = {
     favorites: Favorite[]
   }> {
     try {
-      const allFavorites = await this.getFavorites(client, context)
+      // Call the client API directly to ensure errors are propagated
+      context?.debug?.('Fetching user favorites for project')
+      const allFavorites = await client.getFavorites()
       const projectFavorites = this.filterFavoritesByProject(allFavorites, projectId)
 
       context?.debug?.('Project favorites fetched', {
@@ -112,7 +114,15 @@ export const FavoriteService = {
 
       return { favorites: projectFavorites }
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error)
+      let errorMessage: string
+      if (error instanceof Error) {
+        errorMessage = error.message || error.toString() || 'Unknown error'
+      } else if (typeof error === 'string') {
+        errorMessage = error
+      } else {
+        errorMessage = JSON.stringify(error)
+      }
+
       context?.debug?.('Failed to fetch project favorites', { error: errorMessage, projectId })
       return {
         error: `Failed to get favorites for project: ${errorMessage}`,
@@ -129,7 +139,9 @@ export const FavoriteService = {
     favorites: Favorite[]
   }> {
     try {
-      const allFavorites = await this.getFavorites(client, context)
+      // Call the client API directly to ensure errors are propagated
+      context?.debug?.('Fetching user favorites for workspace')
+      const allFavorites = await client.getFavorites()
       const workspaceFavorites = this.filterFavoritesByWorkspace(allFavorites, workspaceId)
 
       context?.debug?.('Workspace favorites fetched', {
@@ -139,7 +151,15 @@ export const FavoriteService = {
 
       return { favorites: workspaceFavorites }
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error)
+      let errorMessage: string
+      if (error instanceof Error) {
+        errorMessage = error.message || error.toString() || 'Unknown error'
+      } else if (typeof error === 'string') {
+        errorMessage = error
+      } else {
+        errorMessage = JSON.stringify(error)
+      }
+
       context?.debug?.('Failed to fetch workspace favorites', { error: errorMessage, workspaceId })
       return {
         error: `Failed to get favorites for workspace: ${errorMessage}`,
@@ -160,7 +180,9 @@ export const FavoriteService = {
     withProject: number
   }> {
     try {
-      const favorites = await this.getFavorites(client, context)
+      // Call the client API directly to ensure errors are propagated
+      context?.debug?.('Fetching user favorites for statistics')
+      const favorites = await client.getFavorites()
       const total = favorites.length
       const withProject = favorites.filter(f => f.project_id).length
       const withoutProject = total - withProject
@@ -183,7 +205,15 @@ export const FavoriteService = {
         withProject
       }
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error)
+      let errorMessage: string
+      if (error instanceof Error) {
+        errorMessage = error.message || error.toString() || 'Unknown error'
+      } else if (typeof error === 'string') {
+        errorMessage = error
+      } else {
+        errorMessage = JSON.stringify(error)
+      }
+
       context?.debug?.('Failed to get favorite statistics', { error: errorMessage })
       return {
         byProject: {},
@@ -211,7 +241,9 @@ export const FavoriteService = {
     favorites: Favorite[]
   }> {
     try {
-      const allFavorites = await this.getFavorites(client, context)
+      // Call the client API directly to ensure errors are propagated
+      context?.debug?.('Fetching user favorites for recent favorites')
+      const allFavorites = await client.getFavorites()
 
       // Sort by favorite_id descending to get most recent first
       const sortedFavorites = [...allFavorites].sort((a, b) => (b.favorite_id || 0) - (a.favorite_id || 0))
@@ -225,7 +257,15 @@ export const FavoriteService = {
 
       return { favorites: recentFavorites }
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error)
+      let errorMessage: string
+      if (error instanceof Error) {
+        errorMessage = error.message || error.toString() || 'Unknown error'
+      } else if (typeof error === 'string') {
+        errorMessage = error
+      } else {
+        errorMessage = JSON.stringify(error)
+      }
+
       context?.debug?.('Failed to fetch recent favorites', { error: errorMessage })
       return {
         error: `Failed to get recent favorites: ${errorMessage}`,
@@ -242,7 +282,8 @@ export const FavoriteService = {
     try {
       context?.debug?.('Selecting favorite', { input })
 
-      const favorites = await this.getFavorites(client, context)
+      // Call the client API directly to ensure errors are propagated
+      const favorites = await client.getFavorites()
 
       if (favorites.length === 0) {
         return {
@@ -271,7 +312,15 @@ export const FavoriteService = {
         success: true
       }
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error)
+      let errorMessage: string
+      if (error instanceof Error) {
+        errorMessage = error.message || error.toString() || 'Unknown error'
+      } else if (typeof error === 'string') {
+        errorMessage = error
+      } else {
+        errorMessage = JSON.stringify(error)
+      }
+
       context?.debug?.('Favorite selection failed', { error: errorMessage, input })
       return {
         error: errorMessage,
@@ -292,7 +341,8 @@ export const FavoriteService = {
     }
 
     try {
-      const favorites = await this.getFavorites(client, context)
+      // Call the client API directly to ensure errors are propagated
+      const favorites = await client.getFavorites()
       const favorite = this.findFavoriteById(favorites, favoriteId)
 
       if (!favorite) {
@@ -312,7 +362,15 @@ export const FavoriteService = {
         success: true
       }
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error)
+      let errorMessage: string
+      if (error instanceof Error) {
+        errorMessage = error.message || error.toString() || 'Unknown error'
+      } else if (typeof error === 'string') {
+        errorMessage = error
+      } else {
+        errorMessage = JSON.stringify(error)
+      }
+
       context?.debug?.('Favorite validation failed', { error: errorMessage, favoriteId })
       return {
         error: `Failed to validate favorite: ${errorMessage}`,

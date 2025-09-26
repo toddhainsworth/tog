@@ -5,7 +5,9 @@ import ora from 'ora'
 import type {DailySummary, DateRange} from '../lib/time-utils.js'
 
 import {BaseCommand} from '../lib/base-command.js'
+import {ProjectService} from '../lib/project-service.js'
 import {createWeeklyProjectSummaryTable, createWeeklyTimeEntriesTable, formatGrandTotal} from '../lib/table-formatter.js'
+import {TimeEntryService} from '../lib/time-entry-service.js'
 import {
   aggregateWeeklyProjectSummary,
   calculateElapsedSeconds,
@@ -30,6 +32,7 @@ static override flags = {
       const {flags} = await this.parse(Week)
       this.loadConfigOrExit()
       const client = this.getClient()
+      const timeEntryService = new TimeEntryService(client, this.getLoggingContext())
 
       // Get appropriate week date range
       const dateRange = flags.last ? getPreviousWeekDateRange() : getCurrentWeekDateRange()
@@ -38,22 +41,34 @@ static override flags = {
 
       const spinner = ora(`Fetching ${weekLabel.toLowerCase()} time entries...`).start()
 
-      const [timeEntries, currentEntry, projects] = await Promise.all([
-        client.getTimeEntries(dateRange.start_date, dateRange.end_date),
-        client.getCurrentTimeEntry(),
-        client.getProjects(),
+      const [timeEntriesResult, currentResult, projects] = await Promise.all([
+        timeEntryService.getTimeEntries(dateRange.start_date, dateRange.end_date),
+        timeEntryService.getCurrentTimeEntry(),
+        ProjectService.getProjects(client, this.getLoggingContext()),
       ])
 
-      const allEntries = [...timeEntries]
+      if (timeEntriesResult.error) {
+        spinner.fail('Failed to fetch time entries')
+        this.handleError(new Error(timeEntriesResult.error), 'Error fetching time entries')
+        return
+      }
+
+      if (currentResult.error) {
+        spinner.fail('Failed to fetch current timer status')
+        this.handleError(new Error(currentResult.error), 'Error fetching current timer')
+        return
+      }
+
+      const allEntries = [...timeEntriesResult.timeEntries]
 
       // Include current entry only if it's in the current week and we're viewing current week
-      if (currentEntry && !flags.last) {
-        const currentStart = new Date(currentEntry.start)
+      if (currentResult.timeEntry && !flags.last) {
+        const currentStart = new Date(currentResult.timeEntry.start)
         const rangeStart = new Date(dateRange.start_date)
         const rangeEnd = new Date(dateRange.end_date)
 
         if (currentStart >= rangeStart && currentStart <= rangeEnd) {
-          allEntries.push(currentEntry)
+          allEntries.push(currentResult.timeEntry)
         }
       }
 
@@ -98,8 +113,8 @@ static override flags = {
       this.logSuccess(`Total time tracked: ${formatGrandTotal(totalSeconds)}`)
 
       // Show running timer info if applicable
-      if (currentEntry && !flags.last) {
-        const currentStart = new Date(currentEntry.start)
+      if (currentResult.timeEntry && !flags.last) {
+        const currentStart = new Date(currentResult.timeEntry.start)
         const rangeStart = new Date(dateRange.start_date)
         const rangeEnd = new Date(dateRange.end_date)
 

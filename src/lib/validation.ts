@@ -45,7 +45,7 @@ export const TaskSchema = type({
   active: 'boolean',
   id: 'number',
   name: 'string',
-  project_id: 'number',})
+  'project_id?': 'number',})
 
 export const ClientSchema = type({
   id: 'number',

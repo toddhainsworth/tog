@@ -27,6 +27,18 @@ export class ProjectService {
   ) {}
 
   /**
+   * Creates a lookup map from project ID to project name.
+   */
+  static createProjectLookupMap(projects: Project[]): Map<number, string> {
+    const projectMap = new Map<number, string>()
+    for (const project of projects) {
+      projectMap.set(project.id, project.name)
+    }
+
+    return projectMap
+  }
+
+  /**
    * Filters projects by active status.
    */
   static filterActiveProjects(projects: Project[]): Project[] {
@@ -109,6 +121,13 @@ export class ProjectService {
       context?.warn?.('Failed to fetch projects')
       return []
     }
+  }
+
+  /**
+   * Sorts projects alphabetically by name.
+   */
+  static sortProjectsByName(projects: Project[]): Project[] {
+    return [...projects].sort((a, b) => a.name.localeCompare(b.name))
   }
 
   /**

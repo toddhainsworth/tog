@@ -150,9 +150,8 @@ export class TimeEntryService {
       }
 
     } catch (error) {
-      const convertedError = error instanceof Error
-        ? error
-        : new Error(String(error) || 'Unknown error occurred during time entry creation')
+      const originalMessage = error instanceof Error ? error.message : String(error)
+      const convertedError = new Error(`Failed to create time entry: ${originalMessage}`)
 
       this.context?.debug?.('Time entry creation failed', {
         error: convertedError.message,
@@ -255,7 +254,7 @@ export class TimeEntryService {
    * Gets time entry statistics for reporting.
    */
   async getTimeEntryStats(startDate: string, endDate: string): Promise<{
-    byProject: Record<string, { count: number; duration: number }>
+    byProject: Record<number, number>
     error?: string
     runningEntries: number
     totalDuration: number
@@ -266,7 +265,7 @@ export class TimeEntryService {
     if (result.error) {
       return {
         byProject: {},
-        error: result.error,
+        error: `Failed to get time entry statistics: ${result.error}`,
         runningEntries: 0,
         totalDuration: 0,
         totalEntries: 0
@@ -278,16 +277,17 @@ export class TimeEntryService {
     const totalDuration = timeEntries.reduce((sum, entry) => sum + (entry.duration || 0), 0)
     const runningEntries = timeEntries.filter(entry => !entry.stop).length
 
-    const byProject: Record<string, { count: number; duration: number }> = {}
+    const byProject: Record<number, number> = {}
 
     for (const entry of timeEntries) {
-      const projectKey = entry.project_id ? `Project ${entry.project_id}` : 'No Project'
-      if (!byProject[projectKey]) {
-        byProject[projectKey] = { count: 0, duration: 0 }
-      }
+      const projectId = entry.project_id
+      if (projectId) {
+        if (!byProject[projectId]) {
+          byProject[projectId] = 0
+        }
 
-      byProject[projectKey].count++
-      byProject[projectKey].duration += entry.duration || 0
+        byProject[projectId] += entry.duration || 0
+      }
     }
 
     return {
@@ -475,14 +475,14 @@ export class TimeEntryService {
   validateDescription(description: string): { error?: string; isValid: boolean } {
     if (!description || description.trim().length === 0) {
       return {
-        error: 'Timer description cannot be empty',
+        error: 'Description cannot be empty',
         isValid: false
       }
     }
 
     if (description.trim().length > 500) {
       return {
-        error: 'Timer description cannot exceed 500 characters',
+        error: 'Description is too long',
         isValid: false
       }
     }

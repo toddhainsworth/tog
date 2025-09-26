@@ -6,6 +6,9 @@ import type {TogglClient} from '../lib/toggl-client.js'
 import type {Client, Project, Task} from '../lib/validation.js'
 
 import {BaseCommand} from '../lib/base-command.js'
+import {ClientService} from '../lib/client-service.js'
+import {ProjectService} from '../lib/project-service.js'
+import {TaskService} from '../lib/task-service.js'
 
 export default class Clients extends BaseCommand {
   static override description = 'List all clients in the workspace'
@@ -26,8 +29,8 @@ export default class Clients extends BaseCommand {
     const spinner = ora('Fetching clients...').start()
 
     try {
-      const clients = await client.getClients()
-      const projects = await client.getProjects()
+      const clients = await ClientService.getClients(client, this.getLoggingContext())
+      const projects = await ProjectService.getProjects(client, this.getLoggingContext())
 
       spinner.succeed()
 
@@ -139,20 +142,11 @@ export default class Clients extends BaseCommand {
   }
 
   private displayTableView(clients: Client[], projects: Project[]): void {
-    // Create project count map
-    const projectCounts = new Map<number, number>()
-    for (const project of projects) {
-      if (project.client_name) {
-        // Find client by name since projects have client_name
-        const matchingClient = clients.find(c => c.name === project.client_name)
-        if (matchingClient) {
-          projectCounts.set(matchingClient.id, (projectCounts.get(matchingClient.id) || 0) + 1)
-        }
-      }
-    }
+    // Use ClientService to get clients with project counts
+    const clientsWithProjectCounts = ClientService.getClientsWithProjectCounts(clients, projects)
 
-    // Sort clients alphabetically by name
-    const sortedClients = [...clients].sort((a, b) => a.name.localeCompare(b.name))
+    // Sort clients alphabetically by name using ClientService
+    const sortedClients = ClientService.sortClientsByName(clients)
 
     // Create and display table
     const table = new Table({
@@ -163,7 +157,8 @@ export default class Clients extends BaseCommand {
     })
 
     for (const clientItem of sortedClients) {
-      const projectCount = projectCounts.get(clientItem.id) || 0
+      const clientWithCount = clientsWithProjectCounts.find(c => c.client.id === clientItem.id)
+      const projectCount = clientWithCount?.projectCount || 0
       table.push([clientItem.id, clientItem.name, projectCount])
     }
 
@@ -173,7 +168,7 @@ export default class Clients extends BaseCommand {
   }
 
   private async displayTreeView(clients: Client[], projects: Project[], client: TogglClient): Promise<void> {
-    const tasks = await client.getTasks()
+    const tasks = await TaskService.getTasks(client, this.getLoggingContext())
     const {clientProjectMap, orphanedProjects, orphanedTasks, projectTaskMap} = this.organizeTreeData(projects, tasks)
 
     this.displayClientsTree(clients, clientProjectMap, projectTaskMap)

@@ -2,6 +2,8 @@ import Table from 'cli-table3'
 import ora from 'ora'
 
 import {BaseCommand} from '../lib/base-command.js'
+import {ProjectService} from '../lib/project-service.js'
+import {TaskService} from '../lib/task-service.js'
 
 export default class Tasks extends BaseCommand {
   static override description = 'List all tasks in the workspace'
@@ -15,8 +17,8 @@ export default class Tasks extends BaseCommand {
     const spinner = ora('Fetching tasks...').start()
 
     try {
-      const tasks = await client.getTasks()
-      const projects = await client.getProjects()
+      const tasks = await TaskService.getTasks(client, this.getLoggingContext())
+      const projects = await ProjectService.getProjects(client, this.getLoggingContext())
 
       spinner.succeed()
 
@@ -25,11 +27,11 @@ export default class Tasks extends BaseCommand {
         return
       }
 
-      // Create project lookup map
-      const projectMap = new Map(projects.map(p => [p.id, p.name]))
+      // Create project lookup map using ProjectService
+      const projectLookupMap = ProjectService.createProjectLookupMap(projects)
 
-      // Sort tasks alphabetically by name
-      const sortedTasks = [...tasks].sort((a, b) => a.name.localeCompare(b.name))
+      // Sort tasks using TaskService
+      const sortedTasks = TaskService.sortTasksByName(tasks)
 
       // Create and display table
       const table = new Table({
@@ -40,7 +42,7 @@ export default class Tasks extends BaseCommand {
       })
 
       for (const task of sortedTasks) {
-        const projectName = projectMap.get(task.project_id) || 'No Project'
+        const projectName = task.project_id ? projectLookupMap.get(task.project_id) || 'No Project' : 'No Project'
         const activeStatus = task.active ? '✓' : '✗'
 
         table.push([task.id, task.name, projectName, activeStatus])
