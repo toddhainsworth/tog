@@ -1,5 +1,5 @@
 import { expect } from 'chai'
-import { match, restore, type SinonStub, type SinonStubbedInstance, stub } from 'sinon'
+import { match, restore, type SinonStubbedInstance } from 'sinon'
 
 import type { TogglConfig } from '../../src/lib/config.js'
 import type { TogglClient } from '../../src/lib/toggl-client.js'
@@ -169,7 +169,7 @@ describe('TimerService', () => {
         client: mockClient,
         config: mockConfig,
         description: 'Test timer'
-      }, { log: () => {}, warn: () => {} })
+      }, { log() {}, warn() {} })
 
       expect(result.success).to.be.false
       expect(result.error?.message).to.equal('String error')

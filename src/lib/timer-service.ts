@@ -76,8 +76,11 @@ export const TimerService = {
         }
       
     } catch (error) {
+      const convertedError = error instanceof Error && error.message
+        ? error
+        : new Error(String(error) || 'Unknown error occurred during timer creation')
       return {
-        error: error instanceof Error ? error : new Error(String(error) || 'Unknown error occurred during timer creation'),
+        error: convertedError,
         success: false
       }
     }

@@ -110,7 +110,7 @@ export async function promptForTaskSelection(
   }
 
   // Use search for better UX with filtering capability
-  // @ts-ignore - ESM/CommonJS compatibility issue in test environment
+  // @ts-expect-error - ESM/CommonJS compatibility issue in test environment
   const selection = await search({
     message: `${EMOJIS.LOADING} Select a ${tasks.length > 0 ? 'task or project' : 'project'}:`,
     pageSize: Math.min(15, choices.length),
@@ -198,7 +198,7 @@ export async function promptForTimerSelection(
   }
 
   // Use search for better UX with filtering capability
-  // @ts-ignore - ESM/CommonJS compatibility issue in test environment
+  // @ts-expect-error - ESM/CommonJS compatibility issue in test environment
   const selection = await search({
     message: `${EMOJIS.LOADING} Select a timer to continue:`,
     pageSize: Math.min(15, choices.length),
@@ -263,7 +263,7 @@ export async function promptForWorkspaceSelection(
   }))
 
   // Use search for better UX with filtering capability
-  // @ts-ignore - ESM/CommonJS compatibility issue in test environment
+  // @ts-expect-error - ESM/CommonJS compatibility issue in test environment
   const selection = await search({
     message: `${EMOJIS.LOADING} Select default workspace:`,
     pageSize: Math.min(10, choices.length),
