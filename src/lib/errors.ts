@@ -3,6 +3,8 @@
  * Provides structured error handling with better type safety
  */
 
+import {isAxiosError} from 'axios'
+
 /**
  * Base error class for all Toggl CLI errors
  */
@@ -120,9 +122,8 @@ export class TogglUserError extends TogglError {
  * Utility function to create appropriate error from axios errors
  */
 export function createApiErrorFromAxios(error: unknown, endpoint?: string): TogglApiError {
-  if (error && typeof error === 'object' && 'response' in error) {
-    const axiosError = error as {response: {status: number; statusText: string}}
-    const statusCode = axiosError.response.status
+  if (isAxiosError(error) && error.response) {
+    const {data, status: statusCode, statusText} = error.response
 
     if (statusCode === 401 || statusCode === 403) {
       return TogglApiError.authenticationFailed()
@@ -133,16 +134,33 @@ export function createApiErrorFromAxios(error: unknown, endpoint?: string): Togg
     }
 
     if (statusCode >= 500) {
-      return TogglApiError.serverError(axiosError.response.statusText, statusCode)
+      return TogglApiError.serverError(statusText, statusCode)
+    }
+
+    // For 400 errors, include the response body if available
+    let errorMessage = `HTTP ${statusCode}: ${statusText}`
+    if (statusCode === 400 && data) {
+      if (typeof data === 'string') {
+        errorMessage += ` - ${data}`
+      } else if (typeof data === 'object' && data !== null) {
+        errorMessage += ` - ${JSON.stringify(data)}`
+      }
     }
 
     return new TogglApiError(
-      `HTTP ${statusCode}: ${axiosError.response.statusText}`,
+      errorMessage,
       statusCode,
       endpoint,
-      error instanceof Error ? error : undefined
+      error
     )
   }
 
-  return TogglApiError.connectionFailed(endpoint, error instanceof Error ? error : undefined)
+  // Handle generic errors - extract message if it's an Error object
+  const errorCause = error instanceof Error ? error : undefined
+  const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
+
+  return TogglApiError.connectionFailed(
+    endpoint ? `${endpoint}: ${errorMessage}` : errorMessage,
+    errorCause
+  )
 }

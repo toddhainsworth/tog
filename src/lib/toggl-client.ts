@@ -1,6 +1,7 @@
-import axios, {type AxiosInstance} from 'axios'
+import axios, {type AxiosInstance, isAxiosError} from 'axios'
 import dayjs from 'dayjs'
 
+import {DataSanitizer} from './data-sanitizer.js'
 import {createApiErrorFromAxios, TogglValidationError} from './errors.js'
 import {
   type Client,
@@ -42,6 +43,15 @@ interface SearchTimeEntriesPayload {
 
 export interface DebugLogger {
   debug(message: string, data?: Record<string, unknown>): void
+}
+
+// Helper to safely extract error response data for debugging
+function getErrorResponseData(error: unknown): unknown {
+  if (isAxiosError(error)) {
+    return error.response?.data
+  }
+
+  return undefined
 }
 
 export class TogglClient {
@@ -171,10 +181,16 @@ export class TogglClient {
 
   async getProjects(): Promise<Project[]> {
     try {
+      this.logger?.debug('Fetching projects')
       const response = await this.client.get('/me/projects')
       const data = response.data || []
+      this.logger?.debug('Projects fetched', { count: data.length })
       return ProjectsArraySchema.assert(data)
     } catch (error) {
+      this.logger?.debug('Failed to fetch projects', {
+        error: error instanceof Error ? error.message : String(error),
+        response: DataSanitizer.sanitize(getErrorResponseData(error))
+      })
       if (error instanceof Error && 'name' in error && error.name === 'ArkTypeError') {
         throw TogglValidationError.invalidResponse(error.message)
       }
@@ -198,6 +214,11 @@ export class TogglClient {
 
   async getTimeEntries(startDate: string, endDate: string): Promise<TimeEntry[]> {
     try {
+      this.logger?.debug('Fetching time entries', {
+        endDate,
+        endpoint: '/me/time_entries',
+        startDate
+      })
       const response = await this.client.get('/me/time_entries', {
         params: {
           end_date: endDate,
@@ -205,8 +226,19 @@ export class TogglClient {
         },
       })
       const data = response.data || []
+      this.logger?.debug('Time entries fetched', {
+        count: data.length,
+        endDate,
+        startDate
+      })
       return TimeEntriesArraySchema.assert(data)
     } catch (error) {
+      this.logger?.debug('Failed to fetch time entries', {
+        endDate,
+        error: error instanceof Error ? error.message : String(error),
+        response: DataSanitizer.sanitize(getErrorResponseData(error)),
+        startDate
+      })
       if (error instanceof Error && 'name' in error && error.name === 'ArkTypeError') {
         throw TogglValidationError.invalidResponse(error.message)
       }
