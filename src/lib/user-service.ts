@@ -1,3 +1,4 @@
+import type { CachedTogglClient } from './cached-toggl-client.js'
 import type { TogglClient } from './toggl-client.js'
 
 export interface LoggingContext {
@@ -16,7 +17,7 @@ export const UserService = {
    * Performs a health check combining authentication and basic API access.
    * Useful for startup validation and configuration verification.
    */
-  async performHealthCheck(client: TogglClient, context?: LoggingContext): Promise<{
+  async performHealthCheck(client: CachedTogglClient | TogglClient, context?: LoggingContext): Promise<{
     checks: {
       authentication: boolean
       connection: boolean
@@ -53,7 +54,7 @@ export const UserService = {
    * Performs a connectivity test to the Toggl API.
    * This is useful for configuration validation and network diagnostics.
    */
-  async testConnection(client: TogglClient, context?: LoggingContext): Promise<{
+  async testConnection(client: CachedTogglClient | TogglClient, context?: LoggingContext): Promise<{
     connected: boolean
     error?: string
   }> {
@@ -86,7 +87,7 @@ export const UserService = {
    * Validates that the client is properly authenticated and can access Toggl API.
    * This combines token validation with connection testing.
    */
-  async validateAuthentication(client: TogglClient, context?: LoggingContext): Promise<{
+  async validateAuthentication(client: CachedTogglClient | TogglClient, context?: LoggingContext): Promise<{
     authenticated: boolean
     error?: string
   }> {
@@ -120,7 +121,7 @@ export const UserService = {
    * Validates API token by pinging the Toggl API.
    * Returns validation result with success flag and optional user ID.
    */
-  async validateToken(client: TogglClient, context?: LoggingContext): Promise<TokenValidationResult> {
+  async validateToken(client: CachedTogglClient | TogglClient, context?: LoggingContext): Promise<TokenValidationResult> {
     try {
       context?.debug?.('Validating API token')
       const isValid = await client.ping()

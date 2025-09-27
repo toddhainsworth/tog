@@ -116,7 +116,7 @@ describe('FavoriteService', () => {
     it('should handle favorites without description', () => {
       const favoritesWithUntitled: Favorite[] = [
         { description: 'Valid task', favorite_id: 1 },
-        { favorite_id: 2 } as Favorite
+        { description: undefined, favorite_id: 2 }
       ]
 
       const result = FavoriteService.findFavoriteByDescriptionOrId(favoritesWithUntitled, 'untitled')
@@ -480,7 +480,7 @@ describe('FavoriteService', () => {
 
     it('should handle favorites without favorite_id', () => {
       const malformedFavorites = [
-        { description: 'Valid favorite', project_id: 10 } as Favorite,
+        { description: 'Valid favorite', favorite_id: undefined, project_id: 10 },
         { description: 'Another favorite', favorite_id: 2 }
       ]
 

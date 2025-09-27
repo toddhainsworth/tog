@@ -1,3 +1,4 @@
+import type { CachedTogglClient } from './cached-toggl-client.js'
 import type { TogglClient } from './toggl-client.js'
 import type { Favorite } from './validation.js'
 
@@ -80,7 +81,7 @@ export const FavoriteService = {
    * Fetches all favorites for the authenticated user.
    * Returns empty array on error.
    */
-  async getFavorites(client: TogglClient, context?: LoggingContext): Promise<Favorite[]> {
+  async getFavorites(client: CachedTogglClient | TogglClient, context?: LoggingContext): Promise<Favorite[]> {
     try {
       context?.debug?.('Fetching user favorites')
       const favorites = await client.getFavorites()
@@ -97,7 +98,7 @@ export const FavoriteService = {
   /**
    * Gets favorites for a specific project.
    */
-  async getFavoritesForProject(client: TogglClient, projectId: number, context?: LoggingContext): Promise<{
+  async getFavoritesForProject(client: CachedTogglClient | TogglClient, projectId: number, context?: LoggingContext): Promise<{
     error?: string
     favorites: Favorite[]
   }> {
@@ -134,7 +135,7 @@ export const FavoriteService = {
   /**
    * Gets favorites for a specific workspace.
    */
-  async getFavoritesForWorkspace(client: TogglClient, workspaceId: number, context?: LoggingContext): Promise<{
+  async getFavoritesForWorkspace(client: CachedTogglClient | TogglClient, workspaceId: number, context?: LoggingContext): Promise<{
     error?: string
     favorites: Favorite[]
   }> {
@@ -171,7 +172,7 @@ export const FavoriteService = {
   /**
    * Gets favorite statistics for reporting.
    */
-  async getFavoriteStats(client: TogglClient, context?: LoggingContext): Promise<{
+  async getFavoriteStats(client: CachedTogglClient | TogglClient, context?: LoggingContext): Promise<{
     byProject: Record<number, number>
     byWorkspace: Record<number, number>
     error?: string
@@ -236,7 +237,7 @@ export const FavoriteService = {
   /**
    * Gets the most recently used favorites (sorted by ID descending).
    */
-  async getRecentFavorites(client: TogglClient, limit = 10, context?: LoggingContext): Promise<{
+  async getRecentFavorites(client: CachedTogglClient | TogglClient, limit = 10, context?: LoggingContext): Promise<{
     error?: string
     favorites: Favorite[]
   }> {
@@ -278,7 +279,7 @@ export const FavoriteService = {
    * Selects a favorite based on description or ID input.
    * Includes comprehensive validation and error handling.
    */
-  async selectFavorite(client: TogglClient, input: string, context?: LoggingContext): Promise<FavoriteSelectionResult> {
+  async selectFavorite(client: CachedTogglClient | TogglClient, input: string, context?: LoggingContext): Promise<FavoriteSelectionResult> {
     try {
       context?.debug?.('Selecting favorite', { input })
 
@@ -332,7 +333,7 @@ export const FavoriteService = {
   /**
    * Validates that a favorite exists and is accessible.
    */
-  async validateFavorite(client: TogglClient, favoriteId: number, context?: LoggingContext): Promise<FavoriteSelectionResult> {
+  async validateFavorite(client: CachedTogglClient | TogglClient, favoriteId: number, context?: LoggingContext): Promise<FavoriteSelectionResult> {
     if (!favoriteId || favoriteId <= 0) {
       return {
         error: 'Invalid favorite ID provided',

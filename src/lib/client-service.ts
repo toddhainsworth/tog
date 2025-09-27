@@ -1,3 +1,4 @@
+import type { CachedTogglClient } from './cached-toggl-client.js'
 import type { TogglClient } from './toggl-client.js'
 import type { Client } from './validation.js'
 
@@ -87,7 +88,7 @@ export const ClientService = {
    * Fetches all clients for the authenticated user.
    * Returns empty array on error.
    */
-  async getClients(client: TogglClient, context?: LoggingContext): Promise<Client[]> {
+  async getClients(client: CachedTogglClient | TogglClient, context?: LoggingContext): Promise<Client[]> {
     try {
       context?.debug?.('Fetching user clients')
       const clients = await client.getClients()
@@ -113,7 +114,7 @@ export const ClientService = {
   /**
    * Gets client statistics for reporting.
    */
-  async getClientStats(togglClient: TogglClient, projects: Array<{ client_name?: null | string }>, context?: LoggingContext): Promise<{
+  async getClientStats(togglClient: CachedTogglClient | TogglClient, projects: Array<{ client_name?: null | string }>, context?: LoggingContext): Promise<{
     averageProjectsPerClient: number
     clientsWithoutProjects: number
     clientsWithProjects: number
@@ -202,7 +203,7 @@ export const ClientService = {
    * Selects a client based on name or ID input.
    * Includes comprehensive validation and error handling.
    */
-  async selectClient(togglClient: TogglClient, input: string, context?: LoggingContext): Promise<ClientSelectionResult> {
+  async selectClient(togglClient: CachedTogglClient | TogglClient, input: string, context?: LoggingContext): Promise<ClientSelectionResult> {
     try {
       context?.debug?.('Selecting client', { input })
 
@@ -263,7 +264,7 @@ export const ClientService = {
   /**
    * Validates that a client exists and is accessible.
    */
-  async validateClient(togglClient: TogglClient, clientId: number, context?: LoggingContext): Promise<ClientSelectionResult> {
+  async validateClient(togglClient: CachedTogglClient | TogglClient, clientId: number, context?: LoggingContext): Promise<ClientSelectionResult> {
     if (!clientId || clientId <= 0) {
       return {
         error: 'Invalid client ID provided',

@@ -456,9 +456,9 @@ describe('TimeEntryService', () => {
   describe('edge cases', () => {
     it('should handle malformed time entries', async () => {
       const malformedEntries = [
-        { ...mockTimeEntries[0], duration: 0 } as TimeEntry
+        { ...mockTimeEntries[0], duration: 0 }
       ]
-      mockClient.getTimeEntries.resolves(malformedEntries)
+      mockClient.getTimeEntries.resolves(malformedEntries as TimeEntry[])
 
       const result = await timeEntryService.getTimeEntries('2023-01-01', '2023-01-31')
 

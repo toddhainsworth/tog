@@ -3,6 +3,7 @@ import relativeTime from 'dayjs/plugin/relativeTime.js'
 
 dayjs.extend(relativeTime)
 
+import type {CachedTogglClient} from './cached-toggl-client.js'
 import type {TogglClient} from './toggl-client.js'
 import type {Favorite, Project, Task, TimeEntry} from './validation.js'
 
@@ -29,7 +30,7 @@ export interface TimerSelectionOptions {
 
 export class TimerSelectionService {
   constructor(
-    private readonly client: TogglClient,
+    private readonly client: CachedTogglClient | TogglClient,
     private readonly projects: Project[],
     private readonly tasks: Task[]
   ) {}
@@ -190,13 +191,22 @@ export class TimerSelectionService {
       const existing = groupedMap.get(key)
 
       // Keep the most recent entry for each unique combination (by stop time)
-      if (!existing || new Date(entry.stop!) > new Date(existing.stop!)) {
+      // Note: entry.stop is guaranteed to exist due to filter at line 180
+      const entryStopTime = entry.stop
+      const existingStopTime = existing?.stop
+      if (!existing || (entryStopTime && existingStopTime && new Date(entryStopTime) > new Date(existingStopTime))) {
         groupedMap.set(key, entry)
       }
     }
 
     return [...groupedMap.values()]
-      .sort((a, b) => new Date(b.stop!).getTime() - new Date(a.stop!).getTime())
+      .sort((a, b) => {
+        // Both entries are guaranteed to have stop times due to filter
+        const aStop = a.stop
+        const bStop = b.stop
+        if (!aStop || !bStop) return 0
+        return new Date(bStop).getTime() - new Date(aStop).getTime()
+      })
       .map(entry => {
         const project = this.projects.find(p => p.id === entry.project_id)
         const task = this.tasks.find(t => t.id === entry.task_id)

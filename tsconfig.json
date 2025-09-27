@@ -12,7 +12,12 @@
     "noImplicitOverride": true,
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
-    "noUncheckedSideEffectImports": true
+    "noUncheckedSideEffectImports": true,
+    // Ban implicit 'any' types - require explicit typing
+    "noImplicitAny": true,
+    "noImplicitThis": true,
+    // Additional 'any' prevention
+    "useUnknownInCatchVariables": true
   },
   "include": ["./src/**/*"],
   "ts-node": {

@@ -1,3 +1,4 @@
+import type { CachedTogglClient } from './cached-toggl-client.js'
 import type { TogglClient } from './toggl-client.js'
 import type { Project, Task } from './validation.js'
 
@@ -16,7 +17,7 @@ export interface TaskSelectionResult {
 }
 
 export interface TaskServiceOptions {
-  client: TogglClient
+  client: CachedTogglClient | TogglClient
   context?: LoggingContext
   projectService?: ProjectService
 }
@@ -25,7 +26,7 @@ export class TaskService {
   private readonly projectService: ProjectService
 
   constructor(
-    private readonly client: TogglClient,
+    private readonly client: CachedTogglClient | TogglClient,
     private readonly context?: LoggingContext,
     projectService?: ProjectService
   ) {

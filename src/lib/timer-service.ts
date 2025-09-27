@@ -1,3 +1,4 @@
+import type { CachedTogglClient } from './cached-toggl-client.js'
 import type { TogglConfig } from './config.js'
 import type { TogglClient } from './toggl-client.js'
 import type { Project, Task, TimeEntry } from './validation.js'
@@ -10,7 +11,7 @@ export interface LoggingContext {
 }
 
 export interface TimerCreationOptions {
-  client: TogglClient
+  client: CachedTogglClient | TogglClient
   config: TogglConfig
   description: string
   selectedProject?: Project
@@ -28,7 +29,7 @@ export const TimerService = {
    * Checks if there is currently a running timer.
    * Returns true if a timer is running (which should block starting a new timer).
    */
-  async checkForRunningTimer(client: TogglClient): Promise<{ currentEntry?: null | TimeEntry; hasRunningTimer: boolean; }> {
+  async checkForRunningTimer(client: CachedTogglClient | TogglClient): Promise<{ currentEntry?: null | TimeEntry; hasRunningTimer: boolean; }> {
     try {
       const currentEntry = await client.getCurrentTimeEntry()
       return {
@@ -90,7 +91,7 @@ export const TimerService = {
    * Fetches both tasks and projects from the Toggl API.
    * Returns null values if the fetch fails.
    */
-  async fetchTasksAndProjects(client: TogglClient, context: LoggingContext): Promise<{
+  async fetchTasksAndProjects(client: CachedTogglClient | TogglClient, context: LoggingContext): Promise<{
     projects: null | Project[]
     tasks: null | Task[]
   }> {

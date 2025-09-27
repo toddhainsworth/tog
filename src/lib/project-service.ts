@@ -1,3 +1,4 @@
+import type { CachedTogglClient } from './cached-toggl-client.js'
 import type { TogglClient } from './toggl-client.js'
 import type { Project } from './validation.js'
 
@@ -15,14 +16,14 @@ export interface ProjectSelectionResult {
 }
 
 export interface ProjectServiceOptions {
-  client: TogglClient
+  client: CachedTogglClient | TogglClient
   context?: LoggingContext
   workspaceId?: number
 }
 
 export class ProjectService {
   constructor(
-    private readonly client: TogglClient,
+    private readonly client: CachedTogglClient | TogglClient,
     private readonly context?: LoggingContext
   ) {}
 
@@ -42,7 +43,7 @@ export class ProjectService {
    * Fetches and finds a project by its ID.
    */
   static async fetchProjectById(
-    client: TogglClient,
+    client: CachedTogglClient | TogglClient,
     projectId: number,
     context?: LoggingContext
   ): Promise<null | Project> {
@@ -121,7 +122,7 @@ export class ProjectService {
    * Static method to fetch all projects for the authenticated user.
    * Returns empty array on error.
    */
-  static async getProjects(client: TogglClient, context?: LoggingContext): Promise<Project[]> {
+  static async getProjects(client: CachedTogglClient | TogglClient, context?: LoggingContext): Promise<Project[]> {
     try {
       context?.debug?.('Fetching user projects')
       const projects = await client.getProjects()
