@@ -49,7 +49,8 @@ describe('ProjectTaskSelector', () => {
       ]
       const selectorWithExact = new ProjectTaskSelector(projects, mockTasks)
       const result = selectorWithExact.findProjectByNameOrId('backend')
-      expect(result!.name).to.equal('Backend') // Exact match, not "Backend API"
+      expect(result).to.not.be.null
+      expect(result?.name).to.equal('Backend') // Exact match, not "Backend API"
     })
 
     it('should return null for non-existent project', () => {
@@ -92,7 +93,8 @@ describe('ProjectTaskSelector', () => {
 
     it('should filter by project ID when provided', () => {
       const result = selector.findTaskByNameOrId('interface', 2)
-      expect(result!.name).to.equal('User Interface') // Should find task in project 2
+      expect(result).to.not.be.null
+      expect(result?.name).to.equal('User Interface') // Should find task in project 2
     })
 
     it('should throw error if task does not belong to specified project', () => {
@@ -124,7 +126,8 @@ describe('ProjectTaskSelector', () => {
       ]
       const selectorWithExact = new ProjectTaskSelector(mockProjects, tasks)
       const result = selectorWithExact.findTaskByNameOrId('api')
-      expect(result!.name).to.equal('API') // Exact match, not "API Integration"
+      expect(result).to.not.be.null
+      expect(result?.name).to.equal('API') // Exact match, not "API Integration"
     })
 
     it('should handle project filtering with no matches', () => {

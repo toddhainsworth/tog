@@ -347,6 +347,118 @@ When refactoring commands to extract business logic, follow these patterns:
 - Design services to be composable and dependency-injectable
 - Each service should have a single responsibility
 
+## AI Development Anti-Patterns and Solutions
+
+### 🚨 CRITICAL: Avoid These Common AI Development Anti-Patterns
+
+Based on lessons learned during this project's development, future Claude instances must avoid these specific anti-patterns:
+
+#### Anti-Pattern: "Fire and Forget" Functions
+**NEVER implement async operations with `.catch(() => {})` patterns**
+
+```typescript
+// ❌ WRONG: "Fire and forget" anti-pattern
+async doSomething(): void {
+  this.someAsyncOperation().catch(() => {
+    // Silently ignore failures
+  })
+}
+
+// ✅ CORRECT: Proper async handling
+async doSomething(): Promise<void> {
+  try {
+    await this.someAsyncOperation()
+  } catch (error) {
+    // Handle errors appropriately
+  }
+}
+```
+
+**Why this is wrong:**
+- Creates untestable code
+- Silently fails without proper error handling
+- Makes debugging extremely difficult
+- Violates user expectations for proper async behavior
+
+#### Anti-Pattern: Code Standards Violations
+**ALWAYS follow established project standards, even if they seem restrictive**
+
+```typescript
+// ❌ WRONG: Using 'any' types (banned in this project)
+const result: any = await apiCall()
+
+// ❌ WRONG: Non-null assertion operator (banned in this project)
+const value = arrayResult.find(x => x.id === id)!
+
+// ✅ CORRECT: Proper type safety
+const result: ApiResponse = await apiCall()
+const value = arrayResult.find(x => x.id === id)
+if (!value) {
+  throw new Error('Value not found')
+}
+```
+
+**Key reminders:**
+- This project has ZERO TOLERANCE for `any` types
+- Non-null assertions (`!`) are banned - use proper null checks
+- Comments should only explain "why", never "what"
+- Follow the exact commit message format specified
+
+#### Anti-Pattern: Over-Engineering Solutions
+**Start with the simplest solution that meets requirements**
+
+```typescript
+// ❌ WRONG: Over-engineered solution
+class AdvancedCacheWithAnalyticsAndConfigurationManagement {
+  private analytics: AnalyticsEngine
+  private configuration: ConfigurationManager
+  private multiTierStorage: MultiTierStorageEngine
+  // ... 200 lines of complexity
+}
+
+// ✅ CORRECT: Simple, maintainable solution
+class FileCacheManager {
+  async get<T>(key: string): Promise<T | undefined>
+  async set<T>(key: string, value: T, ttlMs: number): Promise<void>
+  // ... focused, single-responsibility implementation
+}
+```
+
+**When user says "simple file-based cache", they mean SIMPLE.**
+
+#### Pattern: Continuous Standards Adherence
+**ALWAYS double-check against established standards before implementation**
+
+Before writing any code:
+1. ✅ Check CLAUDE.md for project-specific rules
+2. ✅ Verify TypeScript strictness settings are honored
+3. ✅ Ensure lint rules are followed
+4. ✅ Confirm async patterns are proper (no fire-and-forget)
+5. ✅ Validate that git workflow rules are respected
+
+#### Pattern: Immediate Error Response
+**When user points out violations, acknowledge and fix immediately**
+
+When user says things like:
+- "You've violated a lot of code standards"
+- "WHY ANY"
+- "You're now casting things as `any` - why!?"
+
+**Response pattern:**
+1. Immediately acknowledge the violation
+2. Fix ALL instances of the anti-pattern
+3. Implement safeguards to prevent recurrence
+4. Do NOT justify or explain the violation
+
+### Caching Implementation Lessons
+
+The file-based caching implementation (Issue #23) revealed that:
+
+1. **User requirements should be taken literally** - When they say "simple", don't add analytics or complex configuration
+2. **Async patterns matter** - Proper `await` is always better than fire-and-forget
+3. **Standards adherence is non-negotiable** - Code standards exist for good reasons and must be followed
+4. **Testing validates implementation** - Comprehensive tests catch architectural issues early
+
 ## Development Best Practices
 
 ### TypeScript Safety

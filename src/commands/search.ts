@@ -2,6 +2,7 @@ import {Args, Flags} from '@oclif/core'
 import ora from 'ora'
 
 import {BaseCommand} from '../lib/base-command.js'
+import { HTTP_STATUS, MAX_SEARCH_PAGE_SIZE } from '../lib/constants.js'
 import {ProjectService} from '../lib/project-service.js'
 import {createSearchResultsTable, formatGrandTotal} from '../lib/table-formatter.js'
 import {TimeEntryService} from '../lib/time-entry-service.js'
@@ -66,7 +67,7 @@ export default class Search extends BaseCommand {
         timeEntryService.searchTimeEntries({
           description: args.query,
           endDate: dateRange.end_date,
-          pageSize: 1000,
+          pageSize: MAX_SEARCH_PAGE_SIZE,
           startDate: dateRange.start_date,
           workspaceId: config.workspaceId
         }),
@@ -110,13 +111,13 @@ export default class Search extends BaseCommand {
     } catch (error) {
       // More specific error message based on error type
       if (error instanceof Error) {
-        if (error.message.includes('HTTP 401') || error.message.includes('Unauthorized')) {
+        if (error.message.includes(`HTTP ${HTTP_STATUS.UNAUTHORIZED}`) || error.message.includes('Unauthorized')) {
           spinner.fail('Authentication failed - check your API token')
           this.handleError(error, 'Authentication error', flags.debug)
-        } else if (error.message.includes('HTTP 403') || error.message.includes('Forbidden')) {
+        } else if (error.message.includes(`HTTP ${HTTP_STATUS.FORBIDDEN}`) || error.message.includes('Forbidden')) {
           spinner.fail('Access denied - insufficient permissions for Reports API')
           this.handleError(error, 'Permission error', flags.debug)
-        } else if (error.message.includes('HTTP 429') || error.message.includes('rate limit')) {
+        } else if (error.message.includes(`HTTP ${HTTP_STATUS.TOO_MANY_REQUESTS}`) || error.message.includes('rate limit')) {
           spinner.fail('Rate limit exceeded - please wait before searching again')
           this.handleError(error, 'Rate limit error', flags.debug)
         } else if (error.message.includes('network') || error.message.includes('connect')) {

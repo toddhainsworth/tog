@@ -2,6 +2,13 @@ import Table from 'cli-table3'
 
 import type {DailySummary, ProjectSummary, TimeEntrySummary, WeeklyProjectSummary} from './time-utils.js'
 
+import {
+  SECONDS_PER_HOUR,
+  SECONDS_PER_MINUTE,
+  TIME_FORMAT_PAD_CHAR,
+  TIME_FORMAT_PADDING_LENGTH
+} from './constants.js'
+
 export function createTimeEntriesTable(entries: TimeEntrySummary[]): string {
   const table = new Table({
     colWidths: [8, 10, 10, 40, 20],
@@ -47,11 +54,11 @@ export function createProjectSummaryTable(projects: ProjectSummary[]): string {
 }
 
 export function formatGrandTotal(totalSeconds: number): string {
-  const hours = Math.floor(totalSeconds / 3600)
-  const minutes = Math.floor((totalSeconds % 3600) / 60)
-  const seconds = totalSeconds % 60
+  const hours = Math.floor(totalSeconds / SECONDS_PER_HOUR)
+  const minutes = Math.floor((totalSeconds % SECONDS_PER_HOUR) / SECONDS_PER_MINUTE)
+  const seconds = totalSeconds % SECONDS_PER_MINUTE
 
-  return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
+  return `${hours.toString().padStart(TIME_FORMAT_PADDING_LENGTH, TIME_FORMAT_PAD_CHAR)}:${minutes.toString().padStart(TIME_FORMAT_PADDING_LENGTH, TIME_FORMAT_PAD_CHAR)}:${seconds.toString().padStart(TIME_FORMAT_PADDING_LENGTH, TIME_FORMAT_PAD_CHAR)}`
 }
 
 export function createWeeklyTimeEntriesTable(dailySummaries: DailySummary[]): string {

@@ -5,6 +5,16 @@ dayjs.extend(utc)
 
 import type {Project, TimeEntry} from './validation.js'
 
+import {
+  DEFAULT_TIME_FORMAT,
+  MILLISECONDS_PER_SECOND,
+  SECONDS_PER_HOUR,
+  SECONDS_PER_MINUTE,
+  TIME_FORMAT_PAD_CHAR,
+  TIME_FORMAT_PADDING_LENGTH,
+  TOGGL_FOUNDED_DATE
+} from './constants.js'
+
 export interface TimeEntrySummary {
   date: string
   description: string
@@ -44,11 +54,11 @@ export interface WeeklyProjectSummary {
 }
 
 export function formatDuration(seconds: number): string {
-  const hours = Math.floor(seconds / 3600)
-  const minutes = Math.floor((seconds % 3600) / 60)
-  const secs = seconds % 60
+  const hours = Math.floor(seconds / SECONDS_PER_HOUR)
+  const minutes = Math.floor((seconds % SECONDS_PER_HOUR) / SECONDS_PER_MINUTE)
+  const secs = seconds % SECONDS_PER_MINUTE
 
-  return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
+  return `${hours.toString().padStart(TIME_FORMAT_PADDING_LENGTH, TIME_FORMAT_PAD_CHAR)}:${minutes.toString().padStart(TIME_FORMAT_PADDING_LENGTH, TIME_FORMAT_PAD_CHAR)}:${secs.toString().padStart(TIME_FORMAT_PADDING_LENGTH, TIME_FORMAT_PAD_CHAR)}`
 }
 
 export function formatStartTime(isoString: string): string {
@@ -59,7 +69,7 @@ export function formatStartTime(isoString: string): string {
 export function calculateElapsedSeconds(startTime: string): number {
   const start = new Date(startTime)
   const now = new Date()
-  return Math.floor((now.getTime() - start.getTime()) / 1000)
+  return Math.floor((now.getTime() - start.getTime()) / MILLISECONDS_PER_SECOND)
 }
 
 export function getTodayDateRange(): DateRange {
@@ -103,13 +113,13 @@ export function getCurrentYearDateRange(): DateRange {
 
 /**
  * Get date range for searching all time entries.
- * Uses 2006-01-01 as start date since Toggl was founded in 2006,
+ * Uses TOGGL_FOUNDED_DATE as start date since Toggl was founded in TOGGL_FOUNDED_YEAR,
  * ensuring we capture the earliest possible time entries.
  */
 export function getAllTimeSearchRange(): DateRange {
   return {
     end_date: dayjs().endOf('day').toISOString(),
-    start_date: dayjs('2006-01-01').startOf('day').toISOString(), // Toggl founded in 2006
+    start_date: dayjs(TOGGL_FOUNDED_DATE).startOf('day').toISOString(),
   }
 }
 
@@ -291,7 +301,7 @@ export function aggregateWeeklyProjectSummary(entries: TimeEntry[], projects: Pr
   return [...projectMap.entries()]
     .map(([projectName, {days, totalSeconds: projectSeconds}]) => {
       const daysWorked = days.size
-      const dailyAverage = daysWorked > 0 ? formatDuration(Math.round(projectSeconds / daysWorked)) : '00:00:00'
+      const dailyAverage = daysWorked > 0 ? formatDuration(Math.round(projectSeconds / daysWorked)) : DEFAULT_TIME_FORMAT
 
       return {
         dailyAverage,

@@ -203,7 +203,7 @@ export class TogglClient {
     try {
       const params = typeof optionsOrStartDate === 'string'
         ? {
-          end_date: endDate!,
+          end_date: endDate ?? '',
           start_date: optionsOrStartDate,
         }
         : {

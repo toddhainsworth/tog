@@ -61,7 +61,7 @@ static override flags = {
       })
 
       if (!validationResult.isValid) {
-        this.handleError(new Error(validationResult.error!), 'Timer validation failed')
+        this.handleError(new Error(validationResult.error ?? 'Timer validation failed'), 'Timer validation failed')
         return
       }
 
@@ -89,7 +89,7 @@ static override flags = {
           this.log(`Task: ${selectedTask.name}`)
         }
       } else {
-        this.handleError(timerResult.error!, 'Timer creation failed')
+        this.handleError(timerResult.error ?? new Error('Timer creation failed'), 'Timer creation failed')
       }
 
     } catch (error) {
