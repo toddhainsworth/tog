@@ -9,22 +9,6 @@
       ]
     }
   },
-  "hooks": [
-    {
-      "matcher": "Task",
-      "hooks": [
-        {
-          "type": "validation",
-          "description": "Suppress command test requirements for oclif CLI project",
-          "rules": [
-            "Commands in src/commands/ do not require tests",
-            "This is an oclif CLI tool where command tests are intentionally excluded",
-            "Focus testing on lib/ files only"
-          ]
-        }
-      ]
-    }
-  ],
   "permissions": {
     "allow": [
       "Read(test/lib/**)",

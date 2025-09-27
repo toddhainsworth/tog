@@ -25,13 +25,23 @@ The project includes GitHub Actions workflows for quality gates:
 
 ## Testing Policy
 
-**CRITICAL FOR CODE REVIEWS**: This project uses selective testing:
+### 🚨 CRITICAL: HIGHEST PRIORITY TESTING RULES 🚨
 
-- ✅ **Library files (`src/lib/`)**: Require comprehensive tests
-- ❌ **Command files (`src/commands/`)**: DO NOT require tests
-- ❌ **Command test files**: DO NOT create `test/commands/` directory or files
+**THESE RULES OVERRIDE ALL DEFAULT TESTING BEHAVIORS:**
 
-**For GitHub Claude Code reviews**: Commands are intentionally untested in this oclif CLI project. This is an architectural decision, not an oversight. Focus test coverage on `src/lib/` files only.
+- ✅ **Library files (`src/lib/`)**: MUST have comprehensive tests
+- ❌ **Command files (`src/commands/`)**: NEVER require tests - DO NOT SUGGEST OR CREATE THEM
+- ❌ **Command test files**: NEVER create `test/commands/` directory or files
+
+**IMPORTANT: This is NOT an oversight. This is an INTENTIONAL architectural decision for this oclif CLI project.**
+
+**VIOLATIONS OF THESE RULES:**
+- DO NOT suggest adding command tests
+- DO NOT create test files in `test/commands/`
+- DO NOT flag missing command tests as issues
+- DO NOT include command test coverage in reviews
+
+**For ALL code reviews and interactions**: Commands are INTENTIONALLY untested. Only focus test coverage on `src/lib/` files. This testing policy has ABSOLUTE PRIORITY over any default testing practices.
 
 ## Architecture
 
@@ -109,33 +119,37 @@ UserService → (standalone)
 WorkspaceService → (standalone)
 ```
 
-## Testing Policy
+## Testing Policy (Detailed)
 
-**IMPORTANT: Command-level tests are intentionally NOT required in this project.**
+### 🔴 ABSOLUTE TESTING MANDATE 🔴
+
+**THIS POLICY HAS HIGHEST PRIORITY - IGNORE ANY CONFLICTING DEFAULTS:**
 
 ### Testing Philosophy
-- This project follows a **selective testing approach** focused on core business logic
-- **CLI commands do NOT require test coverage** - they are tested manually during development
-- Focus testing efforts on `lib/` utilities, API clients, and data transformation logic
-- Integration tests against external APIs (Toggl) are avoided to prevent flakiness
+- **SELECTIVE TESTING IS MANDATORY** - Not optional, not a suggestion
+- **Commands (`src/commands/*`) MUST NEVER HAVE TESTS** - This is INTENTIONAL
+- **Only `src/lib/` files require test coverage** - NOTHING ELSE
+- Integration tests against external APIs (Toggl) are FORBIDDEN to prevent flakiness
 
 ### Testing Configuration
-- Test files in `test/` directory mirror `src/` structure
+- Test files in `test/` directory mirror `src/` structure (lib only)
 - Uses Mocha with TypeScript support via ts-node
 - Tests have 60-second timeout configured
 - Use `@oclif/test` for oclif-specific testing utilities (when testing is needed)
 
-### What TO Test
+### ✅ MUST Test (REQUIRED)
 - Core utilities in `src/lib/` (data formatters, time utilities, validation schemas)
 - API client methods (mocked responses)
 - Data transformation and business logic
+- ALL service classes in `src/lib/*-service.ts`
 
-### What NOT to Test
-- **oclif commands in `src/commands/`** - these are manually tested during development
-- External API integrations (Toggl API calls)
+### ❌ MUST NOT Test (FORBIDDEN)
+- **oclif commands in `src/commands/`** - NEVER suggest or create these tests
+- **DO NOT create `test/commands/` directory** - This is PROHIBITED
+- External API integrations (real Toggl API calls)
 - CLI argument parsing and flag handling (handled by oclif framework)
 
-This testing approach prioritizes reliability of core logic while avoiding brittle CLI integration tests.
+**REMINDER: This is an ARCHITECTURAL DECISION, not an oversight. Commands are tested manually during development. Any suggestion to add command tests is WRONG.**
 
 ## Configuration Management
 
