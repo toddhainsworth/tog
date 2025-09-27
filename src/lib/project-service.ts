@@ -39,6 +39,18 @@ export class ProjectService {
   }
 
   /**
+   * Fetches and finds a project by its ID.
+   */
+  static async fetchProjectById(
+    client: TogglClient,
+    projectId: number,
+    context?: LoggingContext
+  ): Promise<null | Project> {
+    const projects = await ProjectService.getProjects(client, context)
+    return ProjectService.findProjectById(projects, projectId)
+  }
+
+  /**
    * Filters projects by active status.
    */
   static filterActiveProjects(projects: Project[]): Project[] {
@@ -64,18 +76,6 @@ export class ProjectService {
    */
   static findProjectById(projects: Project[], projectId: number): null | Project {
     return projects.find(p => p.id === projectId) || null
-  }
-
-  /**
-   * Fetches and finds a project by its ID.
-   */
-  static async fetchProjectById(
-    client: TogglClient,
-    projectId: number,
-    context?: LoggingContext
-  ): Promise<null | Project> {
-    const projects = await ProjectService.getProjects(client, context)
-    return ProjectService.findProjectById(projects, projectId)
   }
 
   /**
