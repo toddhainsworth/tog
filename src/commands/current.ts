@@ -1,6 +1,9 @@
 import ora from 'ora'
 
 import {BaseCommand} from '../lib/base-command.js'
+import {ProjectService} from '../lib/project-service.js'
+import {TaskService} from '../lib/task-service.js'
+import {TimeEntryService} from '../lib/time-entry-service.js'
 import {calculateElapsedSeconds, formatDuration, formatStartTime} from '../lib/time-utils.js'
 
 export default class Current extends BaseCommand {
@@ -15,14 +18,23 @@ export default class Current extends BaseCommand {
     const spinner = ora('Fetching current timer status...').start()
 
     try {
-      const timeEntry = await client.getCurrentTimeEntry()
+      const timeEntryService = new TimeEntryService(client, this.getLoggingContext())
 
-      if (!timeEntry) {
+      const result = await timeEntryService.getCurrentTimeEntry()
+
+      if (result.error) {
+        spinner.fail('Failed to fetch timer status')
+        this.handleError(new Error(result.error), 'Error fetching timer status')
+        return
+      }
+
+      if (!result.timeEntry) {
         spinner.succeed()
         this.logInfo('No timer currently running')
         return
       }
 
+      const {timeEntry} = result
       const elapsedSeconds = calculateElapsedSeconds(timeEntry.start)
       const elapsedTime = formatDuration(elapsedSeconds)
       const startTime = formatStartTime(timeEntry.start)
@@ -36,8 +48,11 @@ export default class Current extends BaseCommand {
 
       if (timeEntry.project_id) {
         try {
-          const projects = await client.getProjects()
-          const project = projects.find(p => p.id === timeEntry.project_id)
+          const project = await ProjectService.fetchProjectById(
+            client,
+            timeEntry.project_id,
+            this.getLoggingContext()
+          )
           if (project) {
             this.logInfo(`Project: ${project.name}`)
           }
@@ -48,8 +63,10 @@ export default class Current extends BaseCommand {
 
       if (timeEntry.task_id) {
         try {
-          const tasks = await client.getTasks()
-          const task = tasks.find(t => t.id === timeEntry.task_id)
+          const task = TaskService.findTaskById(
+            await TaskService.getTasks(client, this.getLoggingContext()),
+            timeEntry.task_id
+          )
           if (task) {
             this.logInfo(`Task: ${task.name}`)
           }

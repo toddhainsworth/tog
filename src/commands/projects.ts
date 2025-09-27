@@ -2,6 +2,7 @@ import Table from 'cli-table3'
 import ora from 'ora'
 
 import {BaseCommand} from '../lib/base-command.js'
+import {ProjectService} from '../lib/project-service.js'
 
 export default class Projects extends BaseCommand {
   static override description = 'List all projects in the workspace'
@@ -15,8 +16,7 @@ export default class Projects extends BaseCommand {
     const spinner = ora('Fetching projects...').start()
 
     try {
-      const projects = await client.getProjects()
-      const clients = await client.getClients()
+      const projects = await ProjectService.getProjects(client, this.getLoggingContext())
 
       spinner.succeed()
 
@@ -25,11 +25,8 @@ export default class Projects extends BaseCommand {
         return
       }
 
-      // Create client lookup map
-      const clientMap = new Map(clients.map(c => [c.id, c.name]))
-
-      // Sort projects alphabetically by name
-      const sortedProjects = [...projects].sort((a, b) => a.name.localeCompare(b.name))
+      // Sort projects using ProjectService
+      const sortedProjects = ProjectService.sortProjectsByName(projects)
 
       // Create and display table
       const table = new Table({
@@ -40,7 +37,7 @@ export default class Projects extends BaseCommand {
       })
 
       for (const project of sortedProjects) {
-        const clientName = project.client_name || clientMap.get(project.workspace_id) || 'No Client'
+        const clientName = project.client_name || 'No Client'
         const activeStatus = project.active ? '✓' : '✗'
 
         table.push([project.id, project.name, clientName, activeStatus])

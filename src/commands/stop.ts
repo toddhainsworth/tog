@@ -1,5 +1,5 @@
 import {BaseCommand} from '../lib/base-command.js'
-import {withSpinner} from '../lib/prompts.js'
+import {TimeEntryService} from '../lib/time-entry-service.js'
 
 export default class Stop extends BaseCommand {
   static override description = 'Stop the currently running timer'
@@ -12,16 +12,21 @@ export default class Stop extends BaseCommand {
       // Load config and create client using base class methods
       this.loadConfigOrExit()
       const client = this.getClient()
+      const timeEntryService = new TimeEntryService(client, this.getLoggingContext())
 
-      const currentEntry = await withSpinner('Checking for running timer...', () => client.getCurrentTimeEntry(), {
-        log: this.log.bind(this),
-        warn: this.warn.bind(this)
-      })
+      // Check for running timer
+      const currentResult = await timeEntryService.getCurrentTimeEntry()
+      if (currentResult.error) {
+        this.handleError(new Error(currentResult.error), 'Failed to check for running timer')
+        return
+      }
 
-      if (!currentEntry) {
+      if (!currentResult.timeEntry) {
         this.logInfo('No timer is currently running.')
         return
       }
+
+      const currentEntry = currentResult.timeEntry
 
       // Stop the current time entry
       if (!currentEntry.workspace_id || !currentEntry.id) {
@@ -29,15 +34,15 @@ export default class Stop extends BaseCommand {
         return
       }
 
-      const stopped = await client.stopTimeEntry(currentEntry.workspace_id, currentEntry.id)
+      const stopResult = await timeEntryService.stopTimeEntry(currentEntry.workspace_id, currentEntry.id)
 
-      if (stopped) {
+      if (stopResult.success) {
         this.logSuccess('Timer stopped successfully!')
         if (currentEntry.description) {
           this.log(`Stopped: "${currentEntry.description}"`)
         }
       } else {
-        this.handleError(new Error('Failed to stop timer. Please try again.'), 'Timer stop failed')
+        this.handleError(new Error(stopResult.error || 'Failed to stop timer'), 'Timer stop failed')
       }
 
     } catch (error) {

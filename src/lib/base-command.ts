@@ -5,6 +5,11 @@ import {DataSanitizer} from './data-sanitizer.js'
 import {EMOJIS} from './emojis.js'
 import {TogglClient} from './toggl-client.js'
 
+export interface LoggingContext {
+  debug?: (message: string, data?: Record<string, unknown>) => void
+  warn?: (message: string) => void
+}
+
 /**
  * Base command class providing common functionality for all Toggl CLI commands
  */
@@ -33,6 +38,17 @@ export abstract class BaseCommand extends Command {
     }
 
     return this.client
+  }
+
+  /**
+   * Get logging context for services
+   * @returns LoggingContext instance
+   */
+  protected getLoggingContext(): LoggingContext {
+    return {
+      debug: (message: string, data?: Record<string, unknown>) => this.logDebug(message, data),
+      warn: (message: string) => this.logWarning(message)
+    }
   }
 
   /**

@@ -1,10 +1,12 @@
 import {Flags} from '@oclif/core'
 
-import type { TogglClient } from '../lib/toggl-client.js'
 import type { Project, Task, TimeEntry } from '../lib/validation.js'
 
 import { BaseCommand } from '../lib/base-command.js'
-import { promptForDescription, promptForTaskSelection, withSpinner } from '../lib/prompts.js'
+import { ProjectService } from '../lib/project-service.js'
+import { promptForDescription, promptForTaskSelection } from '../lib/prompts.js'
+import { TaskService } from '../lib/task-service.js'
+import { TimeEntryService } from '../lib/time-entry-service.js'
 
 export default class Edit extends BaseCommand {
   static override description = 'Edit the currently running timer'
@@ -28,33 +30,44 @@ export default class Edit extends BaseCommand {
       const {flags} = await this.parse(Edit)
       this.loadConfigOrExit()
       const client = this.getClient()
+      const timeEntryService = new TimeEntryService(client, this.getLoggingContext())
 
-      const currentEntry = await this.getCurrentTimer(client)
-      if (!currentEntry) return
+      const currentResult = await timeEntryService.getCurrentTimeEntry()
+      if (currentResult.error) {
+        this.handleError(new Error(currentResult.error), 'Failed to get current timer')
+        return
+      }
 
-      const result = await this.fetchTasksAndProjects(client)
-      if (!result.tasks || !result.projects) return
-      const {projects, tasks} = result
+      if (!currentResult.timeEntry) {
+        this.logInfo('No timer is currently running.')
+        this.log('Start a timer with `tog start` first.')
+        return
+      }
+
+      const currentEntry = currentResult.timeEntry
+
+      const projects = await ProjectService.getProjects(client, this.getLoggingContext())
+      const tasks = await TaskService.getTasks(client, this.getLoggingContext())
 
       this.showCurrentTimer(currentEntry, projects, tasks)
 
       const updates = await this.gatherUpdates(flags, currentEntry, projects, tasks)
       if (!updates) return
 
-      await this.applyUpdates({client, currentEntry, projects, tasks, updates})
+      await this.applyUpdates({currentEntry, projects, tasks, timeEntryService, updates})
     } catch (error) {
       this.handleError(error, 'Failed to edit timer')
     }
   }
 
   private async applyUpdates(options: {
-    client: TogglClient;
     currentEntry: TimeEntry;
     projects: Project[];
     tasks: Task[];
+    timeEntryService: TimeEntryService;
     updates: {description?: string; project_id?: null | number; task_id?: null | number};
   }): Promise<void> {
-    const {client, currentEntry, projects, tasks, updates} = options
+    const {currentEntry, projects, tasks, timeEntryService, updates} = options
     if (!currentEntry.workspace_id || !currentEntry.id) {
       this.handleError(new Error('Current time entry missing required IDs'), 'Timer validation failed')
       return
@@ -74,106 +87,20 @@ export default class Edit extends BaseCommand {
       updatePayload.task_id = updates.task_id
     }
 
-    try {
-      const updatedEntry = await withSpinner('Updating timer...', () =>
-        client.updateTimeEntry(currentEntry.workspace_id, currentEntry.id, updatePayload), {
-          log: this.log.bind(this),
-          warn: this.warn.bind(this)
-        })
+    const updateResult = await timeEntryService.updateTimeEntry(
+      currentEntry.workspace_id,
+      currentEntry.id,
+      updatePayload
+    )
 
+    if (updateResult.timeEntry) {
       this.logSuccess('Timer updated successfully!')
-      this.showUpdateSummary(currentEntry, updatedEntry, projects, tasks)
-    } catch (error) {
-      this.handleError(error, 'Failed to update timer')
+      this.showUpdateSummary(currentEntry, updateResult.timeEntry, projects, tasks)
+    } else {
+      this.handleError(new Error(updateResult.error || 'Failed to update timer'), 'Timer update failed')
     }
   }
 
-  private async fetchTasksAndProjects(client: TogglClient): Promise<{projects: null | Project[]; tasks: null | Task[]}> {
-    try {
-      const [tasks, projects] = await withSpinner('Fetching available tasks and projects...',
-        async () => Promise.all([client.getTasks(), client.getProjects()]), {
-          log: this.log.bind(this),
-          warn: this.warn.bind(this)
-        })
-      return {projects, tasks}
-    } catch (error) {
-      this.handleError(error, 'Failed to fetch tasks/projects')
-      return {projects: null, tasks: null}
-    }
-  }
-
-  private findProjectById(projects: Project[], projectId: number): Project | undefined {
-    return projects.find(p => p.id === projectId)
-  }
-
-  private findProjectByNameOrId(projects: Project[], input: string): null | Project {
-    const id = Number.parseInt(input, 10)
-    if (!Number.isNaN(id)) {
-      return projects.find(p => p.id === id) || null
-    }
-
-    const lowercaseInput = input.toLowerCase()
-    const matches = projects.filter(p =>
-      p.name.toLowerCase().includes(lowercaseInput)
-    )
-
-    if (matches.length === 0) {
-      return null
-    }
-
-    if (matches.length === 1) {
-      return matches[0] ?? null
-    }
-
-    const exactMatch = matches.find(p =>
-      p.name.toLowerCase() === lowercaseInput
-    )
-    if (exactMatch) {
-      return exactMatch
-    }
-
-    const names = matches.map(p => p.name).join(', ')
-    throw new Error(`Multiple projects match "${input}": ${names}. Please be more specific.`)
-  }
-
-  private findTaskByNameOrId(tasks: Task[], input: string, projectId?: number): null | Task {
-    const id = Number.parseInt(input, 10)
-    if (!Number.isNaN(id)) {
-      const task = tasks.find(t => t.id === id)
-      if (task && projectId !== undefined && task.project_id !== projectId) {
-        throw new Error(`Task "${task.name}" does not belong to the selected project`)
-      }
-
-      return task || null
-    }
-
-    const relevantTasks = projectId === undefined
-      ? tasks
-      : tasks.filter(t => t.project_id === projectId)
-
-    const lowercaseInput = input.toLowerCase()
-    const matches = relevantTasks.filter(t =>
-      t.name.toLowerCase().includes(lowercaseInput)
-    )
-
-    if (matches.length === 0) {
-      return null
-    }
-
-    if (matches.length === 1) {
-      return matches[0] ?? null
-    }
-
-    const exactMatch = matches.find(t =>
-      t.name.toLowerCase() === lowercaseInput
-    )
-    if (exactMatch) {
-      return exactMatch
-    }
-
-    const names = matches.map(t => t.name).join(', ')
-    throw new Error(`Multiple tasks match "${input}": ${names}. Please be more specific.`)
-  }
 
   private async gatherUpdates(
     flags: {clear?: boolean; description?: string; project?: string; task?: string},
@@ -218,25 +145,6 @@ export default class Edit extends BaseCommand {
     return updates
   }
 
-  private async getCurrentTimer(client: TogglClient): Promise<null | TimeEntry> {
-    try {
-      const currentEntry = await withSpinner('Checking for running timer...', () => client.getCurrentTimeEntry(), {
-        log: this.log.bind(this),
-        warn: this.warn.bind(this)
-      })
-
-      if (!currentEntry) {
-        this.logInfo('No timer is currently running.')
-        this.log('Start a timer with `tog start` first.')
-        return null
-      }
-
-      return currentEntry
-    } catch (error) {
-      this.handleError(error, 'Failed to get current timer')
-      return null
-    }
-  }
 
   private handleClearFlag(): {project_id: null; task_id: null} {
     this.log('Clearing all project and task assignments')
@@ -328,7 +236,7 @@ export default class Edit extends BaseCommand {
 
   private async selectProjectByFlag(projects: Project[], projectFlag: string): Promise<null | Project> {
     try {
-      const foundProject = this.findProjectByNameOrId(projects, projectFlag)
+      const foundProject = ProjectService.findProjectByNameOrId(projects, projectFlag)
       if (!foundProject) {
         this.handleError(new Error(`Project "${projectFlag}" not found`), 'Project lookup failed')
         return null
@@ -350,7 +258,7 @@ export default class Edit extends BaseCommand {
   ): Promise<null | Task> {
     try {
       const effectiveProjectId = projectId === null ? undefined : projectId
-      const foundTask = this.findTaskByNameOrId(tasks, taskFlag, effectiveProjectId)
+      const foundTask = TaskService.findTaskByNameOrId(tasks, taskFlag, effectiveProjectId)
       if (!foundTask) {
         const projectContext = effectiveProjectId ?
           ` in project "${projects.find(p => p.id === effectiveProjectId)?.name || effectiveProjectId}"` :

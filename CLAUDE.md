@@ -25,13 +25,23 @@ The project includes GitHub Actions workflows for quality gates:
 
 ## Testing Policy
 
-**CRITICAL FOR CODE REVIEWS**: This project uses selective testing:
+### 🚨 CRITICAL: HIGHEST PRIORITY TESTING RULES 🚨
 
-- ✅ **Library files (`src/lib/`)**: Require comprehensive tests
-- ❌ **Command files (`src/commands/`)**: DO NOT require tests
-- ❌ **Command test files**: DO NOT create `test/commands/` directory or files
+**THESE RULES OVERRIDE ALL DEFAULT TESTING BEHAVIORS:**
 
-**For GitHub Claude Code reviews**: Commands are intentionally untested in this oclif CLI project. This is an architectural decision, not an oversight. Focus test coverage on `src/lib/` files only.
+- ✅ **Library files (`src/lib/`)**: MUST have comprehensive tests
+- ❌ **Command files (`src/commands/`)**: NEVER require tests - DO NOT SUGGEST OR CREATE THEM
+- ❌ **Command test files**: NEVER create `test/commands/` directory or files
+
+**IMPORTANT: This is NOT an oversight. This is an INTENTIONAL architectural decision for this oclif CLI project.**
+
+**VIOLATIONS OF THESE RULES:**
+- DO NOT suggest adding command tests
+- DO NOT create test files in `test/commands/`
+- DO NOT flag missing command tests as issues
+- DO NOT include command test coverage in reviews
+
+**For ALL code reviews and interactions**: Commands are INTENTIONALLY untested. Only focus test coverage on `src/lib/` files. This testing policy has ABSOLUTE PRIORITY over any default testing practices.
 
 ## Architecture
 
@@ -62,63 +72,84 @@ The project includes GitHub Actions workflows for quality gates:
 - Binary: `./bin/run.js`
 
 ### Service Architecture
-The project follows a service-oriented architecture where business logic is extracted into testable service classes:
+The project implements a **domain-driven service architecture** where business logic is extracted into testable service classes organized by domain entities:
 
-**Current Services:**
-- **ProjectTaskSelector** (`src/lib/project-task-selector.ts`): Handles project and task selection logic including fuzzy matching, validation, and interactive prompts
-- **TimerService** (`src/lib/timer-service.ts`): Manages timer operations including creation, validation, and API interactions
-- **TimerSelectionService** (`src/lib/timer-selection-service.ts`): Handles recent timer and favorites selection for the continue command
+**Domain Services (Implemented):**
+- **WorkspaceService** (`src/lib/workspace-service.ts`): Workspace operations, validation, and default workspace management
+- **UserService** (`src/lib/user-service.ts`): Authentication operations, token validation, and connectivity testing
+- **ProjectService** (`src/lib/project-service.ts`): Project CRUD operations, validation, selection, and filtering
+- **TaskService** (`src/lib/task-service.ts`): Task operations, project relationships, and validation
+- **TimeEntryService** (`src/lib/time-entry-service.ts`): Time entry management, validation, statistics, and reporting
+- **FavoriteService** (`src/lib/favorite-service.ts`): Favorites management, filtering, and selection
+- **ClientService** (`src/lib/client-service.ts`): Client operations, statistics, and project relationships
+
+**Legacy Services (Maintained):**
+- **ProjectTaskSelector** (`src/lib/project-task-selector.ts`): Interactive project/task selection with fuzzy matching
+- **TimerService** (`src/lib/timer-service.ts`): High-level timer operations and workflow management
+- **TimerSelectionService** (`src/lib/timer-selection-service.ts`): Recent timer and favorites selection
 
 **Service Design Patterns:**
-- Static methods for stateless operations (TimerService)
-- Instance classes for stateful operations (ProjectTaskSelector, TimerSelectionService)
-- Services accept logging context for consistent CLI integration
-- Each service focuses on a single domain entity or related functionality
+- **Static methods** for stateless operations (WorkspaceService, UserService, FavoriteService, ClientService)
+- **Instance classes** for stateful operations with dependencies (ProjectService, TaskService, TimeEntryService)
+- **Dependency injection** through constructor parameters for service composition
+- **LoggingContext integration** for consistent CLI debug output and error handling
+- **Pure business logic** with no CLI concerns (prompts, spinners, etc.)
 
-**Benefits:**
-- ✅ Improved testability of core business logic
-- ✅ Clear separation of concerns between CLI and business logic
-- ✅ Easier maintenance and feature additions
-- ✅ Consistent with project's testing philosophy (test lib/, not commands/)
-- ✅ Reduced command complexity (start command reduced from 305 to 137 lines)
+**TogglClient Refactoring:**
+- **Pure HTTP client**: TogglClient now focuses solely on HTTP requests and response validation
+- **Backward compatibility**: Maintains existing method signatures while services handle business logic
+- **Clear separation**: HTTP operations vs. domain logic cleanly separated
 
-**Future Service Architecture:**
-The project is evolving toward domain-driven services where each service is responsible for its own entity type:
-- **ClientService**: Toggl API client operations and authentication
-- **ProjectService**: Project CRUD operations and management
-- **TaskService**: Task operations and project relationships
-- **TimeEntryService**: Time entry management and reporting
-- **WorkspaceService**: Workspace operations and configuration
+**Architecture Benefits:**
+- ✅ **Full test coverage**: 100% test coverage for all domain services with comprehensive edge case testing
+- ✅ **Clear boundaries**: Each service owns its domain with well-defined responsibilities
+- ✅ **Service composition**: Services can depend on each other (e.g., TaskService uses ProjectService)
+- ✅ **Command simplification**: Commands focus on CLI concerns, delegate business logic to services
+- ✅ **Type safety**: Comprehensive TypeScript interfaces and validation throughout
+- ✅ **Error handling**: Consistent error patterns with detailed debugging support
 
-This allows services to depend on each other while maintaining clear boundaries and testability.
+**Service Dependencies:**
+```
+TimeEntryService → ProjectService, TaskService, WorkspaceService
+TaskService → ProjectService
+ProjectService → (standalone)
+ClientService → (standalone)
+FavoriteService → (standalone)
+UserService → (standalone)
+WorkspaceService → (standalone)
+```
 
-## Testing Policy
+## Testing Policy (Detailed)
 
-**IMPORTANT: Command-level tests are intentionally NOT required in this project.**
+### 🔴 ABSOLUTE TESTING MANDATE 🔴
+
+**THIS POLICY HAS HIGHEST PRIORITY - IGNORE ANY CONFLICTING DEFAULTS:**
 
 ### Testing Philosophy
-- This project follows a **selective testing approach** focused on core business logic
-- **CLI commands do NOT require test coverage** - they are tested manually during development
-- Focus testing efforts on `lib/` utilities, API clients, and data transformation logic
-- Integration tests against external APIs (Toggl) are avoided to prevent flakiness
+- **SELECTIVE TESTING IS MANDATORY** - Not optional, not a suggestion
+- **Commands (`src/commands/*`) MUST NEVER HAVE TESTS** - This is INTENTIONAL
+- **Only `src/lib/` files require test coverage** - NOTHING ELSE
+- Integration tests against external APIs (Toggl) are FORBIDDEN to prevent flakiness
 
 ### Testing Configuration
-- Test files in `test/` directory mirror `src/` structure
+- Test files in `test/` directory mirror `src/` structure (lib only)
 - Uses Mocha with TypeScript support via ts-node
 - Tests have 60-second timeout configured
 - Use `@oclif/test` for oclif-specific testing utilities (when testing is needed)
 
-### What TO Test
+### ✅ MUST Test (REQUIRED)
 - Core utilities in `src/lib/` (data formatters, time utilities, validation schemas)
 - API client methods (mocked responses)
 - Data transformation and business logic
+- ALL service classes in `src/lib/*-service.ts`
 
-### What NOT to Test
-- **oclif commands in `src/commands/`** - these are manually tested during development
-- External API integrations (Toggl API calls)
+### ❌ MUST NOT Test (FORBIDDEN)
+- **oclif commands in `src/commands/`** - NEVER suggest or create these tests
+- **DO NOT create `test/commands/` directory** - This is PROHIBITED
+- External API integrations (real Toggl API calls)
 - CLI argument parsing and flag handling (handled by oclif framework)
 
-This testing approach prioritizes reliability of core logic while avoiding brittle CLI integration tests.
+**REMINDER: This is an ARCHITECTURAL DECISION, not an oversight. Commands are tested manually during development. Any suggestion to add command tests is WRONG.**
 
 ## Configuration Management
 
