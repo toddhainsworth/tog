@@ -10,11 +10,10 @@ import { TaskService } from '../../src/lib/task-service.js'
 import { TimeEntryService } from '../../src/lib/time-entry-service.js'
 import { WorkspaceService } from '../../src/lib/workspace-service.js'
 
-// Mock WorkspaceService at the module level
-const mockValidateWorkspace = sinon.stub()
-sinon.stub(WorkspaceService, 'validateWorkspace').callsFake(mockValidateWorkspace)
-
 describe('TimeEntryService', () => {
+  // Mock WorkspaceService within the test suite
+  const mockValidateWorkspace = sinon.stub()
+  let workspaceStub: sinon.SinonStub
   let mockClient: sinon.SinonStubbedInstance<TogglClient>
   let mockContext: { debug: SinonStub; warn: SinonStub }
   let mockProjectService: sinon.SinonStubbedInstance<ProjectService>
@@ -62,6 +61,13 @@ describe('TimeEntryService', () => {
   ]
 
   beforeEach(() => {
+    // Set up WorkspaceService stub first
+    if (!workspaceStub) {
+      workspaceStub = sinon.stub(WorkspaceService, 'validateWorkspace')
+    }
+
+    workspaceStub.callsFake(mockValidateWorkspace)
+
     mockClient = {
       createTimeEntry: sinon.stub(),
       getCurrentTimeEntry: sinon.stub(),
@@ -87,8 +93,9 @@ describe('TimeEntryService', () => {
       validateTask: sinon.stub()
     } as unknown as sinon.SinonStubbedInstance<TaskService>
 
-    // Reset the workspace service mock
+    // Reset the workspace service mock and set default success response
     mockValidateWorkspace.reset()
+    mockValidateWorkspace.resolves({ success: true, workspace: { id: 123, name: 'Test Workspace' } })
 
     timeEntryService = new TimeEntryService(mockClient, mockContext, mockProjectService, mockTaskService)
   })
@@ -472,5 +479,12 @@ describe('TimeEntryService', () => {
       expect(result.success).to.be.false
       expect(result.error?.message).to.include('Failed to create time entry')
     })
+  })
+
+  after(() => {
+    // Restore the WorkspaceService stub
+    if (workspaceStub) {
+      workspaceStub.restore()
+    }
   })
 });

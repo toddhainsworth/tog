@@ -50,6 +50,39 @@ export async function promptForDescription(message: string = 'Enter timer descri
   return description.trim()
 }
 
+export async function promptForOptionalDescription(message: string = 'Enter new timer description (or press Enter to skip)'): Promise<null | string> {
+  const description = await input({
+    message: `${EMOJIS.INFO} ${message}:`,
+    transformer(input: string) {
+      const trimmed = input.trim()
+
+      if (trimmed.length === 0) {
+        return 'Press Enter to skip'
+      }
+
+      const remaining = 200 - trimmed.length
+      return remaining < 20 ? `${trimmed} (${remaining} chars left)` : trimmed
+    },
+    validate(input: string) {
+      const trimmed = input.trim()
+
+      // Allow empty input (user wants to skip)
+      if (trimmed.length === 0) {
+        return true
+      }
+
+      if (trimmed.length > 200) {
+        return 'Description must be 200 characters or less'
+      }
+
+      return true
+    }
+  })
+
+  const trimmed = description.trim()
+  return trimmed.length === 0 ? null : trimmed
+}
+
 interface TaskWithContext extends Task {
   client_name?: string
   project_name?: string
