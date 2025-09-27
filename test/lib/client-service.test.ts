@@ -476,12 +476,12 @@ describe('ClientService', () => {
     it('should select client successfully by name', async () => {
       mockClient.getClients.resolves(mockClients)
 
-      const result = await ClientService.selectClient(mockClient, 'acme', mockContext)
+      const result = await ClientService.selectClient(mockClient, 'corp', mockContext)
 
       expect(result.success).to.be.true
       expect(result.client).to.deep.equal({ id: 1, name: 'Acme Corp' })
       expect(result.error).to.be.undefined
-      expect(mockContext.debug).to.have.been.calledWith('Selecting client', { input: 'acme' })
+      expect(mockContext.debug).to.have.been.calledWith('Selecting client', { input: 'corp' })
       expect(mockContext.debug).to.have.been.calledWith('Client selection successful', {
         clientId: 1,
         clientName: 'Acme Corp'
