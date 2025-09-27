@@ -1,5 +1,6 @@
 import {type} from 'arktype'
 
+import { MIN_API_TOKEN_LENGTH } from './constants.js'
 
 // Core entity validation schemas
 export const TimeEntrySchema = type({
@@ -72,7 +73,7 @@ export const TimerDescriptionSchema = type('string>=1')
 export const SearchQuerySchema = type('string>=1')
 
 // Configuration validation (enhanced version of what's in config.ts)
-export const ApiTokenSchema = type('string>=32')
+export const ApiTokenSchema = type(`string>=${MIN_API_TOKEN_LENGTH}`)
 export const WorkspaceIdSchema = type('number>0')
 export const ConfigSchema = type({
   apiToken: ApiTokenSchema,

@@ -3,7 +3,6 @@ import relativeTime from 'dayjs/plugin/relativeTime.js'
 
 dayjs.extend(relativeTime)
 
-import type {CachedTogglClient} from './cached-toggl-client.js'
 import type {TogglClient} from './toggl-client.js'
 import type {Favorite, Project, Task, TimeEntry} from './validation.js'
 
@@ -30,7 +29,7 @@ export interface TimerSelectionOptions {
 
 export class TimerSelectionService {
   constructor(
-    private readonly client: CachedTogglClient | TogglClient,
+    private readonly client: TogglClient,
     private readonly projects: Project[],
     private readonly tasks: Task[]
   ) {}

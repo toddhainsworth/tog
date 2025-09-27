@@ -5,6 +5,8 @@
 
 import {isAxiosError} from 'axios'
 
+import { HTTP_STATUS, MAX_DESCRIPTION_LENGTH, MIN_API_TOKEN_LENGTH } from './constants.js'
+
 /**
  * Base error class for all Toggl CLI errors
  */
@@ -56,7 +58,7 @@ export class TogglApiError extends TogglError {
   static authenticationFailed(): TogglApiError {
     return new TogglApiError(
       'Authentication failed. Your API token may be invalid or expired.',
-      401
+      HTTP_STATUS.UNAUTHORIZED
     )
   }
 
@@ -86,11 +88,11 @@ export class TogglValidationError extends TogglError {
   readonly code = 'VALIDATION_ERROR'
 
   static invalidApiToken(): TogglValidationError {
-    return new TogglValidationError('API token must be at least 32 characters long')
+    return new TogglValidationError(`API token must be at least ${MIN_API_TOKEN_LENGTH} characters long`)
   }
 
   static invalidDescription(): TogglValidationError {
-    return new TogglValidationError('Description cannot be empty and must be 200 characters or less')
+    return new TogglValidationError(`Description cannot be empty and must be ${MAX_DESCRIPTION_LENGTH} characters or less`)
   }
 
   static invalidResponse(details: string): TogglValidationError {
@@ -125,7 +127,7 @@ export function createApiErrorFromAxios(error: unknown, endpoint?: string): Togg
   if (isAxiosError(error) && error.response) {
     const {data, status: statusCode, statusText} = error.response
 
-    if (statusCode === 401 || statusCode === 403) {
+    if (statusCode === HTTP_STATUS.UNAUTHORIZED || statusCode === HTTP_STATUS.FORBIDDEN) {
       return TogglApiError.authenticationFailed()
     }
 

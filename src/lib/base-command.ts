@@ -1,9 +1,9 @@
 import {Command, Flags} from '@oclif/core'
 
-import {CachedTogglClient} from './cached-toggl-client.js'
 import {loadConfig, type TogglConfig} from './config.js'
 import {DataSanitizer} from './data-sanitizer.js'
 import {EMOJIS} from './emojis.js'
+import {ReferenceCachedTogglClient} from './reference-cached-toggl-client.js'
 
 export interface LoggingContext {
   debug?: (message: string, data?: Record<string, unknown>) => void
@@ -21,20 +21,20 @@ export abstract class BaseCommand extends Command {
       // No shorthand to avoid conflicts with command-specific flags
     }),
   }
-  private client: CachedTogglClient | null = null
+  private client: null | ReferenceCachedTogglClient = null
   private togglConfig: null | TogglConfig = null
 
   /**
    * Get or create Toggl client instance with caching
-   * @returns CachedTogglClient instance
+   * @returns ReferenceCachedTogglClient instance
    */
-  protected getClient(): CachedTogglClient {
+  protected getClient(): ReferenceCachedTogglClient {
     if (!this.client) {
       const config = this.togglConfig || this.loadConfigOrExit()
       const debugLogger = {
         debug: (message: string, data?: Record<string, unknown>) => this.logDebug(`[TogglClient] ${message}`, data)
       }
-      this.client = new CachedTogglClient(config.apiToken, debugLogger)
+      this.client = new ReferenceCachedTogglClient(config.apiToken, debugLogger)
     }
 
     return this.client

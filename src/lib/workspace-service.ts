@@ -1,4 +1,3 @@
-import type { CachedTogglClient } from './cached-toggl-client.js'
 import type { TogglClient } from './toggl-client.js'
 import type { Workspace } from './validation.js'
 
@@ -65,7 +64,7 @@ export const WorkspaceService = {
    * Gets the default workspace (first available workspace).
    * Useful for single-workspace scenarios.
    */
-  async getDefaultWorkspace(client: CachedTogglClient | TogglClient, context?: LoggingContext): Promise<null | Workspace> {
+  async getDefaultWorkspace(client: TogglClient, context?: LoggingContext): Promise<null | Workspace> {
     const workspaces = await this.getWorkspaces(client, context)
     return workspaces.length > 0 ? (workspaces[0] ?? null) : null
   },
@@ -74,7 +73,7 @@ export const WorkspaceService = {
    * Fetches all workspaces for the authenticated user.
    * Returns empty array on error.
    */
-  async getWorkspaces(client: CachedTogglClient | TogglClient, context?: LoggingContext): Promise<Workspace[]> {
+  async getWorkspaces(client: TogglClient, context?: LoggingContext): Promise<Workspace[]> {
     try {
       context?.debug?.('Fetching user workspaces')
       const workspaces = await client.getWorkspaces()
@@ -92,7 +91,7 @@ export const WorkspaceService = {
    * Validates that a workspace ID exists and is accessible.
    * Returns validation result with success flag and optional error.
    */
-  async validateWorkspace(client: CachedTogglClient | TogglClient, workspaceId: number, context?: LoggingContext): Promise<WorkspaceSelectionResult> {
+  async validateWorkspace(client: TogglClient, workspaceId: number, context?: LoggingContext): Promise<WorkspaceSelectionResult> {
     if (!workspaceId || workspaceId <= 0) {
       return {
         error: 'Invalid workspace ID provided',
@@ -130,7 +129,7 @@ export const WorkspaceService = {
    * Validates workspace access and returns workspace details.
    * This is useful for configuration validation.
    */
-  async validateWorkspaceAccess(client: CachedTogglClient | TogglClient, workspaceId: number, context?: LoggingContext): Promise<{
+  async validateWorkspaceAccess(client: TogglClient, workspaceId: number, context?: LoggingContext): Promise<{
     hasAccess: boolean
     workspace?: Workspace
   }> {

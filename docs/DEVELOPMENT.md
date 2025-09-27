@@ -144,6 +144,107 @@ Our development process follows a structured approach that combines Product Requ
 
 Existing PRDs in the repository will be migrated to closed GitHub issues to maintain historical context while transitioning to the new workflow.
 
+## API Client Caching Architecture
+
+### Overview
+
+The project implements intelligent API client caching to reduce API calls for reference data that rarely changes. This system balances performance improvements with data freshness through selective caching and appropriate TTL settings.
+
+### Design Decisions
+
+**1. Reference-Only Caching:**
+- Cache only stable reference data: projects, clients, tasks, workspaces, favorites
+- **Never cache** frequently changing data like current time entries
+- This ensures data consistency while maximizing performance benefits
+
+**2. Simplified File-Based Storage:**
+- Single `CachedFileStorage` class provides file-based persistence with TTL
+- Removed complex file locking mechanisms (single-process assumption)
+- Uses request deduplication to prevent concurrent API calls for the same resource
+
+**3. Uniform Client Interface:**
+- `ReferenceCachedTogglClient` extends `TogglClient` maintaining full compatibility
+- Services accept `TogglClient` interface (no union types)
+- Transparent caching - existing code works unchanged
+
+**4. Conservative TTL Strategy:**
+- 1 week TTL for all cached reference data
+- Balances data freshness with performance gains
+- User can clear cache manually via `clearCache()` method
+
+### Implementation
+
+**CachedFileStorage** (`src/lib/cached-file-storage.ts`):
+```typescript
+export class CachedFileStorage {
+  async getOrFetch<T>(key: string, fetchFn: () => Promise<T>, ttlMs: number): Promise<T>
+  async clear(): Promise<void>
+  // Request deduplication prevents concurrent API calls
+}
+```
+
+**ReferenceCachedTogglClient** (`src/lib/reference-cached-toggl-client.ts`):
+```typescript
+export class ReferenceCachedTogglClient extends TogglClient {
+  // Overrides only cache-appropriate methods
+  override async getProjects(): Promise<Project[]>
+  override async getClients(): Promise<Client[]>
+  override async getTasks(): Promise<Task[]>
+  override async getWorkspaces(): Promise<Workspace[]>
+  override async getFavorites(): Promise<Favorite[]>
+
+  // getCurrentTimeEntry() uses parent implementation (no caching)
+}
+```
+
+**BaseCommand Integration** (`src/lib/base-command.ts`):
+```typescript
+protected getClient(): ReferenceCachedTogglClient {
+  return new ReferenceCachedTogglClient(config.apiToken, debugLogger)
+}
+```
+
+### Usage Patterns
+
+**Service Layer:**
+- All services continue using `TogglClient` interface
+- No changes required to existing service implementations
+- Caching is transparent to business logic
+
+**Cache Management:**
+- Cache automatically expires after 1 week
+- Manual cache clearing available via `client.clearCache()`
+- Cache persistence survives command restarts
+
+### Extending the System
+
+**Adding New Cached Methods:**
+1. Override method in `ReferenceCachedTogglClient`
+2. Use `this.cache.getOrFetch()` with appropriate TTL
+3. Ensure method caches stable reference data only
+
+**Custom Cache Storage:**
+- Implement interface compatible with `CachedFileStorage`
+- Replace storage backend while maintaining API contract
+- Consider request deduplication for performance
+
+**Testing Strategy:**
+- Comprehensive test coverage for cache logic
+- Mock external dependencies to avoid API calls
+- Test TTL expiration and cache clearing functionality
+
+### Performance Impact
+
+**Expected Benefits:**
+- Reduced API calls for frequently accessed reference data
+- Faster command execution after initial cache population
+- Improved user experience during interactive workflows
+
+**Monitoring:**
+- Debug logging provides cache hit/miss information
+- File-based storage enables cache inspection
+- Request deduplication prevents API rate limiting
+
 ---
 
 This workflow builds on the proven success of our AI-assisted development approach while adding structure for larger feature development and team collaboration.

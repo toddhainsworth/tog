@@ -2,6 +2,8 @@ import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 
+import { CACHE_FILE_SYNC_DEBOUNCE_MS, DEFAULT_CACHE_MAX_ENTRIES, DEFAULT_CACHE_MAX_FILE_SIZE_BYTES } from './constants.js'
+
 interface CacheEntry<T> {
   data: T
   expiresAt: number
@@ -45,8 +47,8 @@ export class FileCacheManager {
 
     this.cachePath = path.join(os.homedir(), sanitizedFilename)
     this.lockPath = `${this.cachePath}.lock`
-    this.maxEntries = options.maxEntries ?? 1000
-    this.maxFileSizeBytes = options.maxFileSizeBytes ?? 10 * 1024 * 1024 // 10MB
+    this.maxEntries = options.maxEntries ?? DEFAULT_CACHE_MAX_ENTRIES
+    this.maxFileSizeBytes = options.maxFileSizeBytes ?? DEFAULT_CACHE_MAX_FILE_SIZE_BYTES
 
     // Load initial cache into memory
     this.syncFromFile()
@@ -367,7 +369,7 @@ export class FileCacheManager {
    */
   private syncFromFile(): void {
     // Don't sync more than once per second
-    if (Date.now() - this.lastFileSync < 1000) {
+    if (Date.now() - this.lastFileSync < CACHE_FILE_SYNC_DEBOUNCE_MS) {
       return
     }
 
