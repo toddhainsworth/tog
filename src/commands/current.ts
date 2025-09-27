@@ -48,9 +48,10 @@ export default class Current extends BaseCommand {
 
       if (timeEntry.project_id) {
         try {
-          const project = ProjectService.findProjectById(
-            await ProjectService.getProjects(client, this.getLoggingContext()),
-            timeEntry.project_id
+          const project = await ProjectService.fetchProjectById(
+            client,
+            timeEntry.project_id,
+            this.getLoggingContext()
           )
           if (project) {
             this.logInfo(`Project: ${project.name}`)

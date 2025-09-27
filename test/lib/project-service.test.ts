@@ -118,6 +118,36 @@ describe('ProjectService', () => {
     })
   })
 
+  describe('fetchProjectById', () => {
+    it('should fetch and find project by ID', async () => {
+      mockClient.getProjects.resolves(mockProjects)
+
+      const project = await ProjectService.fetchProjectById(mockClient, 2, mockContext)
+
+      expect(project).to.deep.equal({ active: true, client_name: 'Acme Corp', id: 2, name: 'Frontend React', workspace_id: 123 })
+      expect(mockClient.getProjects).to.have.been.calledOnce
+      expect(mockContext.debug).to.have.been.calledWith('Fetching user projects')
+    })
+
+    it('should return null if project not found after fetch', async () => {
+      mockClient.getProjects.resolves(mockProjects)
+
+      const project = await ProjectService.fetchProjectById(mockClient, 999, mockContext)
+
+      expect(project).to.be.null
+      expect(mockClient.getProjects).to.have.been.calledOnce
+    })
+
+    it('should return null if fetch fails', async () => {
+      mockClient.getProjects.rejects(new Error('API error'))
+
+      const project = await ProjectService.fetchProjectById(mockClient, 1, mockContext)
+
+      expect(project).to.be.null
+      expect(mockContext.warn).to.have.been.calledWith('Failed to fetch projects')
+    })
+  })
+
   describe('findProjectByNameOrId', () => {
     it('should find project by exact ID', () => {
       const project = ProjectService.findProjectByNameOrId(mockProjects, '2')
