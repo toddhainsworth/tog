@@ -3,7 +3,7 @@ import { promises as fs } from 'fs'
 import { join } from 'path'
 import { tmpdir } from 'os'
 
-import { FileCacheManager, CacheError } from '../../src/utils/cache.js'
+import { FileCacheManager } from '../../src/utils/cache.js'
 
 // Helper functions for testing
 const createMockFetchFunction = (returnValue: string) => {
@@ -31,13 +31,11 @@ const createErrorFetchFunction = (error: Error) => async () => {
 
 describe('FileCacheManager', () => {
   let cache: FileCacheManager
-  let testCachePath: string
 
   beforeEach(() => {
     // Create unique cache file for each test
     const randomSuffix = Math.random().toString(36).substring(7)
     const testFileName = `.test-togcache-${Date.now()}-${randomSuffix}`
-    testCachePath = join(tmpdir(), testFileName)
     cache = new FileCacheManager(testFileName)
   })
 
@@ -73,7 +71,10 @@ describe('FileCacheManager', () => {
     })
 
     it('should handle array data', async () => {
-      const testData = [{ id: 1, name: 'project 1' }, { id: 2, name: 'project 2' }]
+      const testData = [
+        { id: 1, name: 'project 1' },
+        { id: 2, name: 'project 2' },
+      ]
       await cache.set('array-key', testData, 60000)
 
       const retrieved = await cache.get<typeof testData>('array-key')
@@ -155,7 +156,7 @@ describe('FileCacheManager', () => {
       const promises = [
         cache.getOrFetch('concurrent-key', fetchFn, 60000),
         cache.getOrFetch('concurrent-key', fetchFn, 60000),
-        cache.getOrFetch('concurrent-key', fetchFn, 60000)
+        cache.getOrFetch('concurrent-key', fetchFn, 60000),
       ]
 
       const results = await Promise.all(promises)
@@ -284,8 +285,8 @@ describe('FileCacheManager', () => {
         projects: Array.from({ length: 100 }, (_, i) => ({
           id: i,
           name: `Project ${i}`,
-          description: 'A'.repeat(100)
-        }))
+          description: 'A'.repeat(100),
+        })),
       }
 
       await cache.set('large-data', largeData, 60000)

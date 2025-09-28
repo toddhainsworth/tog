@@ -18,6 +18,7 @@
 import { Command } from 'commander'
 import { select } from '@inquirer/prompts'
 import { isAxiosError } from 'axios'
+import dayjs from 'dayjs'
 import { loadConfig } from '../config/index.js'
 import { createTogglClient, TogglTimeEntry, TogglProject, TogglTask } from '../api/client.js'
 import { formatSuccess, formatError, formatInfo, formatWarning } from '../utils/format.js'
@@ -55,7 +56,9 @@ export function createContinueCommand(): Command {
         const currentTimer = await getCurrentTimeEntry(client)
         if (currentTimer) {
           console.log('')
-          console.log(formatWarning(`Timer is already running: "${currentTimer.description || 'Untitled'}"`))
+          console.log(
+            formatWarning(`Timer is already running: "${currentTimer.description || 'Untitled'}"`)
+          )
           console.log('Use "tog stop" to stop the current timer before continuing a previous one.')
           return
         }
@@ -64,7 +67,7 @@ export function createContinueCommand(): Command {
         const [recentEntries, projects, tasks] = await Promise.all([
           getRecentTimeEntries(client),
           fetchAllProjects(client),
-          fetchAllTasks(client)
+          fetchAllTasks(client),
         ])
 
         // Step 4: Process recent timers
@@ -93,7 +96,6 @@ export function createContinueCommand(): Command {
         if (selectedTimer.task_name) {
           console.log(`Task: ${selectedTimer.task_name}`)
         }
-
       } catch (error: unknown) {
         console.error(formatError('Failed to continue timer'))
 
@@ -122,7 +124,9 @@ export function createContinueCommand(): Command {
 /**
  * Check for currently running timer
  */
-async function getCurrentTimeEntry(client: ReturnType<typeof createTogglClient>): Promise<TogglTimeEntry | null> {
+async function getCurrentTimeEntry(
+  client: ReturnType<typeof createTogglClient>
+): Promise<TogglTimeEntry | null> {
   try {
     const currentEntry: TogglTimeEntry = await client.get('/me/time_entries/current')
     return currentEntry || null
@@ -138,12 +142,11 @@ async function getCurrentTimeEntry(client: ReturnType<typeof createTogglClient>)
 /**
  * Get recent time entries (last 30 days, stopped only)
  */
-async function getRecentTimeEntries(client: ReturnType<typeof createTogglClient>): Promise<TogglTimeEntry[]> {
-  const endDate = new Date()
-  const startDate = new Date(endDate.getTime() - (30 * 24 * 60 * 60 * 1000)) // 30 days ago
-
-  const startDateStr = startDate.toISOString().split('T')[0]
-  const endDateStr = endDate.toISOString().split('T')[0]
+async function getRecentTimeEntries(
+  client: ReturnType<typeof createTogglClient>
+): Promise<TogglTimeEntry[]> {
+  const endDateStr = dayjs().format('YYYY-MM-DD')
+  const startDateStr = dayjs().subtract(30, 'days').format('YYYY-MM-DD')
 
   const entries: TogglTimeEntry[] = await client.get(
     `/me/time_entries?start_date=${startDateStr}&end_date=${endDateStr}`
@@ -152,7 +155,7 @@ async function getRecentTimeEntries(client: ReturnType<typeof createTogglClient>
   // Filter to only stopped entries and sort by most recent
   return entries
     .filter(entry => entry.stop) // Only completed entries
-    .sort((a, b) => new Date(b.stop!).getTime() - new Date(a.stop!).getTime())
+    .sort((a, b) => dayjs(b.stop!).valueOf() - dayjs(a.stop!).valueOf())
     .slice(0, 10) // Limit to 10 most recent
 }
 
@@ -182,7 +185,7 @@ function processRecentTimers(
         task_id: entry.task_id,
         project_name: entry.project_id ? projectMap.get(entry.project_id) : undefined,
         task_name: entry.task_id ? taskMap.get(entry.task_id) : undefined,
-        last_used: entry.stop!
+        last_used: entry.stop!,
       })
     }
   }
@@ -194,21 +197,21 @@ function processRecentTimers(
  * Interactive selection of recent timer
  */
 async function selectRecentTimer(timers: RecentTimer[]): Promise<RecentTimer> {
-  const choices = timers.map((timer, index) => {
+  const choices = timers.map(timer => {
     const description = timer.description || 'Untitled'
     const project = timer.project_name ? ` • ${timer.project_name}` : ''
     const task = timer.task_name ? ` • ${timer.task_name}` : ''
-    const lastUsed = new Date(timer.last_used).toLocaleDateString()
+    const lastUsed = dayjs(timer.last_used).format('MM/DD/YYYY')
 
     return {
       name: `${description}${project}${task} (${lastUsed})`,
-      value: timer
+      value: timer,
     }
   })
 
   return await select({
     message: 'Which timer would you like to continue?',
-    choices
+    choices,
   })
 }
 
@@ -223,9 +226,9 @@ async function startContinuedTimer(
   const timeEntryData: Record<string, unknown> = {
     description: timer.description,
     duration: -1, // Negative duration indicates running timer
-    start: new Date().toISOString(),
+    start: dayjs().toISOString(),
     workspace_id: workspaceId,
-    created_with: 'tog-cli'
+    created_with: 'tog-cli',
   }
 
   if (timer.project_id) {
@@ -242,7 +245,9 @@ async function startContinuedTimer(
 /**
  * Fetch all projects using pagination
  */
-async function fetchAllProjects(client: ReturnType<typeof createTogglClient>): Promise<TogglProject[]> {
+async function fetchAllProjects(
+  client: ReturnType<typeof createTogglClient>
+): Promise<TogglProject[]> {
   const allProjects: TogglProject[] = []
   const perPage = 50
   let page = 1
@@ -275,9 +280,7 @@ async function fetchAllTasks(client: ReturnType<typeof createTogglClient>): Prom
   let hasMorePages = true
 
   while (hasMorePages) {
-    const tasks: TogglTask[] = await client.get(
-      `/me/tasks?per_page=${perPage}&page=${page}`
-    )
+    const tasks: TogglTask[] = await client.get(`/me/tasks?per_page=${perPage}&page=${page}`)
 
     allTasks.push(...tasks)
     hasMorePages = tasks.length === perPage

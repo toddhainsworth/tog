@@ -16,7 +16,6 @@ dayjs.extend(utc)
  */
 const SECONDS_PER_MINUTE = 60
 const SECONDS_PER_HOUR = 3600
-const MILLISECONDS_PER_SECOND = 1000
 
 /**
  * Date range interface
@@ -86,17 +85,14 @@ export function formatDuration(seconds: number): string {
  * Format start time as HH:MM
  */
 export function formatStartTime(isoString: string): string {
-  const date = new Date(isoString)
-  return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  return dayjs(isoString).format('HH:mm')
 }
 
 /**
  * Calculate elapsed seconds for running timer
  */
 export function calculateElapsedSeconds(startTime: string): number {
-  const start = new Date(startTime)
-  const now = new Date()
-  return Math.floor((now.getTime() - start.getTime()) / MILLISECONDS_PER_SECOND)
+  return dayjs().diff(dayjs(startTime), 'seconds')
 }
 
 /**
@@ -106,7 +102,7 @@ export function getTodayDateRange(): DateRange {
   const today = dayjs()
   return {
     start_date: today.startOf('day').toISOString(),
-    end_date: today.endOf('day').toISOString()
+    end_date: today.endOf('day').toISOString(),
   }
 }
 
@@ -114,23 +110,13 @@ export function getTodayDateRange(): DateRange {
  * Get current week date range (Monday to Sunday)
  */
 export function getCurrentWeekDateRange(): DateRange {
-  const now = new Date()
-
-  // Calculate Monday of current week
-  const dayOfWeek = now.getDay()
-  const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek // Sunday is 0, Monday is 1
-
-  const monday = new Date(now)
-  monday.setDate(now.getDate() + mondayOffset)
-  monday.setHours(0, 0, 0, 0)
-
-  const sunday = new Date(monday)
-  sunday.setDate(monday.getDate() + 6)
-  sunday.setHours(23, 59, 59, 999)
+  // dayjs starts week on Sunday by default, we want Monday
+  const startOfWeek = dayjs().startOf('week').add(1, 'day') // Monday
+  const endOfWeek = startOfWeek.add(6, 'days').endOf('day') // Sunday end of day
 
   return {
-    start_date: monday.toISOString(),
-    end_date: sunday.toISOString()
+    start_date: startOfWeek.toISOString(),
+    end_date: endOfWeek.toISOString(),
   }
 }
 
@@ -138,17 +124,13 @@ export function getCurrentWeekDateRange(): DateRange {
  * Get previous week date range (Monday to Sunday)
  */
 export function getPreviousWeekDateRange(): DateRange {
-  const currentWeek = getCurrentWeekDateRange()
-
-  const previousStart = new Date(currentWeek.start_date)
-  previousStart.setDate(previousStart.getDate() - 7)
-
-  const previousEnd = new Date(currentWeek.end_date)
-  previousEnd.setDate(previousEnd.getDate() - 7)
+  // Get previous Monday to Sunday
+  const startOfPreviousWeek = dayjs().startOf('week').add(1, 'day').subtract(1, 'week') // Previous Monday
+  const endOfPreviousWeek = startOfPreviousWeek.add(6, 'days').endOf('day') // Previous Sunday end of day
 
   return {
-    start_date: previousStart.toISOString(),
-    end_date: previousEnd.toISOString()
+    start_date: startOfPreviousWeek.toISOString(),
+    end_date: endOfPreviousWeek.toISOString(),
   }
 }
 
@@ -168,17 +150,11 @@ export function formatTimeEntry(
   entry: TogglTimeEntry,
   projects: TogglProject[] = []
 ): TimeEntrySummary {
-  const project = entry.project_id
-    ? projects.find(p => p.id === entry.project_id)
-    : undefined
+  const project = entry.project_id ? projects.find(p => p.id === entry.project_id) : undefined
 
-  const duration = entry.stop
-    ? entry.duration
-    : calculateElapsedSeconds(entry.start)
+  const duration = entry.stop ? entry.duration : calculateElapsedSeconds(entry.start)
 
-  const endTime = entry.stop
-    ? formatStartTime(entry.stop)
-    : 'Running'
+  const endTime = entry.stop ? formatStartTime(entry.stop) : 'Running'
 
   return {
     date: dayjs(entry.start).format('YYYY-MM-DD'),
@@ -186,7 +162,7 @@ export function formatTimeEntry(
     duration: formatDuration(duration),
     endTime,
     projectName: project?.name,
-    startTime: formatStartTime(entry.start)
+    startTime: formatStartTime(entry.start),
   }
 }
 
@@ -201,13 +177,9 @@ export function aggregateTimeEntriesByProject(
   let totalSeconds = 0
 
   for (const entry of entries) {
-    const project = entry.project_id
-      ? projects.find(p => p.id === entry.project_id)
-      : undefined
+    const project = entry.project_id ? projects.find(p => p.id === entry.project_id) : undefined
     const projectName = project?.name || 'No Project'
-    const entrySeconds = entry.stop
-      ? entry.duration
-      : calculateElapsedSeconds(entry.start)
+    const entrySeconds = entry.stop ? entry.duration : calculateElapsedSeconds(entry.start)
 
     totalSeconds += entrySeconds
 
@@ -222,15 +194,14 @@ export function aggregateTimeEntriesByProject(
   // Convert to array and calculate percentages
   const summaries: ProjectSummary[] = []
   for (const projectData of projectMap.values()) {
-    const percentage = totalSeconds > 0
-      ? Math.round((projectData.totalSeconds / totalSeconds) * 100)
-      : 0
+    const percentage =
+      totalSeconds > 0 ? Math.round((projectData.totalSeconds / totalSeconds) * 100) : 0
 
     summaries.push({
       projectName: projectData.projectName,
       formattedDuration: formatDuration(projectData.totalSeconds),
       totalSeconds: projectData.totalSeconds,
-      percentage
+      percentage,
     })
   }
 
@@ -265,9 +236,7 @@ export function groupTimeEntriesByDay(
     const entrySummaries: TimeEntrySummary[] = []
 
     for (const entry of dayEntries) {
-      const entrySeconds = entry.stop
-        ? entry.duration
-        : calculateElapsedSeconds(entry.start)
+      const entrySeconds = entry.stop ? entry.duration : calculateElapsedSeconds(entry.start)
       totalSeconds += entrySeconds
       entrySummaries.push(formatTimeEntry(entry, projects))
     }
@@ -279,7 +248,7 @@ export function groupTimeEntriesByDay(
       dayName,
       entries: entrySummaries,
       formattedDuration: formatDuration(totalSeconds),
-      totalSeconds
+      totalSeconds,
     })
   }
 
@@ -299,13 +268,9 @@ export function aggregateWeeklyProjectSummary(
 
   // Aggregate by project and track days worked
   for (const entry of entries) {
-    const project = entry.project_id
-      ? projects.find(p => p.id === entry.project_id)
-      : undefined
+    const project = entry.project_id ? projects.find(p => p.id === entry.project_id) : undefined
     const projectName = project?.name || 'No Project'
-    const entrySeconds = entry.stop
-      ? entry.duration
-      : calculateElapsedSeconds(entry.start)
+    const entrySeconds = entry.stop ? entry.duration : calculateElapsedSeconds(entry.start)
     const entryDate = dayjs(entry.start).format('YYYY-MM-DD')
 
     totalSeconds += entrySeconds
@@ -317,7 +282,7 @@ export function aggregateWeeklyProjectSummary(
     } else {
       projectMap.set(projectName, {
         totalSeconds: entrySeconds,
-        days: new Set([entryDate])
+        days: new Set([entryDate]),
       })
     }
   }
@@ -325,13 +290,9 @@ export function aggregateWeeklyProjectSummary(
   // Convert to weekly summaries
   const summaries: WeeklyProjectSummary[] = []
   for (const [projectName, data] of projectMap.entries()) {
-    const percentage = totalSeconds > 0
-      ? Math.round((data.totalSeconds / totalSeconds) * 100)
-      : 0
+    const percentage = totalSeconds > 0 ? Math.round((data.totalSeconds / totalSeconds) * 100) : 0
 
-    const dailyAverageSeconds = data.days.size > 0
-      ? data.totalSeconds / data.days.size
-      : 0
+    const dailyAverageSeconds = data.days.size > 0 ? data.totalSeconds / data.days.size : 0
 
     summaries.push({
       projectName,
@@ -339,7 +300,7 @@ export function aggregateWeeklyProjectSummary(
       totalSeconds: data.totalSeconds,
       percentage,
       daysWorked: data.days.size,
-      dailyAverage: formatDuration(Math.round(dailyAverageSeconds))
+      dailyAverage: formatDuration(Math.round(dailyAverageSeconds)),
     })
   }
 
@@ -358,24 +319,23 @@ export function fillMissingDays(
   const completeDays: DailySummary[] = []
 
   // Generate all 7 days of the week
-  const startDate = new Date(dateRange.start_date)
+  const startDate = dayjs(dateRange.start_date)
   for (let i = 0; i < 7; i++) {
-    const currentDate = new Date(startDate)
-    currentDate.setDate(startDate.getDate() + i)
-    const dateKey = dayjs(currentDate).format('YYYY-MM-DD')
+    const currentDate = startDate.add(i, 'days')
+    const dateKey = currentDate.format('YYYY-MM-DD')
 
     const existingDay = existingDaysMap.get(dateKey)
     if (existingDay) {
       completeDays.push(existingDay)
     } else {
       // Create empty day
-      const dayName = currentDate.toLocaleDateString([], { weekday: 'long' })
+      const dayName = currentDate.format('dddd') // Full day name (Monday, Tuesday, etc.)
       completeDays.push({
         date: dateKey,
         dayName,
         entries: [],
         formattedDuration: '00:00:00',
-        totalSeconds: 0
+        totalSeconds: 0,
       })
     }
   }
