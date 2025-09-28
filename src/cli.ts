@@ -7,6 +7,8 @@
 
 import { Command } from 'commander'
 import { createPingCommand } from './commands/ping.js'
+import { createCurrentCommand } from './commands/current.js'
+import { createStopCommand } from './commands/stop.js'
 
 // Create the main program
 const program = new Command()
@@ -19,6 +21,8 @@ program
 
 // Register commands
 program.addCommand(createPingCommand())
+program.addCommand(createCurrentCommand())
+program.addCommand(createStopCommand())
 
 // Parse command line arguments
 program.parse()

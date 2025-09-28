@@ -36,15 +36,22 @@ export function formatInfo(message: string): string {
  * Format duration in human-readable format
  *
  * @param seconds - Duration in seconds (negative for running timer)
+ * @param precise - If true, returns HH:MM:SS format, otherwise human-readable
  * @returns Formatted duration string
  */
-export function formatDuration(seconds: number): string {
+export function formatDuration(seconds: number, precise = false): string {
   const absSeconds = Math.abs(seconds)
 
   const hours = Math.floor(absSeconds / 3600)
   const minutes = Math.floor((absSeconds % 3600) / 60)
   const remainingSeconds = absSeconds % 60
 
+  if (precise) {
+    // Return HH:MM:SS format for precise display
+    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`
+  }
+
+  // Return human-readable format
   if (hours > 0) {
     return `${hours}h ${minutes}m`
   } else if (minutes > 0) {
@@ -52,6 +59,29 @@ export function formatDuration(seconds: number): string {
   } else {
     return `${remainingSeconds}s`
   }
+}
+
+/**
+ * Calculate elapsed seconds from a start time
+ *
+ * @param startTime - ISO string start time
+ * @returns Elapsed seconds
+ */
+export function calculateElapsedSeconds(startTime: string): number {
+  const start = new Date(startTime)
+  const now = new Date()
+  return Math.floor((now.getTime() - start.getTime()) / 1000)
+}
+
+/**
+ * Format start time for display
+ *
+ * @param isoString - ISO string timestamp
+ * @returns Formatted time string
+ */
+export function formatStartTime(isoString: string): string {
+  const date = new Date(isoString)
+  return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
 }
 
 /**

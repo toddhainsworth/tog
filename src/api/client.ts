@@ -122,8 +122,10 @@ export interface TogglTimeEntry {
   id: number
   description: string
   start: string
+  stop?: string | null
   duration: number
   project_id?: number
+  task_id?: number
   workspace_id: number
   billable: boolean
   created_with: string
@@ -136,4 +138,12 @@ export interface TogglProject {
   active: boolean
   workspace_id: number
   client_id?: number
+}
+
+export interface TogglTask {
+  id: number
+  name: string
+  project_id: number
+  workspace_id: number
+  active: boolean
 }
