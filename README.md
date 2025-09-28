@@ -44,12 +44,11 @@ yarn install && yarn build
 # Make your first change
 # Edit src/commands/ping.ts - change the success message
 yarn build && ./bin/run.js ping
-
-# See our comprehensive guides:
 ```
 
-📚 **[→ Developer Onboarding Guide](docs/ONBOARDING.md)** - Complete step-by-step setup with architecture overview
-🔧 **[→ Troubleshooting Guide](docs/TROUBLESHOOTING.md)** - Solutions to common development and usage issues
+**See our comprehensive guides:**
+- 📚 **[→ Developer Onboarding Guide](docs/ONBOARDING.md)** - Complete step-by-step setup with architecture overview
+- 🔧 **[→ Troubleshooting Guide](docs/TROUBLESHOOTING.md)** - Solutions to common development and usage issues
 
 ## 📋 Available Commands
 
