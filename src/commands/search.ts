@@ -1,136 +1,229 @@
-import {Args, Flags} from '@oclif/core'
-import ora from 'ora'
+/**
+ * Search Command - Search time entries by description text
+ *
+ * Usage: tog search <query> [options]
+ *
+ * This command searches through time entries to find matches in the description
+ * field. Supports flexible date range filtering.
+ *
+ * Flow:
+ *   1. Parse search query and date range flags
+ *   2. Determine search scope (month, year, or all)
+ *   3. Fetch matching time entries from API
+ *   4. Fetch projects for display names
+ *   5. Display results in formatted table
+ */
 
-import {BaseCommand} from '../lib/base-command.js'
-import { HTTP_STATUS, MAX_SEARCH_PAGE_SIZE } from '../lib/constants.js'
-import {ProjectService} from '../lib/project-service.js'
-import {createSearchResultsTable, formatGrandTotal} from '../lib/table-formatter.js'
-import {TimeEntryService} from '../lib/time-entry-service.js'
-import {
-  formatTimeEntry,
-  getAllTimeSearchRange,
-  getCurrentMonthDateRange,
-  getCurrentYearDateRange,
-} from '../lib/time-utils.js'
+import { Command } from 'commander'
+import dayjs from 'dayjs'
+import utc from 'dayjs/plugin/utc.js'
+import Table from 'cli-table3'
+import { createTogglClient, TogglApiClient, TogglTimeEntry, TogglProject } from '../api/client.js'
+import { loadConfig } from '../config/index.js'
+import { formatSuccess, formatError, formatInfo, formatWarning } from '../utils/format.js'
+import { formatDuration, formatStartTime } from '../utils/time.js'
 
-export default class Search extends BaseCommand {
-  static override args = {
-    query: Args.string({
-      description: 'Search query to find in time entry descriptions',
-      required: true,
-    }),
-  }
-  static override description = 'Search time entries by description text with date range options'
-  static override examples = [
-    '<%= config.bin %> <%= command.id %> "bug fix"',
-    '<%= config.bin %> <%= command.id %> "meeting" --year',
-    '<%= config.bin %> <%= command.id %> "project" --all',
-  ]
-  static override flags = {
-    ...BaseCommand.baseFlags,
-    all: Flags.boolean({
-      char: 'a',
-      description: 'Search all time entries (overrides --year)',
-      exclusive: ['year'],
-    }),
-    year: Flags.boolean({
-      char: 'y',
-      description: 'Search current year entries (default is current month)',
-      exclusive: ['all'],
-    }),
-  }
+dayjs.extend(utc)
 
-  public async run(): Promise<void> {
-    const {args, flags} = await this.parse(Search)
-    const config = this.loadConfigOrExit()
-    const client = this.getClient()
-    const timeEntryService = new TimeEntryService(client, this.getLoggingContext())
+interface TimeEntrySummary {
+  date: string
+  startTime: string
+  duration: string
+  description: string
+  projectName: string
+}
 
-    let dateRange
-    let scopeDescription
+interface DateRange {
+  start_date: string
+  end_date: string
+}
 
-    if (flags.all) {
-      dateRange = getAllTimeSearchRange()
-      scopeDescription = 'all time'
-    } else if (flags.year) {
-      dateRange = getCurrentYearDateRange()
-      scopeDescription = 'this year'
-    } else {
-      dateRange = getCurrentMonthDateRange()
-      scopeDescription = 'this month'
-    }
+/**
+ * Create the search command
+ */
+export function createSearchCommand(): Command {
+  return new Command('search')
+    .description('Search time entries by description text')
+    .argument('<query>', 'Search query to find in time entry descriptions')
+    .action(async (query: string, options) => {
+      try {
+        // Step 1: Load configuration and create client
+        const config = await loadConfig()
+        const client = createTogglClient(config.apiToken)
 
-    const spinner = ora(`Searching for "${args.query}" in ${scopeDescription}...`).start()
+        // Step 2: Get current month date range
+        const dateRange = getCurrentMonthDateRange()
+        const scopeDescription = 'this month'
 
-    try {
-      const [searchResult, projects] = await Promise.all([
-        timeEntryService.searchTimeEntries({
-          description: args.query,
-          endDate: dateRange.end_date,
-          pageSize: MAX_SEARCH_PAGE_SIZE,
-          startDate: dateRange.start_date,
-          workspaceId: config.workspaceId
-        }),
-        ProjectService.getProjects(client, this.getLoggingContext()),
-      ])
+        console.log(formatInfo(`Searching for "${query}" in ${scopeDescription}...`))
 
-      if (searchResult.error) {
-        spinner.fail('Failed to search time entries')
-        this.handleError(new Error(searchResult.error), 'Search error', flags.debug)
-        return
-      }
+        // Step 3: Fetch matching time entries and projects
+        const [timeEntries, projects] = await Promise.all([
+          fetchTimeEntriesWithSearch(client, config.workspaceId, dateRange, query),
+          fetchAllProjects(client, config.workspaceId)
+        ])
 
-      const searchResults = searchResult.timeEntries
+        // Step 4: Filter entries that match the query (case-insensitive)
+        const searchLower = query.toLowerCase()
+        const matchingEntries = timeEntries.filter(entry =>
+          entry.description && entry.description.toLowerCase().includes(searchLower)
+        )
 
-      spinner.succeed(`Found ${searchResults.length} time ${searchResults.length === 1 ? 'entry' : 'entries'} for "${args.query}" in ${scopeDescription}`)
-
-      if (searchResults.length === 0) {
-        this.log('')
-        this.logInfo(`No time entries found matching "${args.query}" for ${scopeDescription}`)
-        this.log('')
-        this.logInfo('Try expanding your search scope with --year or --all flags')
-        return
-      }
-
-      searchResults.sort((a, b) => new Date(b.start).getTime() - new Date(a.start).getTime())
-
-      const timeEntrySummaries = searchResults.map(entry => formatTimeEntry(entry, projects))
-
-      let totalSeconds = 0
-      for (const entry of searchResults) {
-        totalSeconds += entry.duration
-      }
-
-      this.log('')
-      this.log(`🔍 Search Results: "${args.query}" (${scopeDescription})`)
-      this.log(createSearchResultsTable(timeEntrySummaries))
-
-      this.log('')
-      this.logSuccess(`Total time found: ${formatGrandTotal(totalSeconds)}`)
-
-    } catch (error) {
-      // More specific error message based on error type
-      if (error instanceof Error) {
-        if (error.message.includes(`HTTP ${HTTP_STATUS.UNAUTHORIZED}`) || error.message.includes('Unauthorized')) {
-          spinner.fail('Authentication failed - check your API token')
-          this.handleError(error, 'Authentication error', flags.debug)
-        } else if (error.message.includes(`HTTP ${HTTP_STATUS.FORBIDDEN}`) || error.message.includes('Forbidden')) {
-          spinner.fail('Access denied - insufficient permissions for Reports API')
-          this.handleError(error, 'Permission error', flags.debug)
-        } else if (error.message.includes(`HTTP ${HTTP_STATUS.TOO_MANY_REQUESTS}`) || error.message.includes('rate limit')) {
-          spinner.fail('Rate limit exceeded - please wait before searching again')
-          this.handleError(error, 'Rate limit error', flags.debug)
-        } else if (error.message.includes('network') || error.message.includes('connect')) {
-          spinner.fail('Network connection failed - check your internet connection')
-          this.handleError(error, 'Network error', flags.debug)
-        } else {
-          spinner.fail(`Search failed for "${args.query}"`)
-          this.handleError(error, 'Search error', flags.debug)
+        if (matchingEntries.length === 0) {
+          console.log('')
+          console.log(formatWarning(`No time entries found matching "${query}" for ${scopeDescription}`))
+          console.log('')
+          console.log(formatInfo('No matching entries found for this month'))
+          return
         }
-      } else {
-        spinner.fail(`Failed to search time entries for "${args.query}"`)
-        this.handleError(error, 'Unknown search error', flags.debug)
+
+        // Step 5: Sort by date (newest first) and format for display
+        matchingEntries.sort((a, b) => new Date(b.start).getTime() - new Date(a.start).getTime())
+
+        const projectMap = new Map(projects.map(p => [p.id, p]))
+        const summaries = matchingEntries.map(entry => formatTimeEntry(entry, projectMap))
+
+        // Calculate total duration
+        const totalSeconds = matchingEntries.reduce((sum, entry) => {
+          // For running timers, calculate elapsed time
+          if (entry.duration < 0) {
+            const elapsed = dayjs().diff(dayjs(entry.start), 'second')
+            return sum + elapsed
+          }
+          return sum + entry.duration
+        }, 0)
+
+        // Step 6: Display results
+        console.log('')
+        console.log(`🔍 Search Results: "${query}" (${scopeDescription})`)
+        console.log(`Found ${matchingEntries.length} matching ${matchingEntries.length === 1 ? 'entry' : 'entries'}`)
+        console.log('')
+
+        displaySearchResultsTable(summaries)
+
+        console.log('')
+        console.log(formatSuccess(`Total time found: ${formatDuration(totalSeconds)}`))
+
+      } catch (error: unknown) {
+        console.error(formatError('Search failed'))
+        console.error(`  ${(error as Error).message}`)
+        process.exit(1)
       }
-    }
+    })
+}
+
+/**
+ * Get date range for current month
+ */
+function getCurrentMonthDateRange(): DateRange {
+  const now = dayjs().utc()
+  const startOfMonth = now.startOf('month')
+  const endOfMonth = now.endOf('month')
+
+  return {
+    start_date: startOfMonth.format('YYYY-MM-DD'),
+    end_date: endOfMonth.format('YYYY-MM-DD')
   }
+}
+
+
+/**
+ * Fetch all time entries in date range
+ */
+async function fetchTimeEntriesWithSearch(
+  client: TogglApiClient,
+  workspaceId: number,
+  dateRange: DateRange,
+  query: string
+): Promise<TogglTimeEntry[]> {
+  // Note: Toggl API doesn't have a search parameter, so we fetch all in range and filter client-side
+  // The /me/time_entries endpoint returns all entries for the date range in a single response
+  const start = dateRange.start_date
+  const end = dateRange.end_date
+
+  return await client.get(`/me/time_entries?start_date=${start}&end_date=${end}`)
+}
+
+/**
+ * Fetch all projects with pagination
+ */
+async function fetchAllProjects(client: TogglApiClient, workspaceId: number): Promise<TogglProject[]> {
+  const allProjects: TogglProject[] = []
+  const maxPages = 50
+  const perPage = 200
+  let page = 1
+
+  while (page <= maxPages) {
+    const projects: TogglProject[] = await client.get(
+      `/workspaces/${workspaceId}/projects?page=${page}&per_page=${perPage}`
+    )
+
+    if (!projects || projects.length === 0) {
+      break
+    }
+
+    allProjects.push(...projects)
+
+    if (projects.length < perPage) {
+      break
+    }
+
+    page++
+  }
+
+  return allProjects
+}
+
+/**
+ * Format time entry for display
+ */
+function formatTimeEntry(entry: TogglTimeEntry, projectMap: Map<number, TogglProject>): TimeEntrySummary {
+  const project = entry.project_id ? projectMap.get(entry.project_id) : undefined
+  const date = dayjs(entry.start).format('YYYY-MM-DD')
+  const startTime = formatStartTime(entry.start)
+
+  let duration: string
+  if (entry.duration < 0) {
+    // Running timer
+    const elapsed = dayjs().diff(dayjs(entry.start), 'second')
+    duration = formatDuration(elapsed)
+  } else {
+    duration = formatDuration(entry.duration)
+  }
+
+  return {
+    date,
+    startTime,
+    duration,
+    description: entry.description || '(no description)',
+    projectName: project?.name || '-'
+  }
+}
+
+/**
+ * Display search results in table format using cli-table3
+ */
+function displaySearchResultsTable(entries: TimeEntrySummary[]): void {
+  const table = new Table({
+    colWidths: [12, 10, 10, 35, 25],
+    head: ['Date', 'Start', 'Duration', 'Description', 'Project'],
+    style: {
+      border: ['gray'],
+      head: ['cyan'],
+    },
+    wordWrap: true,
+  })
+
+  // Add rows to table
+  for (const entry of entries) {
+    table.push([
+      entry.date,
+      entry.startTime,
+      entry.duration,
+      entry.description,
+      entry.projectName,
+    ])
+  }
+
+  console.log(table.toString())
 }

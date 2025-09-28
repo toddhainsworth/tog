@@ -1,55 +1,140 @@
+/**
+ * Projects Command - List all projects in workspace
+ *
+ * Usage: tog projects
+ *
+ * This command displays all projects in the user's default workspace
+ * in a clear table format. Follows the single-file pattern with
+ * comprehensive error handling and pagination support.
+ *
+ * Flow:
+ *   1. Load configuration and validate API token
+ *   2. Fetch all projects using pagination
+ *   3. Sort projects alphabetically by name
+ *   4. Display in formatted table with ID, Name, and Active status
+ *   5. Handle empty state gracefully
+ */
+
+import { Command } from 'commander'
+import { isAxiosError } from 'axios'
 import Table from 'cli-table3'
-import ora from 'ora'
+import { loadConfig } from '../config/index.js'
+import { createTogglClient, TogglProject } from '../api/client.js'
+import { formatSuccess, formatError, formatInfo } from '../utils/format.js'
 
-import {BaseCommand} from '../lib/base-command.js'
-import {ProjectService} from '../lib/project-service.js'
+/**
+ * Create the projects command
+ */
+export function createProjectsCommand(): Command {
+  return new Command('projects')
+    .description('List all projects in the workspace')
+    .action(async () => {
+      try {
+        console.log(formatInfo('Fetching projects...'))
 
-export default class Projects extends BaseCommand {
-  static override description = 'List all projects in the workspace'
-  static override examples = [
-    '<%= config.bin %> <%= command.id %>',
-  ]
+        // Step 1: Load configuration
+        const config = await loadConfig()
+        if (!config) {
+          console.error(formatError('No configuration found'))
+          console.error('Run "tog init" to set up your API token.')
+          process.exit(1)
+        }
 
-  public async run(): Promise<void> {
-    this.loadConfigOrExit()
-    const client = this.getClient()
-    const spinner = ora('Fetching projects...').start()
+        // Step 2: Create API client and fetch all projects with pagination
+        const client = createTogglClient(config.apiToken)
+        const projects = await fetchAllProjects(client)
 
-    try {
-      const projects = await ProjectService.getProjects(client, this.getLoggingContext())
+        // Step 3: Handle empty state
+        if (projects.length === 0) {
+          console.log('')
+          console.log(formatInfo('No projects found in this workspace'))
+          console.log('Create projects at https://track.toggl.com/projects')
+          return
+        }
 
-      spinner.succeed()
+        // Step 4: Sort projects alphabetically by name
+        const sortedProjects = projects.sort((a, b) =>
+          a.name.toLowerCase().localeCompare(b.name.toLowerCase())
+        )
 
-      if (projects.length === 0) {
-        this.logInfo('No projects found in this workspace')
-        return
+        // Step 5: Display results
+        console.log('')
+        console.log(formatSuccess(`Found ${projects.length} project${projects.length === 1 ? '' : 's'}`))
+        console.log('')
+
+        // Create professional table using cli-table3
+        const table = new Table({
+          colWidths: [10, 35, 8],
+          head: ['ID', 'Name', 'Active'],
+          style: {
+            border: ['gray'],
+            head: ['cyan'],
+          },
+        })
+
+        // Add rows to table
+        for (const project of sortedProjects) {
+          const activeStatus = project.active ? '✓' : '✗'
+          table.push([
+            String(project.id),
+            project.name,
+            activeStatus,
+          ])
+        }
+
+        console.log(table.toString())
+        console.log('')
+
+      } catch (error: unknown) {
+        console.error(formatError('Failed to fetch projects'))
+
+        if (isAxiosError(error) && error.response) {
+          const status = error.response.status
+          if (status === 401) {
+            console.error('Invalid API token. Run "tog init" to update your credentials.')
+          } else if (status === 403) {
+            console.error('Access denied. Check your API token permissions.')
+          } else if (status >= 500) {
+            console.error('Toggl API is currently unavailable. Please try again later.')
+          } else {
+            console.error(`API error ${status}: ${error.response.statusText}`)
+          }
+        } else if (error instanceof Error) {
+          console.error(`Error: ${error.message}`)
+        } else {
+          console.error(`Unknown error: ${String(error)}`)
+        }
+
+        process.exit(1)
       }
+    })
+}
 
-      // Sort projects using ProjectService
-      const sortedProjects = ProjectService.sortProjectsByName(projects)
+/**
+ * Fetch all projects using pagination
+ */
+async function fetchAllProjects(client: ReturnType<typeof createTogglClient>): Promise<TogglProject[]> {
+  const allProjects: TogglProject[] = []
+  const perPage = 50 // Toggl API default page size
+  let page = 1
+  let hasMorePages = true
 
-      // Create and display table
-      const table = new Table({
-        colWidths: [8, 40, 25, 8],
-        head: ['ID', 'Name', 'Client', 'Active'],
-        style: { head: ['cyan'] },
-        wordWrap: true,
-      })
+  while (hasMorePages) {
+    const projects: TogglProject[] = await client.get(
+      `/me/projects?per_page=${perPage}&page=${page}`
+    )
 
-      for (const project of sortedProjects) {
-        const clientName = project.client_name || 'No Client'
-        const activeStatus = project.active ? '✓' : '✗'
+    allProjects.push(...projects)
 
-        table.push([project.id, project.name, clientName, activeStatus])
-      }
+    // If we got fewer results than the page size, we've reached the end
+    hasMorePages = projects.length === perPage
+    page++
 
-      this.log('')
-      this.log(table.toString())
-      this.log('')
-
-    } catch (error) {
-      spinner.fail('Failed to fetch projects')
-      this.handleError(error, 'Error fetching projects')
+    // Safety check to prevent infinite loops
+    if (page > 100) {
+      throw new Error('Too many pages - possible infinite loop detected')
     }
   }
+
+  return allProjects
 }

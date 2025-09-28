@@ -1,216 +1,349 @@
-import {Flags} from '@oclif/core'
+/**
+ * Clients Command - List all clients in workspace
+ *
+ * Usage: tog clients [--tree]
+ *
+ * This command displays all clients in the user's default workspace.
+ * Supports both table view (default) and hierarchical tree view.
+ * Follows the single-file pattern with comprehensive error handling.
+ *
+ * Flow:
+ *   1. Load configuration and validate API token
+ *   2. Fetch clients, projects, and tasks (if tree view)
+ *   3. Display in requested format (table or tree)
+ *   4. Handle empty state gracefully
+ */
+
+import { Command } from 'commander'
+import { isAxiosError } from 'axios'
 import Table from 'cli-table3'
-import ora from 'ora'
+import { loadConfig } from '../config/index.js'
+import { createTogglClient, TogglClient, TogglProject, TogglTask } from '../api/client.js'
+import { formatSuccess, formatError, formatInfo } from '../utils/format.js'
 
-import type {TogglClient} from '../lib/toggl-client.js'
-import type {Client, Project, Task} from '../lib/validation.js'
+/**
+ * Create the clients command
+ */
+export function createClientsCommand(): Command {
+  return new Command('clients')
+    .description('List all clients in the workspace')
+    .option('-t, --tree', 'Display clients in hierarchical tree format with projects and tasks')
+    .action(async (options: { tree?: boolean }) => {
+      try {
+        console.log(formatInfo('Fetching clients...'))
 
-import {BaseCommand} from '../lib/base-command.js'
-import {ClientService} from '../lib/client-service.js'
-import {ProjectService} from '../lib/project-service.js'
-import {TaskService} from '../lib/task-service.js'
+        // Step 1: Load configuration
+        const config = await loadConfig()
+        if (!config) {
+          console.error(formatError('No configuration found'))
+          console.error('Run "tog init" to set up your API token.')
+          process.exit(1)
+        }
 
-export default class Clients extends BaseCommand {
-  static override description = 'List all clients in the workspace'
-  static override examples = [
-    '<%= config.bin %> <%= command.id %>',
-    '<%= config.bin %> <%= command.id %> --tree',
-  ]
-  static override flags = {
-    tree: Flags.boolean({
-      description: 'Display clients in hierarchical tree format with projects and tasks',
-    }),
-  }
+        // Step 2: Create API client and fetch data
+        const client = createTogglClient(config.apiToken)
+        const [clients, projects] = await Promise.all([
+          fetchAllClients(client),
+          fetchAllProjects(client)
+        ])
 
-  public async run(): Promise<void> {
-    const {flags} = await this.parse(Clients)
-    this.loadConfigOrExit()
-    const client = this.getClient()
-    const spinner = ora('Fetching clients...').start()
+        // Step 3: Handle empty state
+        if (clients.length === 0) {
+          console.log('')
+          console.log(formatInfo('No clients found in this workspace'))
+          console.log('Create clients at https://track.toggl.com/clients')
+          return
+        }
 
-    try {
-      const clients = await ClientService.getClients(client, this.getLoggingContext())
-      const projects = await ProjectService.getProjects(client, this.getLoggingContext())
+        // Step 4: Display in requested format
+        if (options.tree) {
+          const tasks = await fetchAllTasks(client)
+          displayTreeView(clients, projects, tasks)
+        } else {
+          displayTableView(clients, projects)
+        }
 
-      spinner.succeed()
+      } catch (error: unknown) {
+        console.error(formatError('Failed to fetch clients'))
 
-      if (clients.length === 0) {
-        this.logInfo('No clients found in this workspace')
-        return
+        if (isAxiosError(error) && error.response) {
+          const status = error.response.status
+          if (status === 401) {
+            console.error('Invalid API token. Run "tog init" to update your credentials.')
+          } else if (status === 403) {
+            console.error('Access denied. Check your API token permissions.')
+          } else if (status >= 500) {
+            console.error('Toggl API is currently unavailable. Please try again later.')
+          } else {
+            console.error(`API error ${status}: ${error.response.statusText}`)
+          }
+        } else if (error instanceof Error) {
+          console.error(`Error: ${error.message}`)
+        } else {
+          console.error(`Unknown error: ${String(error)}`)
+        }
+
+        process.exit(1)
       }
+    })
+}
 
-      if (flags.tree) {
-        await this.displayTreeView(clients, projects, client)
-      } else {
-        this.displayTableView(clients, projects)
-      }
-
-    } catch (error) {
-      spinner.fail('Failed to fetch clients')
-      this.handleError(error, 'Error fetching clients')
+/**
+ * Display clients in table format
+ */
+function displayTableView(clients: TogglClient[], projects: TogglProject[]): void {
+  // Calculate project counts per client
+  const clientProjectCounts = new Map<number, number>()
+  for (const project of projects) {
+    if (project.client_id) {
+      const count = clientProjectCounts.get(project.client_id) || 0
+      clientProjectCounts.set(project.client_id, count + 1)
     }
   }
 
-  private displayClientsTree(clients: Client[], clientProjectMap: Map<string, Project[]>, projectTaskMap: Map<number, Task[]>): void {
-    const sortedClients = [...clients].sort((a, b) => a.name.localeCompare(b.name))
+  // Sort clients alphabetically by name
+  const sortedClients = clients.sort((a, b) =>
+    a.name.toLowerCase().localeCompare(b.name.toLowerCase())
+  )
 
-    this.log('')
+  console.log('')
+  console.log(formatSuccess(`Found ${clients.length} client${clients.length === 1 ? '' : 's'}`))
+  console.log('')
 
-    for (const clientItem of sortedClients) {
-      const clientProjects = (clientProjectMap.get(clientItem.name) || [])
-        .sort((a, b) => a.name.localeCompare(b.name))
+  // Create professional table using cli-table3
+  const table = new Table({
+    colWidths: [8, 30, 10],
+    head: ['ID', 'Name', 'Projects'],
+    style: {
+      border: ['gray'],
+      head: ['cyan'],
+    },
+  })
 
-      this.log(`📁 ${clientItem.name}`)
+  // Add rows to table
+  for (const client of sortedClients) {
+    const projectCount = clientProjectCounts.get(client.id) || 0
+    table.push([
+      String(client.id),
+      client.name,
+      String(projectCount),
+    ])
+  }
 
-      if (clientProjects.length === 0) {
-        continue
+  console.log(table.toString())
+  console.log('')
+}
+
+/**
+ * Display clients in hierarchical tree format
+ */
+function displayTreeView(clients: TogglClient[], projects: TogglProject[], tasks: TogglTask[]): void {
+  // Organize data into hierarchical structure
+  const clientProjectMap = new Map<number, TogglProject[]>()
+  const projectTaskMap = new Map<number, TogglTask[]>()
+  const orphanedProjects: TogglProject[] = []
+  const orphanedTasks: TogglTask[] = []
+
+  // Group projects by client
+  for (const project of projects) {
+    if (project.client_id) {
+      if (!clientProjectMap.has(project.client_id)) {
+        clientProjectMap.set(project.client_id, [])
       }
-
-      this.displayProjectsWithTasks(clientProjects, projectTaskMap)
-      this.log('')
+      const clientProjects = clientProjectMap.get(project.client_id)
+      if (clientProjects) {
+        clientProjects.push(project)
+      }
+    } else {
+      orphanedProjects.push(project)
     }
   }
 
-  private displayOrphanedEntities(orphanedProjects: Project[], orphanedTasks: Task[], projectTaskMap: Map<number, Task[]>): void {
-    if (orphanedProjects.length === 0 && orphanedTasks.length === 0) {
-      return
+  // Group tasks by project
+  for (const task of tasks) {
+    if (task.project_id) {
+      if (!projectTaskMap.has(task.project_id)) {
+        projectTaskMap.set(task.project_id, [])
+      }
+      const projectTasks = projectTaskMap.get(task.project_id)
+      if (projectTasks) {
+        projectTasks.push(task)
+      }
+    } else {
+      orphanedTasks.push(task)
+    }
+  }
+
+  console.log('')
+  console.log(formatSuccess(`Found ${clients.length} client${clients.length === 1 ? '' : 's'}`))
+
+  // Display clients with their projects and tasks
+  const sortedClients = clients.sort((a, b) =>
+    a.name.toLowerCase().localeCompare(b.name.toLowerCase())
+  )
+
+  console.log('')
+
+  for (const client of sortedClients) {
+    const clientProjects = (clientProjectMap.get(client.id) || [])
+      .sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase()))
+
+    console.log(`📁 ${client.name}`)
+
+    if (clientProjects.length > 0) {
+      displayProjectsWithTasks(clientProjects, projectTaskMap)
     }
 
-    this.log('📁 No Client')
+    console.log('')
+  }
 
-    const sortedOrphanedProjects = orphanedProjects.sort((a, b) => a.name.localeCompare(b.name))
+  // Display orphaned projects and tasks (those without clients)
+  if (orphanedProjects.length > 0 || orphanedTasks.length > 0) {
+    console.log('📁 No Client')
+
+    // Display orphaned projects with their tasks
+    const sortedOrphanedProjects = orphanedProjects.sort((a, b) =>
+      a.name.toLowerCase().localeCompare(b.name.toLowerCase())
+    )
 
     for (let i = 0; i < sortedOrphanedProjects.length; i++) {
       const project = sortedOrphanedProjects[i]
-      if (!project) continue
       const isLastProject = i === sortedOrphanedProjects.length - 1 && orphanedTasks.length === 0
       const projectPrefix = isLastProject ? '└── ' : '├── '
 
-      this.log(`${projectPrefix}📋 ${project.name}`)
+      console.log(`${projectPrefix}📋 ${project.name}`)
 
       const projectTasks = (projectTaskMap.get(project.id) || [])
-        .sort((a, b) => a.name.localeCompare(b.name))
+        .sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase()))
 
       for (let j = 0; j < projectTasks.length; j++) {
         const task = projectTasks[j]
-        if (!task) continue
         const isLastTask = j === projectTasks.length - 1
         const taskPrefix = isLastProject
           ? (isLastTask ? '    └── ' : '    ├── ')
           : (isLastTask ? '│   └── ' : '│   ├── ')
 
-        this.log(`${taskPrefix}📝 ${task.name}`)
+        console.log(`${taskPrefix}📝 ${task.name}`)
       }
     }
 
-    const sortedOrphanedTasks = orphanedTasks.sort((a, b) => a.name.localeCompare(b.name))
+    // Display orphaned tasks (those without projects)
+    const sortedOrphanedTasks = orphanedTasks.sort((a, b) =>
+      a.name.toLowerCase().localeCompare(b.name.toLowerCase())
+    )
+
     for (let i = 0; i < sortedOrphanedTasks.length; i++) {
       const task = sortedOrphanedTasks[i]
-      if (!task) continue
       const isLastTask = i === sortedOrphanedTasks.length - 1
       const taskPrefix = isLastTask ? '└── ' : '├── '
 
-      this.log(`${taskPrefix}📝 ${task.name}`)
+      console.log(`${taskPrefix}📝 ${task.name}`)
     }
 
-    this.log('')
+    console.log('')
   }
+}
 
-  private displayProjectsWithTasks(projects: Project[], projectTaskMap: Map<number, Task[]>): void {
-    for (let i = 0; i < projects.length; i++) {
-      const project = projects[i]
-      if (!project) continue
-      const isLastProject = i === projects.length - 1
-      const projectPrefix = isLastProject ? '└── ' : '├── '
+/**
+ * Display projects with their tasks in tree format
+ */
+function displayProjectsWithTasks(projects: TogglProject[], projectTaskMap: Map<number, TogglTask[]>): void {
+  for (let i = 0; i < projects.length; i++) {
+    const project = projects[i]
+    const isLastProject = i === projects.length - 1
+    const projectPrefix = isLastProject ? '└── ' : '├── '
 
-      this.log(`${projectPrefix}📋 ${project.name}`)
+    console.log(`${projectPrefix}📋 ${project.name}`)
 
-      const projectTasks = (projectTaskMap.get(project.id) || [])
-        .sort((a, b) => a.name.localeCompare(b.name))
+    const projectTasks = (projectTaskMap.get(project.id) || [])
+      .sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase()))
 
-      for (let j = 0; j < projectTasks.length; j++) {
-        const task = projectTasks[j]
-        if (!task) continue
-        const isLastTask = j === projectTasks.length - 1
-        const taskPrefix = isLastProject
-          ? (isLastTask ? '    └── ' : '    ├── ')
-          : (isLastTask ? '│   └── ' : '│   ├── ')
+    for (let j = 0; j < projectTasks.length; j++) {
+      const task = projectTasks[j]
+      const isLastTask = j === projectTasks.length - 1
+      const taskPrefix = isLastProject
+        ? (isLastTask ? '    └── ' : '    ├── ')
+        : (isLastTask ? '│   └── ' : '│   ├── ')
 
-        this.log(`${taskPrefix}📝 ${task.name}`)
-      }
+      console.log(`${taskPrefix}📝 ${task.name}`)
+    }
+  }
+}
+
+/**
+ * Fetch all clients using pagination
+ */
+async function fetchAllClients(client: ReturnType<typeof createTogglClient>): Promise<TogglClient[]> {
+  const allClients: TogglClient[] = []
+  const perPage = 50
+  let page = 1
+  let hasMorePages = true
+
+  while (hasMorePages) {
+    const clients: TogglClient[] = await client.get(
+      `/me/clients?per_page=${perPage}&page=${page}`
+    )
+
+    allClients.push(...clients)
+    hasMorePages = clients.length === perPage
+    page++
+
+    if (page > 100) {
+      throw new Error('Too many pages - possible infinite loop detected')
     }
   }
 
-  private displayTableView(clients: Client[], projects: Project[]): void {
-    // Use ClientService to get clients with project counts
-    const clientsWithProjectCounts = ClientService.getClientsWithProjectCounts(clients, projects)
+  return allClients
+}
 
-    // Sort clients alphabetically by name using ClientService
-    const sortedClients = ClientService.sortClientsByName(clients)
+/**
+ * Fetch all projects using pagination
+ */
+async function fetchAllProjects(client: ReturnType<typeof createTogglClient>): Promise<TogglProject[]> {
+  const allProjects: TogglProject[] = []
+  const perPage = 50
+  let page = 1
+  let hasMorePages = true
 
-    // Create and display table
-    const table = new Table({
-      colWidths: [8, 40, 15],
-      head: ['ID', 'Name', 'Project Count'],
-      style: { head: ['cyan'] },
-      wordWrap: true,
-    })
+  while (hasMorePages) {
+    const projects: TogglProject[] = await client.get(
+      `/me/projects?per_page=${perPage}&page=${page}`
+    )
 
-    for (const clientItem of sortedClients) {
-      const clientWithCount = clientsWithProjectCounts.find(c => c.client.id === clientItem.id)
-      const projectCount = clientWithCount?.projectCount || 0
-      table.push([clientItem.id, clientItem.name, projectCount])
+    allProjects.push(...projects)
+    hasMorePages = projects.length === perPage
+    page++
+
+    if (page > 100) {
+      throw new Error('Too many pages - possible infinite loop detected')
     }
-
-    this.log('')
-    this.log(table.toString())
-    this.log('')
   }
 
-  private async displayTreeView(clients: Client[], projects: Project[], client: TogglClient): Promise<void> {
-    const tasks = await TaskService.getTasks(client, this.getLoggingContext())
-    const {clientProjectMap, orphanedProjects, orphanedTasks, projectTaskMap} = this.organizeTreeData(projects, tasks)
+  return allProjects
+}
 
-    this.displayClientsTree(clients, clientProjectMap, projectTaskMap)
-    this.displayOrphanedEntities(orphanedProjects, orphanedTasks, projectTaskMap)
+/**
+ * Fetch all tasks using pagination
+ */
+async function fetchAllTasks(client: ReturnType<typeof createTogglClient>): Promise<TogglTask[]> {
+  const allTasks: TogglTask[] = []
+  const perPage = 50
+  let page = 1
+  let hasMorePages = true
+
+  while (hasMorePages) {
+    const tasks: TogglTask[] = await client.get(
+      `/me/tasks?per_page=${perPage}&page=${page}`
+    )
+
+    allTasks.push(...tasks)
+    hasMorePages = tasks.length === perPage
+    page++
+
+    if (page > 100) {
+      throw new Error('Too many pages - possible infinite loop detected')
+    }
   }
 
-  private organizeTreeData(projects: Project[], tasks: Task[]) {
-    const clientProjectMap = new Map<string, Project[]>()
-    const orphanedProjects: Project[] = []
-    const projectTaskMap = new Map<number, Task[]>()
-    const orphanedTasks: Task[] = []
-
-    for (const project of projects) {
-      if (project.client_name) {
-        if (!clientProjectMap.has(project.client_name)) {
-          clientProjectMap.set(project.client_name, [])
-        }
-
-        const projectList = clientProjectMap.get(project.client_name)
-        if (projectList) {
-          projectList.push(project)
-        }
-      } else {
-        orphanedProjects.push(project)
-      }
-    }
-
-    for (const task of tasks) {
-      if (task.project_id) {
-        if (!projectTaskMap.has(task.project_id)) {
-          projectTaskMap.set(task.project_id, [])
-        }
-
-        const taskList = projectTaskMap.get(task.project_id)
-        if (taskList) {
-          taskList.push(task)
-        }
-      } else {
-        orphanedTasks.push(task)
-      }
-    }
-
-    return {clientProjectMap, orphanedProjects, orphanedTasks, projectTaskMap}
-  }
+  return allTasks
 }

@@ -1,0 +1,63 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [ main ]
+  push:
+    branches: [ main ]
+
+jobs:
+  quality-gates:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '22'
+        cache: 'yarn'
+
+    - name: Install dependencies
+      run: yarn install --frozen-lockfile
+
+    - name: TypeScript compilation check
+      run: yarn build
+
+    - name: Run tests
+      run: yarn test
+
+    - name: Lint check (when configured)
+      run: yarn lint
+      continue-on-error: true
+
+    - name: CLI smoke tests
+      run: |
+        chmod +x ./bin/run.js
+        echo "Testing version command..."
+        ./bin/run.js --version
+        echo "Testing help command..."
+        ./bin/run.js --help
+        echo "Testing command help..."
+        ./bin/run.js ping --help
+        ./bin/run.js start --help
+        ./bin/run.js week --help
+
+    - name: Performance check
+      run: |
+        echo "Testing build performance..."
+        time yarn build
+        echo "Testing CLI startup performance..."
+        time ./bin/run.js --version
+
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v4
+      if: success()
+      with:
+        name: ci-artifacts-${{ github.sha }}
+        path: |
+          dist/
+          bin/
+        retention-days: 3

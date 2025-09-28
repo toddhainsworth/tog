@@ -1,11 +1,8 @@
 {
   "extends": "../tsconfig.json",
   "compilerOptions": {
-    "noEmit": true,
-    // Disable strict array access checking in tests for simpler test code
-    "noUncheckedIndexedAccess": false
+    "module": "CommonJS"
   },
-  "references": [
-    {"path": ".."}
-  ]
+  "include": ["**/*"],
+  "exclude": []
 }

@@ -4,13 +4,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a Toggl CLI tool built with oclif framework. The project uses TypeScript with ES modules and follows oclif conventions for command structure and organization.
+This is a Toggl CLI tool built with Commander.js framework. The project uses TypeScript with ES modules and follows a simplified single-file command pattern for maximum clarity and maintainability.
 
 ## Development Commands
 
 - **Build**: `yarn build` - Compiles TypeScript to dist/ directory
 - **Test**: `yarn test` - Runs Mocha tests with TypeScript support
-- **Lint**: `yarn lint` - Runs ESLint with oclif configuration
+- **Lint**: `yarn lint` - ESLint configuration pending (currently skipped)
 - **Test single file**: `yarn test test/path/to/specific.test.ts`
 - **Development workflow**: Tests automatically run linting via `posttest` script
 
@@ -33,7 +33,7 @@ The project includes GitHub Actions workflows for quality gates:
 - ❌ **Command files (`src/commands/`)**: NEVER require tests - DO NOT SUGGEST OR CREATE THEM
 - ❌ **Command test files**: NEVER create `test/commands/` directory or files
 
-**IMPORTANT: This is NOT an oversight. This is an INTENTIONAL architectural decision for this oclif CLI project.**
+**IMPORTANT: This is NOT an oversight. This is an INTENTIONAL architectural decision for this Commander.js CLI project.**
 
 **VIOLATIONS OF THESE RULES:**
 - DO NOT suggest adding command tests
@@ -46,78 +46,97 @@ The project includes GitHub Actions workflows for quality gates:
 ## Architecture
 
 ### Command Structure
-- Commands are organized under `src/commands/` following oclif conventions
-- Each command extends `BaseCommand` from `src/lib/base-command.ts` which provides shared functionality
-- Commands use static properties for `args`, `flags`, `description`, and `examples`
+- Commands are organized under `src/commands/` following single-file pattern
+- Each command exports a `createXCommand()` function that returns a Commander.js Command
+- Commands contain all logic in one file with direct API calls - no service layers
 - Command structure follows the pattern: `src/commands/[command].ts`
 
 ### Configuration
 - **TypeScript**: ES2022 target with Node16 modules, strict mode enabled
 - **Testing**: Mocha with ts-node/register for TypeScript support
-- **Linting**: ESLint with oclif config and Prettier integration
+- **Framework**: Commander.js (replacing oclif)
 - **Package Manager**: Yarn (specified in packageManager field)
 
 ### Key Dependencies
-- `@oclif/core` - Core oclif framework
-- `@oclif/plugin-help` - Help system
-- `@oclif/plugin-plugins` - Plugin management
+- `commander` - Lightweight CLI framework
 - `@inquirer/prompts` - Interactive CLI prompts
 - `arktype` - Runtime type validation library
 - `axios` - HTTP client for API requests
-- `ora` - Terminal spinners for loading states
+- `dayjs` - Reliable time and date handling
+- `cli-table3` - Professional table formatting for command output
 
 ### Build Output
 - Compiled code goes to `dist/`
-- Entry point: `dist/index.js`
+- Entry point: `dist/cli.js`
 - Binary: `./bin/run.js`
 
-### Service Architecture
-The project implements a **domain-driven service architecture** where business logic is extracted into testable service classes organized by domain entities:
+### Single-File Architecture
+The project implements a **single-file command pattern** where each command contains all necessary logic:
 
-**Domain Services (Implemented):**
-- **WorkspaceService** (`src/lib/workspace-service.ts`): Workspace operations, validation, and default workspace management
-- **UserService** (`src/lib/user-service.ts`): Authentication operations, token validation, and connectivity testing
-- **ProjectService** (`src/lib/project-service.ts`): Project CRUD operations, validation, selection, and filtering
-- **TaskService** (`src/lib/task-service.ts`): Task operations, project relationships, and validation
-- **TimeEntryService** (`src/lib/time-entry-service.ts`): Time entry management, validation, statistics, and reporting
-- **FavoriteService** (`src/lib/favorite-service.ts`): Favorites management, filtering, and selection
-- **ClientService** (`src/lib/client-service.ts`): Client operations, statistics, and project relationships
+**Command Structure:**
+- **ping.ts**: API connectivity testing with user info display
+- **current.ts**: Shows running timer with elapsed time and project details
+- **stop.ts**: Stops running timer with validation and confirmation
+- **start.ts**: Interactive timer creation with project/task selection
 
-**Legacy Services (Maintained):**
-- **ProjectTaskSelector** (`src/lib/project-task-selector.ts`): Interactive project/task selection with fuzzy matching
-- **TimerService** (`src/lib/timer-service.ts`): High-level timer operations and workflow management
-- **TimerSelectionService** (`src/lib/timer-selection-service.ts`): Recent timer and favorites selection
+**Architecture Principles:**
+- **Self-contained**: Each command file contains all logic needed for that command
+- **Direct API calls**: No service layer - commands call Toggl API directly
+- **Type safety**: Zero `any` types, comprehensive error handling
+- **Interactive UX**: Uses @inquirer/prompts for user-friendly interactions
 
-**Service Design Patterns:**
-- **Static methods** for stateless operations (WorkspaceService, UserService, FavoriteService, ClientService)
-- **Instance classes** for stateful operations with dependencies (ProjectService, TaskService, TimeEntryService)
-- **Dependency injection** through constructor parameters for service composition
-- **LoggingContext integration** for consistent CLI debug output and error handling
-- **Pure business logic** with no CLI concerns (prompts, spinners, etc.)
-
-**TogglClient Refactoring:**
-- **Pure HTTP client**: TogglClient now focuses solely on HTTP requests and response validation
-- **Backward compatibility**: Maintains existing method signatures while services handle business logic
-- **Clear separation**: HTTP operations vs. domain logic cleanly separated
+**Shared Utilities:**
+- **api/client.ts**: HTTP client with axios, intelligent caching, and proper type guards
+- **config/**: Configuration management with arktype validation
+- **utils/format.ts**: Output formatting utilities (100% test coverage)
+- **utils/cache.ts**: File-based caching with TTL expiration and request deduplication
 
 **Architecture Benefits:**
-- ✅ **Full test coverage**: 100% test coverage for all domain services with comprehensive edge case testing
-- ✅ **Clear boundaries**: Each service owns its domain with well-defined responsibilities
-- ✅ **Service composition**: Services can depend on each other (e.g., TaskService uses ProjectService)
-- ✅ **Command simplification**: Commands focus on CLI concerns, delegate business logic to services
-- ✅ **Type safety**: Comprehensive TypeScript interfaces and validation throughout
-- ✅ **Error handling**: Consistent error patterns with detailed debugging support
+- ✅ **Immediate understanding**: All logic visible in one file
+- ✅ **No hidden abstractions**: Direct, clear code flow
+- ✅ **Easy debugging**: Simple call stack, clear error paths
+- ✅ **Fast development**: No service layer to design or maintain
+- ✅ **Type safety**: Comprehensive TypeScript with zero `any` types
+- ✅ **Maintainability**: Dramatically reduced codebase complexity
 
-**Service Dependencies:**
+## UI and Table Formatting
+
+### Table Display Standards
+All commands use **cli-table3** for professional table formatting with consistent styling:
+
+```typescript
+import Table from 'cli-table3'
+
+const table = new Table({
+  colWidths: [12, 10, 10, 35, 25],
+  head: ['Date', 'Start', 'Duration', 'Description', 'Project'],
+  style: {
+    border: ['gray'],
+    head: ['cyan'],
+  },
+  wordWrap: true,
+})
+
+// Add rows
+for (const entry of entries) {
+  table.push([entry.date, entry.startTime, entry.duration, entry.description, entry.projectName])
+}
+
+console.log(table.toString())
 ```
-TimeEntryService → ProjectService, TaskService, WorkspaceService
-TaskService → ProjectService
-ProjectService → (standalone)
-ClientService → (standalone)
-FavoriteService → (standalone)
-UserService → (standalone)
-WorkspaceService → (standalone)
-```
+
+**Table Style Requirements:**
+- ✅ **Gray borders**: `border: ['gray']` for professional appearance
+- ✅ **Cyan headers**: `head: ['cyan']` for consistent branding
+- ✅ **Word wrapping**: `wordWrap: true` for long content
+- ✅ **Fixed column widths**: Ensures consistent alignment across different data sets
+- ✅ **Consistent patterns**: All table-displaying commands use identical styling
+
+**Commands with Tables:**
+- **search**: Time entries with Date, Start, Duration, Description, Project columns
+- **today**: Time entries table + Project summary table
+- **week**: Daily summary table + Project summary table
+- **projects/tasks/clients**: List tables with relevant columns
 
 ## Testing Policy (Detailed)
 
@@ -135,19 +154,20 @@ WorkspaceService → (standalone)
 - Test files in `test/` directory mirror `src/` structure (lib only)
 - Uses Mocha with TypeScript support via ts-node
 - Tests have 60-second timeout configured
-- Use `@oclif/test` for oclif-specific testing utilities (when testing is needed)
+- Focus on utility functions that require comprehensive testing
 
 ### ✅ MUST Test (REQUIRED)
-- Core utilities in `src/lib/` (data formatters, time utilities, validation schemas)
-- API client methods (mocked responses)
+- Core utilities in `src/utils/` (format utilities, time calculations, validation, caching)
+- API client methods (with proper type safety)
 - Data transformation and business logic
-- ALL service classes in `src/lib/*-service.ts`
+- Cache functionality including TTL, persistence, and request deduplication
+- ALL utility functions with comprehensive edge cases
 
 ### ❌ MUST NOT Test (FORBIDDEN)
-- **oclif commands in `src/commands/`** - NEVER suggest or create these tests
+- **Commands in `src/commands/`** - NEVER suggest or create these tests
 - **DO NOT create `test/commands/` directory** - This is PROHIBITED
 - External API integrations (real Toggl API calls)
-- CLI argument parsing and flag handling (handled by oclif framework)
+- CLI argument parsing and flag handling (handled by Commander.js framework)
 
 **REMINDER: This is an ARCHITECTURAL DECISION, not an oversight. Commands are tested manually during development. Any suggestion to add command tests is WRONG.**
 
@@ -160,7 +180,7 @@ WorkspaceService → (standalone)
 - Use `tog nuke` to delete configuration (with confirmation prompt)
 
 ### API Integration
-- Uses `TogglClient` class from `src/lib/toggl-client.ts`
+- Uses `createTogglClient` function from `src/api/client.ts` with integrated caching
 - Implements Basic Auth with API token format: `${token}:api_token`
 - Client provides `ping()` method for token validation
 - Base URL: `https://api.track.toggl.com/api/v9`
@@ -168,8 +188,9 @@ WorkspaceService → (standalone)
 ## Implementation Notes
 
 ### Command Generation
-- Always use `npx oclif generate command <name>` to create new commands
-- This ensures proper oclif structure and includes test files
+- Create new commands using the single-file pattern
+- Copy existing command structure and modify for new functionality
+- Register in `src/cli.ts` using `program.addCommand(createYourCommand())`
 
 ### PRD Template
 
@@ -237,22 +258,21 @@ Brief description of the feature and its purpose.
 - Pattern: `type ApiToken = typeof ApiTokenSchema.infer`
 
 ### Error Handling
-- Commands extend `BaseCommand` which provides `handleError()` method for consistent error handling
-- Use `this.error()` for command failures that should exit with error code
-- Use `this.logInfo()`, `this.logSuccess()`, `this.logWarning()` for consistent messaging with emojis
-- Error handling system includes typed errors in `src/lib/errors.ts`
+- Commands use try/catch blocks with comprehensive error handling
+- Use `process.exit(1)` for command failures that should exit with error code
+- Use format utilities (`formatSuccess`, `formatError`, etc.) for consistent messaging
+- Error handling uses proper type guards and `isAxiosError()` for API errors
 
-### Structured Logging
-- **Debug Logging**: BaseCommand provides `logDebug()` and `logDebugError()` methods for detailed debug output
-- **Debug Flag**: All commands inherit a hidden `--debug` flag that enables verbose logging
-- **Data Sanitization**: Logs automatically sanitize sensitive information using `DataSanitizer` class
-- **TogglClient Integration**: API client includes debug logging for requests, responses, and errors
-- **Security-First**: API tokens and other sensitive keys are automatically masked in debug output
+### Type Safety Standards
+- **Zero `any` types**: Strict TypeScript with no `any` usage allowed
+- **Proper error handling**: Use `unknown` for errors with type guards
+- **API responses**: Always type API responses with proper interfaces
+- **Type guards**: Use `isAxiosError()` for axios-specific error handling
 
 ### Interactive Prompts
 - Use `@inquirer/prompts` for user input: `confirm`, `input`, `select`
-- Prompt utilities available in `src/lib/prompts.ts`
-- Use `withSpinner()` for async operations with loading indicators
+- Import directly in commands: `import { input, select, confirm } from '@inquirer/prompts'`
+- Create user-friendly prompts with clear messaging
 - Use confirmation prompts for destructive operations (y/N pattern)
 
 ## Release Process
@@ -320,9 +340,19 @@ Brief description of the feature and its purpose.
 - Use `yarn version` command for automated version bumping if preferred
 
 ## Documentation
-- PRDs (Product Requirements Documents) follow the new workflow in `docs/DEVELOPMENT.md`
-- Local PRDs are kept in `docs/prd/` for development reference (not committed)
-- GitHub issues serve as the source of truth for approved PRDs
+
+The project includes comprehensive developer documentation:
+
+- **[Developer Onboarding](docs/ONBOARDING.md)** - Complete guide for new contributors with architecture overview, progressive learning from 5-minute quick start to 30-minute first contribution
+- **[Troubleshooting Guide](docs/TROUBLESHOOTING.md)** - Solutions to common development and usage issues with debugging techniques
+- **[Architecture Deep Dive](docs/AI_DEVELOPMENT.md)** - Development process and architectural decisions
+- **[Release Process](docs/RELEASE.md)** - How to cut releases and manage versions
+
+### Documentation Standards
+- All examples in documentation must be tested and working
+- Architecture diagrams use Mermaid for clear visualization
+- Progressive complexity from basic usage to advanced development
+- Focus on copy-paste examples and practical workflows
 
 ## Refactoring Approach
 
@@ -452,7 +482,7 @@ When user says things like:
 
 ### Caching Implementation Lessons
 
-The file-based caching implementation (Issue #23) revealed that:
+The file-based caching implementation (Issue #23) was successfully restored and revealed that:
 
 1. **User requirements should be taken literally** - When they say "simple", don't add analytics or complex configuration
 2. **Async patterns matter** - Proper `await` is always better than fire-and-forget

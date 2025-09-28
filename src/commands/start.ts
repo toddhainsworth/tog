@@ -1,145 +1,295 @@
-import {Flags} from '@oclif/core'
+/**
+ * Start Command - Start a new time tracking timer
+ *
+ * Usage: tog start
+ *
+ * This command demonstrates the single-file pattern for complex interactive
+ * operations. All logic is contained here for immediate understanding.
+ *
+ * Flow:
+ *   1. Load configuration and create API client
+ *   2. Check if a timer is already running
+ *   3. Interactive prompt for timer description
+ *   4. Interactive project selection (with search)
+ *   5. Interactive task selection (if project has tasks)
+ *   6. Create and start the timer
+ *   7. Confirm success with timer details
+ */
 
-import type { Project, Task } from '../lib/validation.js'
+import { confirm, input, select } from '@inquirer/prompts'
+import { type } from 'arktype'
+import { isAxiosError } from 'axios'
+import { Command } from 'commander'
+import dayjs from 'dayjs'
+import { createTogglClient, TogglApiClient, TogglProject, TogglTask, TogglTimeEntry, TogglUser } from '../api/client.js'
+import { loadConfig } from '../config/index.js'
+import { formatError, formatInfo, formatSuccess, formatWarning } from '../utils/format.js'
 
-import { BaseCommand } from '../lib/base-command.js'
-import { ProjectTaskSelector } from '../lib/project-task-selector.js'
-import { promptForDescription } from '../lib/prompts.js'
-import { TimerService } from '../lib/timer-service.js'
+/**
+ * Schema for timer data when starting a new timer
+ */
+const StartTimerDataSchema = type({
+  description: 'string',
+  duration: 'number',
+  start: 'string',
+  project_id: 'number?',
+  task_id: 'number?',
+  workspace_id: 'number',
+  created_with: 'string'
+})
 
-export default class Start extends BaseCommand {
-  static override description = 'Start a new time tracking timer'
-  static override examples = [
-    '<%= config.bin %> <%= command.id %>',
-    '<%= config.bin %> <%= command.id %> -d "Working on API integration"',
-    '<%= config.bin %> <%= command.id %> -d "Bug fix" -p "Backend Project"',
-    '<%= config.bin %> <%= command.id %> -d "Feature work" -p "Frontend" -t "Login system"',
-  ]
-static override flags = {
-    description: Flags.string({char: 'd', description: 'Timer description'}),
-    project: Flags.string({char: 'p', description: 'Project name or ID'}),
-    task: Flags.string({char: 't', description: 'Task name or ID'}),
-  }
+/**
+ * Schema for timer description validation
+ */
+const TimerDescriptionSchema = type('string<=200')
 
-  public async run(): Promise<void> {
-    try {
-      const {flags} = await this.parse(Start)
-      const config = this.loadConfigOrExit()
-      const client = this.getClient()
+/**
+ * Type definitions inferred from schemas
+ */
+type StartTimerData = typeof StartTimerDataSchema.infer
 
-      // Check for running timer
-      const runningTimerCheck = await TimerService.checkForRunningTimer(client)
-      if (runningTimerCheck.hasRunningTimer) {
-        this.logWarning(`Timer is already running: "${runningTimerCheck.currentEntry?.description || 'Untitled'}"`)
-        this.log('Use `tog stop` to stop the current timer before starting a new one.')
-        return
-      }
+/**
+ * Create the start command
+ */
+export function createStartCommand(): Command {
+  return new Command('start')
+    .description('Start a new time tracking timer')
+    .action(async () => {
+      try {
+        // Step 1: Load configuration and create client
+        const config = await loadConfig()
+        const client = createTogglClient(config.apiToken)
 
-      // Get timer description
-      const description = await this.getTimerDescription(flags)
-      if (!description) return
+        // Step 2: Check for running timer
+        const currentEntry = await getCurrentTimeEntry(client)
+        if (currentEntry) {
+          console.log(formatWarning('Timer is already running'))
+          console.log(`Current: "${currentEntry.description || 'No description'}"`)
+          console.log('')
 
-      // Get available data
-      const result = await TimerService.fetchTasksAndProjects(client, {
-        log: this.log.bind(this),
-        warn: this.warn.bind(this)
-      })
-      if (!result.tasks || !result.projects) return
-      const {projects, tasks} = result
+          const shouldStop = await confirm({
+            message: 'Do you want to stop the current timer and start a new one?',
+            default: false
+          })
 
-      // Handle project/task selection
-      const selector = new ProjectTaskSelector(projects, tasks)
-      const {selectedProject, selectedTask} = await this.selectProjectAndTask(selector, flags)
+          if (!shouldStop) {
+            console.log(formatInfo('Timer start cancelled'))
+            return
+          }
 
-      // Validate timer creation parameters
-      const validationResult = TimerService.validateTimerCreation({
-        client,
-        config,
-        description,
-        selectedProject,
-        selectedTask
-      })
+          // Stop current timer
+          if (currentEntry.workspace_id && currentEntry.id) {
+            await stopTimeEntry(client, currentEntry.workspace_id, currentEntry.id)
+            console.log(formatSuccess('Previous timer stopped'))
+          }
+        }
 
-      if (!validationResult.isValid) {
-        this.handleError(new Error(validationResult.error ?? 'Timer validation failed'), 'Timer validation failed')
-        return
-      }
+        // Step 3: Get timer description
+        const description = await getTimerDescription()
 
-      // Create and start timer
-      const timerResult = await TimerService.createTimer({
-        client,
-        config,
-        description,
-        selectedProject,
-        selectedTask
-      }, {
-        log: this.log.bind(this),
-        warn: this.warn.bind(this)
-      })
+        // Step 4: Get user's workspace (needed for API calls)
+        const user: TogglUser = await client.get('/me')
+        const workspaceId = user.default_workspace_id
 
-      if (timerResult.success) {
-        this.logSuccess('Timer started successfully!')
-        this.log(`Description: "${description}"`)
+        // Step 5: Project selection
+        const selectedProject = await selectProject(client, workspaceId)
+
+        // Step 6: Task selection (if project has tasks)
+        let selectedTask: TogglTask | undefined
+        if (selectedProject) {
+          selectedTask = await selectTask(client, workspaceId, selectedProject.id)
+        }
+
+        // Step 7: Create and start timer
+        const timerData: StartTimerData = {
+          description,
+          duration: -1, // Negative duration indicates running timer
+          start: dayjs().toISOString(), // Current time as start time
+          workspace_id: workspaceId,
+          created_with: 'tog-cli',
+        }
 
         if (selectedProject) {
-          this.log(`Project: ${selectedProject.name}`)
+          timerData.project_id = selectedProject.id
         }
 
         if (selectedTask) {
-          this.log(`Task: ${selectedTask.name}`)
+          timerData.task_id = selectedTask.id
         }
-      } else {
-        this.handleError(timerResult.error ?? new Error('Timer creation failed'), 'Timer creation failed')
-      }
 
-    } catch (error) {
-      this.handleError(error, 'Failed to start timer')
-    }
-  }
+        // Validate timer data before sending to API
+        const validatedData = StartTimerDataSchema.assert(timerData)
+        const newTimer = await createTimer(client, workspaceId, validatedData)
 
+        // Step 8: Confirm success
+        console.log('')
+        console.log(formatSuccess('Timer started successfully!'))
+        console.log(`📝 Description: ${description || 'No description'}`)
 
-  private async getTimerDescription(flags: {description?: string}): Promise<null | string> {
-    if (flags.description) {
-      this.log(`Using description: "${flags.description}"`)
-      return flags.description
-    }
-
-    this.log('Let\'s start a new timer!')
-    try {
-      return await promptForDescription()
-    } catch (error) {
-      this.handleError(error, 'Failed to get timer description')
-      return null
-    }
-  }
-
-  private async selectProjectAndTask(selector: ProjectTaskSelector, flags: {project?: string, task?: string}): Promise<{selectedProject?: Project, selectedTask?: Task}> {
-    try {
-      const result = await selector.selectProjectAndTask(flags)
-
-      // Log selections for user feedback
-      if (result.selectedProject) {
-        this.log(`Using project: ${result.selectedProject.name}`)
-      }
-
-      if (result.selectedTask) {
-        this.log(`Using task: ${result.selectedTask.name}`)
-      }
-
-      // Log interactive selection result if it came from interactive mode
-      if (!flags.project && !flags.task && (result.selectedProject || result.selectedTask)) {
-        const parts = []
-        if (result.selectedProject) parts.push(result.selectedProject.name)
-        if (result.selectedTask) parts.push(`(${result.selectedTask.name})`)
-        if (parts.length > 0) {
-          this.logSuccess(`Selected: ${parts.join(' ')}`)
+        if (selectedProject) {
+          console.log(`📂 Project: ${selectedProject.name}`)
         }
-      }
 
-      return result
-    } catch (error) {
-      this.handleError(error, 'Failed to select project/task')
-      return {}
+        if (selectedTask) {
+          console.log(`📋 Task: ${selectedTask.name}`)
+        }
+
+      } catch (error: unknown) {
+        console.error(formatError('Failed to start timer'))
+        console.error(`  ${(error as Error).message}`)
+        process.exit(1)
+      }
+    })
+}
+
+/**
+ * Fetch the current time entry from the API
+ */
+async function getCurrentTimeEntry(client: TogglApiClient): Promise<TogglTimeEntry | null> {
+  try {
+    const currentEntry: TogglTimeEntry = await client.get('/me/time_entries/current')
+    return currentEntry
+  } catch (error: unknown) {
+    // Use axios type guard for better type safety
+    if (isAxiosError(error)) {
+      // If API returns 200 with null/empty response, no timer is running
+      if (error.response?.status === 200 || !error.response) {
+        return null
+      }
     }
+    throw error
+  }
+}
+
+/**
+ * Stop a time entry via the API
+ */
+async function stopTimeEntry(client: TogglApiClient, workspaceId: number, timeEntryId: number): Promise<void> {
+  try {
+    await client.put(`/workspaces/${workspaceId}/time_entries/${timeEntryId}/stop`)
+  } catch (error: unknown) {
+    if (isAxiosError(error) && error.response?.status === 404) {
+      throw new Error('Timer not found. It may have already been stopped.')
+    }
+    const message = error instanceof Error ? error.message : String(error)
+    throw new Error(`Failed to stop timer: ${message}`)
+  }
+}
+
+/**
+ * Interactive prompt for timer description
+ */
+async function getTimerDescription(): Promise<string> {
+  const description = await input({
+    message: 'Enter timer description (optional):',
+    validate: (input: string) => {
+      const trimmed = input.trim()
+      const validation = TimerDescriptionSchema(trimmed)
+      if (validation instanceof type.errors) {
+        return 'Description must be 200 characters or less'
+      }
+      return true
+    }
+  })
+
+  return description.trim()
+}
+
+/**
+ * Interactive project selection
+ */
+async function selectProject(client: TogglApiClient, workspaceId: number): Promise<TogglProject | undefined> {
+  try {
+    // Fetch available projects
+    const projects: TogglProject[] = await client.get(`/workspaces/${workspaceId}/projects`)
+
+    if (projects.length === 0) {
+      console.log(formatInfo('No projects available'))
+      return undefined
+    }
+
+    // Create choices with "No project" option
+    const choices = [
+      {
+        name: 'No project',
+        value: null
+      },
+      ...projects.map(project => ({
+        name: project.name,
+        value: project
+      }))
+    ]
+
+    const selectedProject = await select({
+      message: 'Select a project:',
+      choices
+    })
+
+    return selectedProject || undefined
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error)
+    throw new Error(`Failed to fetch projects: ${message}`)
+  }
+}
+
+/**
+ * Interactive task selection for a project
+ */
+async function selectTask(client: TogglApiClient, workspaceId: number, projectId: number): Promise<TogglTask | undefined> {
+  try {
+    // Fetch all tasks for the user, then filter by project
+    const allTasks: TogglTask[] = await client.get('/me/tasks?meta=true')
+    const projectTasks = allTasks.filter(task => task.project_id === projectId)
+
+    if (projectTasks.length === 0) {
+      return undefined
+    }
+
+    // Create choices with "No task" option
+    const choices = [
+      {
+        name: 'No task',
+        value: null
+      },
+      ...projectTasks.map(task => ({
+        name: task.name,
+        value: task
+      }))
+    ]
+
+    const selectedTask = await select({
+      message: 'Select a task:',
+      choices
+    })
+
+    return selectedTask || undefined
+  } catch (error: unknown) {
+    // If user has no tasks or endpoint fails, that's ok
+    if (isAxiosError(error) && (error.response?.status === 404 || error.response?.status === 403)) {
+      return undefined
+    }
+    const message = error instanceof Error ? error.message : String(error)
+    throw new Error(`Failed to fetch tasks: ${message}`)
+  }
+}
+
+/**
+ * Create a new timer via the API
+ */
+async function createTimer(client: TogglApiClient, workspaceId: number, timerData: StartTimerData): Promise<TogglTimeEntry> {
+  try {
+    const timer: TogglTimeEntry = await client.post(`/workspaces/${workspaceId}/time_entries?meta=true`, timerData)
+    return timer
+  } catch (error: unknown) {
+    if (isAxiosError(error)) {
+      if (error.response?.status === 400) {
+        throw new Error('Invalid timer data. Please check your input.')
+      }
+      if (error.response?.status === 403) {
+        throw new Error('Permission denied. Check your workspace access.')
+      }
+    }
+    const message = error instanceof Error ? error.message : String(error)
+    throw new Error(`Failed to create timer: ${message}`)
   }
 }
