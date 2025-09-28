@@ -23,42 +23,39 @@ import { formatError, formatInfo, formatSuccess } from '../utils/format.js'
  * Create the stop command
  */
 export function createStopCommand(): Command {
-  return new Command('stop')
-    .description('Stop the currently running timer')
-    .action(async () => {
-      try {
-        // Step 1: Load configuration and create client
-        const config = await loadConfig()
-        const client = createTogglClient(config.apiToken)
+  return new Command('stop').description('Stop the currently running timer').action(async () => {
+    try {
+      // Step 1: Load configuration and create client
+      const config = await loadConfig()
+      const client = createTogglClient(config.apiToken)
 
-        // Step 2: Check for running timer
-        const currentEntry = await getCurrentTimeEntry(client)
+      // Step 2: Check for running timer
+      const currentEntry = await getCurrentTimeEntry(client)
 
-        if (!currentEntry) {
-          console.log(formatInfo('No timer is currently running'))
-          return
-        }
-
-        // Step 3: Validate timer has required IDs
-        if (!currentEntry.workspace_id || !currentEntry.id) {
-          throw new Error('Current time entry missing required IDs. Unable to stop timer.')
-        }
-
-        // Step 4: Stop the timer
-        await stopTimeEntry(client, currentEntry.workspace_id, currentEntry.id)
-
-        // Step 5: Confirm success
-        console.log(formatSuccess('Timer stopped successfully!'))
-        if (currentEntry.description) {
-          console.log(`Stopped: "${currentEntry.description}"`)
-        }
-
-      } catch (error: unknown) {
-        console.error(formatError('Failed to stop timer'))
-        console.error(`  ${(error as Error).message}`)
-        process.exit(1)
+      if (!currentEntry) {
+        console.log(formatInfo('No timer is currently running'))
+        return
       }
-    })
+
+      // Step 3: Validate timer has required IDs
+      if (!currentEntry.workspace_id || !currentEntry.id) {
+        throw new Error('Current time entry missing required IDs. Unable to stop timer.')
+      }
+
+      // Step 4: Stop the timer
+      await stopTimeEntry(client, currentEntry.workspace_id, currentEntry.id)
+
+      // Step 5: Confirm success
+      console.log(formatSuccess('Timer stopped successfully!'))
+      if (currentEntry.description) {
+        console.log(`Stopped: "${currentEntry.description}"`)
+      }
+    } catch (error: unknown) {
+      console.error(formatError('Failed to stop timer'))
+      console.error(`  ${(error as Error).message}`)
+      process.exit(1)
+    }
+  })
 }
 
 /**
@@ -82,7 +79,11 @@ async function getCurrentTimeEntry(client: TogglApiClient): Promise<TogglTimeEnt
 /**
  * Stop a time entry via the API
  */
-async function stopTimeEntry(client: TogglApiClient, workspaceId: number, timeEntryId: number): Promise<void> {
+async function stopTimeEntry(
+  client: TogglApiClient,
+  workspaceId: number,
+  timeEntryId: number
+): Promise<void> {
   try {
     await client.patch(`/workspaces/${workspaceId}/time_entries/${timeEntryId}/stop`)
   } catch (error: unknown) {

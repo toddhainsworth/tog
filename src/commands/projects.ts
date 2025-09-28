@@ -59,7 +59,9 @@ export function createProjectsCommand(): Command {
 
         // Step 5: Display results
         console.log('')
-        console.log(formatSuccess(`Found ${projects.length} project${projects.length === 1 ? '' : 's'}`))
+        console.log(
+          formatSuccess(`Found ${projects.length} project${projects.length === 1 ? '' : 's'}`)
+        )
         console.log('')
 
         // Create professional table using cli-table3
@@ -75,16 +77,11 @@ export function createProjectsCommand(): Command {
         // Add rows to table
         for (const project of sortedProjects) {
           const activeStatus = project.active ? '✓' : '✗'
-          table.push([
-            String(project.id),
-            project.name,
-            activeStatus,
-          ])
+          table.push([String(project.id), project.name, activeStatus])
         }
 
         console.log(table.toString())
         console.log('')
-
       } catch (error: unknown) {
         console.error(formatError('Failed to fetch projects'))
 
@@ -113,7 +110,9 @@ export function createProjectsCommand(): Command {
 /**
  * Fetch all projects using pagination
  */
-async function fetchAllProjects(client: ReturnType<typeof createTogglClient>): Promise<TogglProject[]> {
+async function fetchAllProjects(
+  client: ReturnType<typeof createTogglClient>
+): Promise<TogglProject[]> {
   const allProjects: TogglProject[] = []
   const perPage = 50 // Toggl API default page size
   let page = 1

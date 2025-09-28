@@ -15,7 +15,7 @@ import {
   formatDuration,
   calculateElapsedSeconds,
   formatStartTime,
-  formatTimeEntry
+  formatTimeEntry,
 } from '../../src/utils/format.js'
 
 describe('Format Utilities', () => {
@@ -185,7 +185,7 @@ describe('Format Utilities', () => {
       const formats = [
         '2023-01-01T09:05:00Z',
         '2023-01-01T09:05:00.000Z',
-        '2023-01-01T09:05:00+00:00'
+        '2023-01-01T09:05:00+00:00',
       ]
 
       formats.forEach(format => {
@@ -210,7 +210,7 @@ describe('Format Utilities', () => {
         description: 'Working on feature',
         duration: 3600, // 1 hour
         project: { name: 'My Project' },
-        start: '2023-12-25T10:00:00Z'
+        start: '2023-12-25T10:00:00Z',
       }
 
       const formatted = formatTimeEntry(entry)
@@ -225,7 +225,7 @@ describe('Format Utilities', () => {
       const entry = {
         description: 'Solo work',
         duration: 1800, // 30 minutes
-        start: '2023-12-25T10:00:00Z'
+        start: '2023-12-25T10:00:00Z',
       }
 
       const formatted = formatTimeEntry(entry)
@@ -240,7 +240,7 @@ describe('Format Utilities', () => {
       const entry = {
         description: '',
         duration: 600, // 10 minutes
-        start: '2023-12-25T10:00:00Z'
+        start: '2023-12-25T10:00:00Z',
       }
 
       const formatted = formatTimeEntry(entry)
@@ -253,7 +253,7 @@ describe('Format Utilities', () => {
       const entry = {
         description: 'Just started',
         duration: 0,
-        start: '2023-12-25T10:00:00Z'
+        start: '2023-12-25T10:00:00Z',
       }
 
       const formatted = formatTimeEntry(entry)
@@ -267,7 +267,7 @@ describe('Format Utilities', () => {
       const entry = {
         description: 'Currently running',
         duration: -1800, // Negative indicates running
-        start: '2023-12-25T10:00:00Z'
+        start: '2023-12-25T10:00:00Z',
       }
 
       const formatted = formatTimeEntry(entry)

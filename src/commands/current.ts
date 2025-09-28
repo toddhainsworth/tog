@@ -16,7 +16,13 @@
 import { Command } from 'commander'
 import { isAxiosError } from 'axios'
 import { loadConfig } from '../config/index.js'
-import { createTogglClient, TogglApiClient, TogglTimeEntry, TogglProject, TogglTask } from '../api/client.js'
+import {
+  createTogglClient,
+  TogglApiClient,
+  TogglTimeEntry,
+  TogglProject,
+  TogglTask,
+} from '../api/client.js'
 import { formatSuccess, formatError, formatInfo } from '../utils/format.js'
 import { calculateElapsedSeconds, formatDuration, formatStartTime } from '../utils/format.js'
 
@@ -24,32 +30,29 @@ import { calculateElapsedSeconds, formatDuration, formatStartTime } from '../uti
  * Create the current command
  */
 export function createCurrentCommand(): Command {
-  return new Command('current')
-    .description('Show currently running timer')
-    .action(async () => {
-      try {
-        // Step 1: Load configuration and create client
-        const config = await loadConfig()
-        const client = createTogglClient(config.apiToken)
+  return new Command('current').description('Show currently running timer').action(async () => {
+    try {
+      // Step 1: Load configuration and create client
+      const config = await loadConfig()
+      const client = createTogglClient(config.apiToken)
 
-        // Step 2: Fetch current time entry
-        const currentEntry = await getCurrentTimeEntry(client)
+      // Step 2: Fetch current time entry
+      const currentEntry = await getCurrentTimeEntry(client)
 
-        // Step 3: Display results
-        if (!currentEntry) {
-          console.log(formatInfo('No timer currently running'))
-          return
-        }
-
-        // Step 4: Display timer details
-        await displayTimerDetails(client, currentEntry)
-
-      } catch (error: unknown) {
-        console.error(formatError('Failed to fetch timer status'))
-        console.error(`  ${(error as Error).message}`)
-        process.exit(1)
+      // Step 3: Display results
+      if (!currentEntry) {
+        console.log(formatInfo('No timer currently running'))
+        return
       }
-    })
+
+      // Step 4: Display timer details
+      await displayTimerDetails(client, currentEntry)
+    } catch (error: unknown) {
+      console.error(formatError('Failed to fetch timer status'))
+      console.error(`  ${(error as Error).message}`)
+      process.exit(1)
+    }
+  })
 }
 
 /**
@@ -74,7 +77,10 @@ async function getCurrentTimeEntry(client: TogglApiClient): Promise<TogglTimeEnt
 /**
  * Display detailed information about the running timer
  */
-async function displayTimerDetails(client: TogglApiClient, timeEntry: TogglTimeEntry): Promise<void> {
+async function displayTimerDetails(
+  client: TogglApiClient,
+  timeEntry: TogglTimeEntry
+): Promise<void> {
   console.log(formatSuccess('Timer is running'))
   console.log('')
 
@@ -93,7 +99,9 @@ async function displayTimerDetails(client: TogglApiClient, timeEntry: TogglTimeE
   // Fetch and display project information if available
   if (timeEntry.project_id) {
     try {
-      const project: TogglProject = await client.get(`/workspaces/${timeEntry.workspace_id}/projects/${timeEntry.project_id}`)
+      const project: TogglProject = await client.get(
+        `/workspaces/${timeEntry.workspace_id}/projects/${timeEntry.project_id}`
+      )
       console.log(formatInfo(`Project: ${project.name}`))
     } catch {
       // Silently ignore project lookup errors - project might be archived/deleted
@@ -103,7 +111,9 @@ async function displayTimerDetails(client: TogglApiClient, timeEntry: TogglTimeE
   // Fetch and display task information if available
   if (timeEntry.task_id) {
     try {
-      const task: TogglTask = await client.get(`/workspaces/${timeEntry.workspace_id}/tasks/${timeEntry.task_id}`)
+      const task: TogglTask = await client.get(
+        `/workspaces/${timeEntry.workspace_id}/tasks/${timeEntry.task_id}`
+      )
       console.log(formatInfo(`Task: ${task.name}`))
     } catch {
       // Silently ignore task lookup errors - task might be archived/deleted

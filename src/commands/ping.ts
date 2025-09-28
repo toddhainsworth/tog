@@ -22,39 +22,36 @@ import { formatSuccess, formatError, formatInfo } from '../utils/format.js'
  * Create the ping command
  */
 export function createPingCommand(): Command {
-  return new Command('ping')
-    .description('Test connection to Toggl API')
-    .action(async () => {
-      try {
-        // Step 1: Load configuration
-        const config = await loadConfig()
+  return new Command('ping').description('Test connection to Toggl API').action(async () => {
+    try {
+      // Step 1: Load configuration
+      const config = await loadConfig()
 
-        // Step 2: Create API client
-        const client = createTogglClient(config.apiToken)
+      // Step 2: Create API client
+      const client = createTogglClient(config.apiToken)
 
-        // Step 3: Test connection by fetching user info
-        const user: TogglUser = await client.get('/me')
+      // Step 3: Test connection by fetching user info
+      const user: TogglUser = await client.get('/me')
 
-        // Step 4: Display success information
-        console.log(formatSuccess('Connected to Toggl API'))
-        console.log(formatInfo(`User: ${user.fullname} (${user.email})`))
-        console.log(formatInfo(`Default Workspace: ${user.default_workspace_id}`))
-        console.log(formatInfo(`Timezone: ${user.timezone}`))
-        console.log(formatInfo(`Token: ${config.apiToken.substring(0, 8)}...`))
+      // Step 4: Display success information
+      console.log(formatSuccess('Connected to Toggl API'))
+      console.log(formatInfo(`User: ${user.fullname} (${user.email})`))
+      console.log(formatInfo(`Default Workspace: ${user.default_workspace_id}`))
+      console.log(formatInfo(`Timezone: ${user.timezone}`))
+      console.log(formatInfo(`Token: ${config.apiToken.substring(0, 8)}...`))
+    } catch (error: unknown) {
+      // Step 5: Handle errors with helpful troubleshooting
+      console.error(formatError('Connection failed'))
+      console.error(`  ${(error as Error).message}`)
 
-      } catch (error: unknown) {
-        // Step 5: Handle errors with helpful troubleshooting
-        console.error(formatError('Connection failed'))
-        console.error(`  ${(error as Error).message}`)
+      // Provide troubleshooting steps
+      console.error('')
+      console.error('Troubleshooting:')
+      console.error('  1. Check your internet connection')
+      console.error('  2. Verify your API token with "tog init"')
+      console.error('  3. Check Toggl API status at https://status.toggl.com')
 
-        // Provide troubleshooting steps
-        console.error('')
-        console.error('Troubleshooting:')
-        console.error('  1. Check your internet connection')
-        console.error('  2. Verify your API token with "tog init"')
-        console.error('  3. Check Toggl API status at https://status.toggl.com')
-
-        process.exit(1)
-      }
-    })
+      process.exit(1)
+    }
+  })
 }
