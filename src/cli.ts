@@ -12,6 +12,11 @@ import { createStopCommand } from './commands/stop.js'
 import { createStartCommand } from './commands/start.js'
 import { createInitCommand } from './commands/init.js'
 import { createNukeCommand } from './commands/nuke.js'
+import { createProjectsCommand } from './commands/projects.js'
+import { createTasksCommand } from './commands/tasks.js'
+import { createContinueCommand } from './commands/continue.js'
+import { createEditCommand } from './commands/edit.js'
+import { createClientsCommand } from './commands/clients.js'
 
 // Create the main program
 const program = new Command()
@@ -29,6 +34,11 @@ program.addCommand(createStopCommand())
 program.addCommand(createStartCommand())
 program.addCommand(createInitCommand())
 program.addCommand(createNukeCommand())
+program.addCommand(createProjectsCommand())
+program.addCommand(createTasksCommand())
+program.addCommand(createContinueCommand())
+program.addCommand(createEditCommand())
+program.addCommand(createClientsCommand())
 
 // Parse command line arguments
 program.parse()

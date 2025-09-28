@@ -165,3 +165,8 @@ export interface TogglTask {
   workspace_id: number
   active: boolean
 }
+
+export interface TogglClient {
+  id: number
+  name: string
+}
