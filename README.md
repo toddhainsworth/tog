@@ -130,7 +130,7 @@ yarn clean        # Remove build artifacts
 
 - **[Developer Onboarding](docs/ONBOARDING.md)** - Complete guide for new contributors with architecture overview
 - **[Troubleshooting Guide](docs/TROUBLESHOOTING.md)** - Common development and usage issues with solutions
-- **[Architecture Deep Dive](docs/AI_DEVELOPMENT.md)** - Development process and decisions
+- **[AI Development Experiment](docs/AI_DEVELOPMENT.md)** - AI-assisted development case study and lessons learned
 - **[Release Process](docs/RELEASE.md)** - How to cut releases
 
 ## 🎯 Project Status
