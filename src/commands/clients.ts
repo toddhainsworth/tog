@@ -16,6 +16,7 @@
 
 import { Command } from 'commander'
 import { isAxiosError } from 'axios'
+import Table from 'cli-table3'
 import { loadConfig } from '../config/index.js'
 import { createTogglClient, TogglClient, TogglProject, TogglTask } from '../api/client.js'
 import { formatSuccess, formatError, formatInfo } from '../utils/format.js'
@@ -109,32 +110,27 @@ function displayTableView(clients: TogglClient[], projects: TogglProject[]): voi
   console.log(formatSuccess(`Found ${clients.length} client${clients.length === 1 ? '' : 's'}`))
   console.log('')
 
-  // Create simple table display
-  const maxIdWidth = Math.max(2, ...sortedClients.map(c => String(c.id).length))
-  const maxNameWidth = Math.max(4, ...sortedClients.map(c => c.name.length))
+  // Create professional table using cli-table3
+  const table = new Table({
+    colWidths: [8, 30, 10],
+    head: ['ID', 'Name', 'Projects'],
+    style: {
+      border: ['gray'],
+      head: ['cyan'],
+    },
+  })
 
-  // Header
-  console.log(
-    'ID'.padEnd(maxIdWidth) + '  ' +
-    'Name'.padEnd(maxNameWidth) + '  ' +
-    'Projects'
-  )
-  console.log(
-    '-'.repeat(maxIdWidth) + '  ' +
-    '-'.repeat(maxNameWidth) + '  ' +
-    '--------'
-  )
-
-  // Client rows
+  // Add rows to table
   for (const client of sortedClients) {
     const projectCount = clientProjectCounts.get(client.id) || 0
-    console.log(
-      String(client.id).padEnd(maxIdWidth) + '  ' +
-      client.name.padEnd(maxNameWidth) + '  ' +
-      projectCount
-    )
+    table.push([
+      String(client.id),
+      client.name,
+      String(projectCount),
+    ])
   }
 
+  console.log(table.toString())
   console.log('')
 }
 

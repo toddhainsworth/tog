@@ -18,6 +18,7 @@
 
 import { Command } from 'commander'
 import { isAxiosError } from 'axios'
+import Table from 'cli-table3'
 import { loadConfig } from '../config/index.js'
 import { createTogglClient, TogglTask, TogglProject } from '../api/client.js'
 import { formatSuccess, formatError, formatInfo } from '../utils/format.js'
@@ -71,40 +72,29 @@ export function createTasksCommand(): Command {
         console.log(formatSuccess(`Found ${tasks.length} task${tasks.length === 1 ? '' : 's'}`))
         console.log('')
 
-        // Create simple table display
-        const maxIdWidth = Math.max(2, ...sortedTasks.map(t => String(t.id).length))
-        const maxNameWidth = Math.max(4, ...sortedTasks.map(t => t.name.length))
-        const maxProjectWidth = Math.max(7, ...sortedTasks.map(t => {
-          const projectName = projectMap.get(t.project_id) || 'No Project'
-          return projectName.length
-        }))
+        // Create professional table using cli-table3
+        const table = new Table({
+          colWidths: [10, 25, 20, 8],
+          head: ['ID', 'Name', 'Project', 'Active'],
+          style: {
+            border: ['gray'],
+            head: ['cyan'],
+          },
+        })
 
-        // Header
-        console.log(
-          'ID'.padEnd(maxIdWidth) + '  ' +
-          'Name'.padEnd(maxNameWidth) + '  ' +
-          'Project'.padEnd(maxProjectWidth) + '  ' +
-          'Active'
-        )
-        console.log(
-          '-'.repeat(maxIdWidth) + '  ' +
-          '-'.repeat(maxNameWidth) + '  ' +
-          '-'.repeat(maxProjectWidth) + '  ' +
-          '------'
-        )
-
-        // Task rows
+        // Add rows to table
         for (const task of sortedTasks) {
           const projectName = projectMap.get(task.project_id) || 'No Project'
           const activeStatus = task.active ? '✓' : '✗'
-          console.log(
-            String(task.id).padEnd(maxIdWidth) + '  ' +
-            task.name.padEnd(maxNameWidth) + '  ' +
-            projectName.padEnd(maxProjectWidth) + '  ' +
-            activeStatus
-          )
+          table.push([
+            String(task.id),
+            task.name,
+            projectName,
+            activeStatus,
+          ])
         }
 
+        console.log(table.toString())
         console.log('')
 
       } catch (error: unknown) {

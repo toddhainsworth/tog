@@ -17,6 +17,7 @@
 
 import { Command } from 'commander'
 import { isAxiosError } from 'axios'
+import Table from 'cli-table3'
 import { loadConfig } from '../config/index.js'
 import { createTogglClient, TogglProject } from '../api/client.js'
 import { formatSuccess, formatError, formatInfo } from '../utils/format.js'
@@ -61,32 +62,27 @@ export function createProjectsCommand(): Command {
         console.log(formatSuccess(`Found ${projects.length} project${projects.length === 1 ? '' : 's'}`))
         console.log('')
 
-        // Create simple table display
-        const maxIdWidth = Math.max(2, ...sortedProjects.map(p => String(p.id).length))
-        const maxNameWidth = Math.max(4, ...sortedProjects.map(p => p.name.length))
+        // Create professional table using cli-table3
+        const table = new Table({
+          colWidths: [10, 35, 8],
+          head: ['ID', 'Name', 'Active'],
+          style: {
+            border: ['gray'],
+            head: ['cyan'],
+          },
+        })
 
-        // Header
-        console.log(
-          'ID'.padEnd(maxIdWidth) + '  ' +
-          'Name'.padEnd(maxNameWidth) + '  ' +
-          'Active'
-        )
-        console.log(
-          '-'.repeat(maxIdWidth) + '  ' +
-          '-'.repeat(maxNameWidth) + '  ' +
-          '------'
-        )
-
-        // Project rows
+        // Add rows to table
         for (const project of sortedProjects) {
           const activeStatus = project.active ? '✓' : '✗'
-          console.log(
-            String(project.id).padEnd(maxIdWidth) + '  ' +
-            project.name.padEnd(maxNameWidth) + '  ' +
-            activeStatus
-          )
+          table.push([
+            String(project.id),
+            project.name,
+            activeStatus,
+          ])
         }
 
+        console.log(table.toString())
         console.log('')
 
       } catch (error: unknown) {
