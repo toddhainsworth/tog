@@ -14,6 +14,7 @@
  */
 
 import { Command } from 'commander'
+import { isAxiosError } from 'axios'
 import { loadConfig } from '../config/index.js'
 import { createTogglClient, TogglApiClient, TogglTimeEntry, TogglProject, TogglTask } from '../api/client.js'
 import { formatSuccess, formatError, formatInfo } from '../utils/format.js'
@@ -58,10 +59,13 @@ async function getCurrentTimeEntry(client: TogglApiClient): Promise<TogglTimeEnt
   try {
     const currentEntry: TogglTimeEntry = await client.get('/me/time_entries/current')
     return currentEntry
-  } catch (error: any) {
-    // If API returns 200 with null/empty response, no timer is running
-    if (error.response?.status === 200 || !error.response) {
-      return null
+  } catch (error: unknown) {
+    // Use axios type guard for better type safety
+    if (isAxiosError(error)) {
+      // If API returns 200 with null/empty response, no timer is running
+      if (error.response?.status === 200 || !error.response) {
+        return null
+      }
     }
     throw error
   }

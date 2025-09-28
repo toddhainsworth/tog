@@ -11,7 +11,8 @@
     "@inquirer/prompts": "^7.8.6",
     "arktype": "^2.1.22",
     "axios": "^1.12.2",
-    "commander": "^12.1.0"
+    "commander": "^12.1.0",
+    "dayjs": "^1.11.18"
   },
   "devDependencies": {
     "@types/chai": "^4.3.20",
@@ -41,8 +42,8 @@
   "repository": "toddhainsworth/tog",
   "scripts": {
     "build": "tsc",
-    "test": "echo 'Tests simplified - CLI working correctly'",
-    "test:update": "UPDATE_GOLDEN=true npm test",
+    "test": "mocha --require ./test/mocha.env.js",
+    "test:watch": "npm test -- --watch",
     "lint": "echo 'Linting skipped for now'",
     "start": "node dist/cli.js",
     "dev": "ts-node --loader ts-node/esm src/cli.ts"

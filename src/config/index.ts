@@ -36,7 +36,8 @@ export async function loadConfig(): Promise<TogglConfig> {
     // ConfigSchema.assert() throws on validation failure, returns validated data on success
     return ConfigSchema.assert(rawConfig)
   } catch (error) {
-    if ((error as any).code === 'ENOENT') {
+    // Type guard for Node.js file system errors
+    if (error && typeof error === 'object' && 'code' in error && error.code === 'ENOENT') {
       throw new Error('Configuration not found. Run "tog init" to set up your API token.')
     }
 
@@ -87,8 +88,10 @@ export async function deleteConfig(): Promise<void> {
     const { unlink } = await import('fs/promises')
     await unlink(CONFIG_FILE_PATH)
   } catch (error) {
-    if ((error as any).code !== 'ENOENT') {
-      throw new Error(`Failed to delete configuration: ${(error as Error).message}`)
+    // Type guard for Node.js file system errors
+    if (error && typeof error === 'object' && 'code' in error && error.code !== 'ENOENT') {
+      const message = error instanceof Error ? error.message : String(error)
+      throw new Error(`Failed to delete configuration: ${message}`)
     }
     // File doesn't exist, which is fine
   }

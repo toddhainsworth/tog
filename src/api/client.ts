@@ -5,13 +5,14 @@
  * to the Toggl Track API without complex abstractions.
  */
 
-import axios, { AxiosInstance, AxiosResponse } from 'axios'
+import axios, { AxiosInstance, AxiosResponse, isAxiosError } from 'axios'
 
 export interface TogglApiClient {
-  get<T = any>(endpoint: string): Promise<T>
-  post<T = any>(endpoint: string, data?: any): Promise<T>
-  put<T = any>(endpoint: string, data?: any): Promise<T>
-  delete<T = any>(endpoint: string): Promise<T>
+  get<T = unknown>(endpoint: string): Promise<T>
+  post<T = unknown>(endpoint: string, data?: Record<string, unknown>): Promise<T>
+  put<T = unknown>(endpoint: string, data?: Record<string, unknown>): Promise<T>
+  patch<T = unknown>(endpoint: string, data?: Record<string, unknown>): Promise<T>
+  delete<T = unknown>(endpoint: string): Promise<T>
 }
 
 /**
@@ -45,7 +46,7 @@ export function createTogglClient(apiToken: string): TogglApiClient {
       }
     },
 
-    async post<T>(endpoint: string, data?: any): Promise<T> {
+    async post<T>(endpoint: string, data?: Record<string, unknown>): Promise<T> {
       try {
         const response: AxiosResponse<T> = await client.post(endpoint, data)
         return response.data
@@ -54,12 +55,21 @@ export function createTogglClient(apiToken: string): TogglApiClient {
       }
     },
 
-    async put<T>(endpoint: string, data?: any): Promise<T> {
+    async put<T>(endpoint: string, data?: Record<string, unknown>): Promise<T> {
       try {
         const response: AxiosResponse<T> = await client.put(endpoint, data)
         return response.data
       } catch (error) {
         throw formatApiError(error, 'PUT', endpoint)
+      }
+    },
+
+    async patch<T>(endpoint: string, data?: Record<string, unknown>): Promise<T> {
+      try {
+        const response: AxiosResponse<T> = await client.patch(endpoint, data)
+        return response.data
+      } catch (error) {
+        throw formatApiError(error, 'PATCH', endpoint)
       }
     },
 
@@ -77,34 +87,42 @@ export function createTogglClient(apiToken: string): TogglApiClient {
 /**
  * Format API errors with helpful context
  */
-function formatApiError(error: any, method: string, endpoint: string): Error {
-  if (error.response) {
-    // Server responded with error status
-    const status = error.response.status
-    const message = error.response.data?.message || error.response.statusText
+function formatApiError(error: unknown, method: string, endpoint: string): Error {
+  // Use axios's built-in type guard
+  if (isAxiosError(error)) {
+    if (error.response) {
+      // Server responded with error status
+      const status = error.response.status
+      const message = error.response.data?.message || error.response.statusText
 
-    if (status === 401) {
-      return new Error('Invalid API token. Run "tog init" to set up authentication.')
+      if (status === 401) {
+        return new Error('Invalid API token. Run "tog init" to set up authentication.')
+      }
+
+      if (status === 403) {
+        return new Error('Access denied. Check your API token permissions.')
+      }
+
+      if (status === 429) {
+        return new Error('Rate limit exceeded. Please wait before retrying.')
+      }
+
+      return new Error(`API error ${status}: ${message}`)
     }
 
-    if (status === 403) {
-      return new Error('Access denied. Check your API token permissions.')
+    if (error.request) {
+      // Network error
+      return new Error('Network error: Unable to connect to Toggl API. Check your internet connection.')
     }
-
-    if (status === 429) {
-      return new Error('Rate limit exceeded. Please wait before retrying.')
-    }
-
-    return new Error(`API error ${status}: ${message}`)
   }
 
-  if (error.request) {
-    // Network error
-    return new Error('Network error: Unable to connect to Toggl API. Check your internet connection.')
+  // Handle Error instances
+  if (error instanceof Error) {
+    return new Error(`Request failed: ${error.message}`)
   }
 
-  // Other error
-  return new Error(`Request failed: ${error.message}`)
+  // Fallback for unknown error types
+  return new Error(`Request failed: ${String(error)}`)
 }
 
 /**

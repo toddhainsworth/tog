@@ -1,7 +1,0 @@
-❌ Connection failed
-  Configuration not found. Run "tog init" to set up your API token.
-
-Troubleshooting:
-  1. Check your internet connection
-  2. Verify your API token with "tog init"
-  3. Check Toggl API status at https://status.toggl.com

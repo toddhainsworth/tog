@@ -4,6 +4,8 @@
  * Simple helpers for consistent CLI output formatting
  */
 
+import dayjs from 'dayjs'
+
 /**
  * Format success messages with green checkmark
  */
@@ -44,7 +46,7 @@ export function formatDuration(seconds: number, precise = false): string {
 
   const hours = Math.floor(absSeconds / 3600)
   const minutes = Math.floor((absSeconds % 3600) / 60)
-  const remainingSeconds = absSeconds % 60
+  const remainingSeconds = Math.floor(absSeconds % 60)
 
   if (precise) {
     // Return HH:MM:SS format for precise display
@@ -68,9 +70,9 @@ export function formatDuration(seconds: number, precise = false): string {
  * @returns Elapsed seconds
  */
 export function calculateElapsedSeconds(startTime: string): number {
-  const start = new Date(startTime)
-  const now = new Date()
-  return Math.floor((now.getTime() - start.getTime()) / 1000)
+  const start = dayjs(startTime)
+  const now = dayjs()
+  return now.diff(start, 'second')
 }
 
 /**
@@ -80,8 +82,7 @@ export function calculateElapsedSeconds(startTime: string): number {
  * @returns Formatted time string
  */
 export function formatStartTime(isoString: string): string {
-  const date = new Date(isoString)
-  return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  return dayjs(isoString).format('HH:mm')
 }
 
 /**

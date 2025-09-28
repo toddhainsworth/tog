@@ -13,10 +13,11 @@
  *   4. If timer exists: stop it and confirm success
  */
 
+import { isAxiosError } from 'axios'
 import { Command } from 'commander'
-import { loadConfig } from '../config/index.js'
 import { createTogglClient, TogglApiClient, TogglTimeEntry } from '../api/client.js'
-import { formatSuccess, formatError, formatInfo } from '../utils/format.js'
+import { loadConfig } from '../config/index.js'
+import { formatError, formatInfo, formatSuccess } from '../utils/format.js'
 
 /**
  * Create the stop command
@@ -67,10 +68,12 @@ async function getCurrentTimeEntry(client: TogglApiClient): Promise<TogglTimeEnt
   try {
     const currentEntry: TogglTimeEntry = await client.get('/me/time_entries/current')
     return currentEntry
-  } catch (error: any) {
-    // If API returns 200 with null/empty response, no timer is running
-    if (error.response?.status === 200 || !error.response) {
-      return null
+  } catch (error: unknown) {
+    if (isAxiosError(error)) {
+      // If API returns 200 with null/empty response, no timer is running
+      if (error.response?.status === 200 || !error.response) {
+        return null
+      }
     }
     throw error
   }
@@ -81,11 +84,12 @@ async function getCurrentTimeEntry(client: TogglApiClient): Promise<TogglTimeEnt
  */
 async function stopTimeEntry(client: TogglApiClient, workspaceId: number, timeEntryId: number): Promise<void> {
   try {
-    await client.put(`/workspaces/${workspaceId}/time_entries/${timeEntryId}/stop`)
-  } catch (error: any) {
-    if (error.response?.status === 404) {
+    await client.patch(`/workspaces/${workspaceId}/time_entries/${timeEntryId}/stop`)
+  } catch (error: unknown) {
+    if (isAxiosError(error) && error.response?.status === 404) {
       throw new Error('Timer not found. It may have already been stopped.')
     }
-    throw new Error(`Failed to stop timer: ${error.message}`)
+    const message = error instanceof Error ? error.message : String(error)
+    throw new Error(`Failed to stop timer: ${message}`)
   }
 }
