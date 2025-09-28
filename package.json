@@ -42,11 +42,17 @@
   "repository": "toddhainsworth/tog",
   "scripts": {
     "build": "tsc",
-    "test": "mocha --require ./test/mocha.env.js",
-    "test:watch": "npm test -- --watch",
-    "lint": "echo 'Linting skipped for now'",
+    "test": "mocha --require ./test/mocha.env.js test/**/*.test.ts",
+    "test:watch": "yarn test -- --watch",
+    "test:update": "UPDATE_GOLDEN=true yarn test",
+    "lint": "echo 'ESLint configuration pending - currently skipped'",
+    "lint:fix": "echo 'ESLint configuration pending - currently skipped'",
     "start": "node dist/cli.js",
-    "dev": "ts-node --loader ts-node/esm src/cli.ts"
+    "dev": "ts-node --loader ts-node/esm src/cli.ts",
+    "clean": "rm -rf dist",
+    "prebuild": "yarn clean",
+    "pretest": "yarn build",
+    "verify": "yarn lint && yarn test && yarn build"
   },
   "packageManager": "yarn@1.22.22"
 }

@@ -1,4 +1,4 @@
-name: Lint
+name: Build
 
 on:
   pull_request:
@@ -7,7 +7,7 @@ on:
     branches: [ main ]
 
 jobs:
-  lint:
+  build:
     runs-on: ubuntu-latest
 
     steps:
@@ -22,9 +22,20 @@ jobs:
     - name: Install dependencies
       run: yarn install --frozen-lockfile
 
-    - name: Check TypeScript compilation
+    - name: Build project
       run: yarn build
 
-    - name: Run lint (when configured)
-      run: yarn lint
-      continue-on-error: true
+    - name: Verify binary works
+      run: |
+        chmod +x ./bin/run.js
+        ./bin/run.js --version
+        ./bin/run.js --help
+
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: build-artifacts
+        path: |
+          dist/
+          bin/
+        retention-days: 7
