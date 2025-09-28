@@ -19,6 +19,7 @@ import { createEditCommand } from './commands/edit.js'
 import { createClientsCommand } from './commands/clients.js'
 import { createWeekCommand } from './commands/week.js'
 import { createTodayCommand } from './commands/today.js'
+import { createSearchCommand } from './commands/search.js'
 
 // Create the main program
 const program = new Command()
@@ -43,6 +44,7 @@ program.addCommand(createEditCommand())
 program.addCommand(createClientsCommand())
 program.addCommand(createWeekCommand())
 program.addCommand(createTodayCommand())
+program.addCommand(createSearchCommand())
 
 // Parse command line arguments
 program.parse()
