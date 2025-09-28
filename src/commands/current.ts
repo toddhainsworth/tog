@@ -44,7 +44,7 @@ export function createCurrentCommand(): Command {
         // Step 4: Display timer details
         await displayTimerDetails(client, currentEntry)
 
-      } catch (error) {
+      } catch (error: unknown) {
         console.error(formatError('Failed to fetch timer status'))
         console.error(`  ${(error as Error).message}`)
         process.exit(1)

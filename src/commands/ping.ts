@@ -42,7 +42,7 @@ export function createPingCommand(): Command {
         console.log(formatInfo(`Timezone: ${user.timezone}`))
         console.log(formatInfo(`Token: ${config.apiToken.substring(0, 8)}...`))
 
-      } catch (error) {
+      } catch (error: unknown) {
         // Step 5: Handle errors with helpful troubleshooting
         console.error(formatError('Connection failed'))
         console.error(`  ${(error as Error).message}`)

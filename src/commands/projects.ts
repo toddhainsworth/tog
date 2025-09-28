@@ -89,7 +89,7 @@ export function createProjectsCommand(): Command {
 
         console.log('')
 
-      } catch (error) {
+      } catch (error: unknown) {
         console.error(formatError('Failed to fetch projects'))
 
         if (isAxiosError(error) && error.response) {

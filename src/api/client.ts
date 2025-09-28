@@ -41,7 +41,7 @@ export function createTogglClient(apiToken: string): TogglApiClient {
       try {
         const response: AxiosResponse<T> = await client.get(endpoint)
         return response.data
-      } catch (error) {
+      } catch (error: unknown) {
         throw formatApiError(error, 'GET', endpoint)
       }
     },
@@ -50,7 +50,7 @@ export function createTogglClient(apiToken: string): TogglApiClient {
       try {
         const response: AxiosResponse<T> = await client.post(endpoint, data)
         return response.data
-      } catch (error) {
+      } catch (error: unknown) {
         throw formatApiError(error, 'POST', endpoint)
       }
     },
@@ -59,7 +59,7 @@ export function createTogglClient(apiToken: string): TogglApiClient {
       try {
         const response: AxiosResponse<T> = await client.put(endpoint, data)
         return response.data
-      } catch (error) {
+      } catch (error: unknown) {
         throw formatApiError(error, 'PUT', endpoint)
       }
     },
@@ -68,7 +68,7 @@ export function createTogglClient(apiToken: string): TogglApiClient {
       try {
         const response: AxiosResponse<T> = await client.patch(endpoint, data)
         return response.data
-      } catch (error) {
+      } catch (error: unknown) {
         throw formatApiError(error, 'PATCH', endpoint)
       }
     },
@@ -77,7 +77,7 @@ export function createTogglClient(apiToken: string): TogglApiClient {
       try {
         const response: AxiosResponse<T> = await client.delete(endpoint)
         return response.data
-      } catch (error) {
+      } catch (error: unknown) {
         throw formatApiError(error, 'DELETE', endpoint)
       }
     }

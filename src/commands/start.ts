@@ -134,7 +134,7 @@ export function createStartCommand(): Command {
           console.log(`📋 Task: ${selectedTask.name}`)
         }
 
-      } catch (error) {
+      } catch (error: unknown) {
         console.error(formatError('Failed to start timer'))
         console.error(`  ${(error as Error).message}`)
         process.exit(1)

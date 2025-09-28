@@ -53,7 +53,7 @@ export function createStopCommand(): Command {
           console.log(`Stopped: "${currentEntry.description}"`)
         }
 
-      } catch (error) {
+      } catch (error: unknown) {
         console.error(formatError('Failed to stop timer'))
         console.error(`  ${(error as Error).message}`)
         process.exit(1)

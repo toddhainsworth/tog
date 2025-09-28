@@ -102,7 +102,7 @@ export function createEditCommand(): Command {
         console.log(formatSuccess('Timer updated successfully!'))
         showUpdateSummary(currentTimer, updatedTimer, projects, tasks)
 
-      } catch (error) {
+      } catch (error: unknown) {
         console.error(formatError('Failed to edit timer'))
 
         if (isAxiosError(error) && error.response) {
@@ -136,7 +136,7 @@ async function getCurrentTimeEntry(client: ReturnType<typeof createTogglClient>)
   try {
     const currentEntry: TogglTimeEntry = await client.get('/me/time_entries/current')
     return currentEntry || null
-  } catch (error) {
+  } catch (error: unknown) {
     if (isAxiosError(error) && error.response?.status === 404) {
       return null
     }

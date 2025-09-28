@@ -9,12 +9,10 @@
 import { readFile, writeFile, access } from 'fs/promises'
 import { join } from 'path'
 import { homedir } from 'os'
-import { ConfigSchema, type Config } from './validation.js'
+import { ConfigSchema, ApiTokenSchema, type Config } from './validation.js'
 
-export interface TogglConfig {
-  apiToken: string
-  workspaceId: number
-}
+// Export Config type from validation module for consistency
+export type { Config as TogglConfig }
 
 const CONFIG_FILE_PATH = join(homedir(), '.togrc')
 
@@ -24,7 +22,7 @@ const CONFIG_FILE_PATH = join(homedir(), '.togrc')
  * @returns Configuration object
  * @throws Error if config file doesn't exist or is invalid
  */
-export async function loadConfig(): Promise<TogglConfig> {
+export async function loadConfig(): Promise<Config> {
   try {
     // Check if config file exists
     await access(CONFIG_FILE_PATH)
@@ -55,7 +53,7 @@ export async function loadConfig(): Promise<TogglConfig> {
  *
  * @param config - Configuration to save
  */
-export async function saveConfig(config: TogglConfig): Promise<void> {
+export async function saveConfig(config: Config): Promise<void> {
   try {
     // Validate configuration before saving using arktype
     const validatedConfig = ConfigSchema.assert(config)
@@ -106,7 +104,7 @@ export async function deleteConfig(): Promise<void> {
  */
 export function isValidTokenFormat(token: string): boolean {
   try {
-    ConfigSchema.assert({ apiToken: token })
+    ApiTokenSchema.assert(token)
     return true
   } catch {
     return false

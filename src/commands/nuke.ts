@@ -62,7 +62,7 @@ export function createNukeCommand(): Command {
         console.log('To use Toggl CLI again, run:')
         console.log('  tog init')
 
-      } catch (error) {
+      } catch (error: unknown) {
         console.error(formatError('Failed to delete configuration'))
         console.error(`  ${error instanceof Error ? error.message : String(error)}`)
         process.exit(1)

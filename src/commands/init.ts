@@ -93,7 +93,7 @@ export function createInitCommand(): Command {
         console.log('  tog current   # Show running timer')
         console.log('  tog start     # Start a new timer')
 
-      } catch (error) {
+      } catch (error: unknown) {
         console.error(formatError('Setup failed'))
         console.error(`  ${error instanceof Error ? error.message : String(error)}`)
         process.exit(1)
@@ -170,7 +170,7 @@ async function getWorkspaces(client: ReturnType<typeof createTogglClient>): Prom
   try {
     const workspaces: TogglWorkspace[] = await client.get('/workspaces')
     return workspaces
-  } catch (error) {
+  } catch (error: unknown) {
     if (isAxiosError(error) && error.response) {
       const status = error.response.status
       if (status === 401) {

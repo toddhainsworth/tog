@@ -107,7 +107,7 @@ export function createTasksCommand(): Command {
 
         console.log('')
 
-      } catch (error) {
+      } catch (error: unknown) {
         console.error(formatError('Failed to fetch tasks'))
 
         if (isAxiosError(error) && error.response) {

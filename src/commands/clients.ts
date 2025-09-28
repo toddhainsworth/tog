@@ -62,7 +62,7 @@ export function createClientsCommand(): Command {
           displayTableView(clients, projects)
         }
 
-      } catch (error) {
+      } catch (error: unknown) {
         console.error(formatError('Failed to fetch clients'))
 
         if (isAxiosError(error) && error.response) {
@@ -154,7 +154,10 @@ function displayTreeView(clients: TogglClient[], projects: TogglProject[], tasks
       if (!clientProjectMap.has(project.client_id)) {
         clientProjectMap.set(project.client_id, [])
       }
-      clientProjectMap.get(project.client_id)!.push(project)
+      const clientProjects = clientProjectMap.get(project.client_id)
+      if (clientProjects) {
+        clientProjects.push(project)
+      }
     } else {
       orphanedProjects.push(project)
     }
@@ -166,7 +169,10 @@ function displayTreeView(clients: TogglClient[], projects: TogglProject[], tasks
       if (!projectTaskMap.has(task.project_id)) {
         projectTaskMap.set(task.project_id, [])
       }
-      projectTaskMap.get(task.project_id)!.push(task)
+      const projectTasks = projectTaskMap.get(task.project_id)
+      if (projectTasks) {
+        projectTasks.push(task)
+      }
     } else {
       orphanedTasks.push(task)
     }

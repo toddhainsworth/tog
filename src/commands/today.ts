@@ -102,7 +102,7 @@ export function createTodayCommand(): Command {
           console.log(formatInfo('⏰ Timer is currently running'))
         }
 
-      } catch (error) {
+      } catch (error: unknown) {
         console.error(formatError('Failed to fetch today\'s summary'))
 
         if (isAxiosError(error) && error.response) {
@@ -213,7 +213,7 @@ async function getCurrentTimeEntry(
   try {
     const currentEntry: TogglTimeEntry = await client.get('/me/time_entries/current')
     return currentEntry || null
-  } catch (error) {
+  } catch (error: unknown) {
     // 404 means no current timer, which is expected
     if (isAxiosError(error) && error.response?.status === 404) {
       return null

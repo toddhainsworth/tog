@@ -94,7 +94,7 @@ export function createContinueCommand(): Command {
           console.log(`Task: ${selectedTimer.task_name}`)
         }
 
-      } catch (error) {
+      } catch (error: unknown) {
         console.error(formatError('Failed to continue timer'))
 
         if (isAxiosError(error) && error.response) {
@@ -126,7 +126,7 @@ async function getCurrentTimeEntry(client: ReturnType<typeof createTogglClient>)
   try {
     const currentEntry: TogglTimeEntry = await client.get('/me/time_entries/current')
     return currentEntry || null
-  } catch (error) {
+  } catch (error: unknown) {
     // 404 means no current timer, which is expected
     if (isAxiosError(error) && error.response?.status === 404) {
       return null
