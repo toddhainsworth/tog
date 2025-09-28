@@ -13,6 +13,7 @@ import { ConfigSchema, type Config } from './validation.js'
 
 export interface TogglConfig {
   apiToken: string
+  workspaceId: number
 }
 
 const CONFIG_FILE_PATH = join(homedir(), '.togrc')

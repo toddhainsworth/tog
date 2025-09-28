@@ -81,7 +81,7 @@ export function createContinueCommand(): Command {
         const selectedTimer = await selectRecentTimer(recentTimers)
 
         // Step 6: Start new timer with selected settings
-        await startContinuedTimer(client, selectedTimer)
+        await startContinuedTimer(client, config.workspaceId, selectedTimer)
 
         console.log('')
         console.log(formatSuccess('Timer continued successfully!'))
@@ -217,10 +217,14 @@ async function selectRecentTimer(timers: RecentTimer[]): Promise<RecentTimer> {
  */
 async function startContinuedTimer(
   client: ReturnType<typeof createTogglClient>,
+  workspaceId: number,
   timer: RecentTimer
 ): Promise<void> {
   const timeEntryData: Record<string, unknown> = {
     description: timer.description,
+    duration: -1, // Negative duration indicates running timer
+    start: new Date().toISOString(),
+    workspace_id: workspaceId,
     created_with: 'tog-cli'
   }
 
@@ -232,7 +236,7 @@ async function startContinuedTimer(
     timeEntryData.task_id = timer.task_id
   }
 
-  await client.post('/me/time_entries', timeEntryData)
+  await client.post(`/workspaces/${workspaceId}/time_entries`, timeEntryData)
 }
 
 /**

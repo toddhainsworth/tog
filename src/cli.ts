@@ -17,6 +17,8 @@ import { createTasksCommand } from './commands/tasks.js'
 import { createContinueCommand } from './commands/continue.js'
 import { createEditCommand } from './commands/edit.js'
 import { createClientsCommand } from './commands/clients.js'
+import { createWeekCommand } from './commands/week.js'
+import { createTodayCommand } from './commands/today.js'
 
 // Create the main program
 const program = new Command()
@@ -39,6 +41,8 @@ program.addCommand(createTasksCommand())
 program.addCommand(createContinueCommand())
 program.addCommand(createEditCommand())
 program.addCommand(createClientsCommand())
+program.addCommand(createWeekCommand())
+program.addCommand(createTodayCommand())
 
 // Parse command line arguments
 program.parse()

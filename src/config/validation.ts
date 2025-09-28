@@ -18,7 +18,8 @@ export const ApiTokenSchema = type('string>=32')
  * Configuration object schema
  */
 export const ConfigSchema = type({
-  apiToken: ApiTokenSchema
+  apiToken: ApiTokenSchema,
+  workspaceId: 'number'
 })
 
 /**

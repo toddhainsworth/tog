@@ -16,11 +16,17 @@
  */
 
 import { Command } from 'commander'
-import { input, confirm } from '@inquirer/prompts'
+import { input, confirm, select } from '@inquirer/prompts'
 import { isAxiosError } from 'axios'
 import { configExists, saveConfig } from '../config/index.js'
 import { createTogglClient, TogglUser } from '../api/client.js'
 import { formatSuccess, formatError, formatWarning, formatInfo } from '../utils/format.js'
+
+interface TogglWorkspace {
+  id: number
+  name: string
+  role: string
+}
 
 /**
  * Create the init command
@@ -62,15 +68,24 @@ export function createInitCommand(): Command {
         console.log(formatInfo('Validating API token...'))
         const user = await validateApiToken(apiToken)
 
-        // Step 4: Save configuration
-        await saveConfig({ apiToken })
+        // Step 4: Get workspaces and let user select
+        console.log(formatInfo('Fetching available workspaces...'))
+        const client = createTogglClient(apiToken)
+        const workspaces = await getWorkspaces(client)
+        const selectedWorkspace = await selectWorkspace(workspaces, user.default_workspace_id)
 
-        // Step 5: Display success
+        // Step 5: Save configuration
+        await saveConfig({
+          apiToken,
+          workspaceId: selectedWorkspace.id
+        })
+
+        // Step 6: Display success
         console.log('')
         console.log(formatSuccess('Configuration saved successfully!'))
         console.log('')
         console.log(formatInfo(`Connected as: ${user.fullname} (${user.email})`))
-        console.log(formatInfo(`Default workspace: ${user.default_workspace_id}`))
+        console.log(formatInfo(`Selected workspace: ${selectedWorkspace.name} (ID: ${selectedWorkspace.id})`))
         console.log(formatInfo(`Timezone: ${user.timezone}`))
         console.log('')
         console.log('You can now use Toggl CLI commands like:')
@@ -146,4 +161,62 @@ async function validateApiToken(apiToken: string): Promise<TogglUser> {
 
     throw new Error('Unknown error occurred during API validation')
   }
+}
+
+/**
+ * Get available workspaces for the user
+ */
+async function getWorkspaces(client: ReturnType<typeof createTogglClient>): Promise<TogglWorkspace[]> {
+  try {
+    const workspaces: TogglWorkspace[] = await client.get('/workspaces')
+    return workspaces
+  } catch (error) {
+    if (isAxiosError(error) && error.response) {
+      const status = error.response.status
+      if (status === 401) {
+        throw new Error('Invalid API token. Please check your token and try again.')
+      }
+      if (status === 403) {
+        throw new Error('Access denied. Please check your API token permissions.')
+      }
+      if (status >= 500) {
+        throw new Error('Toggl API is currently unavailable. Please try again later.')
+      }
+    }
+
+    if (error instanceof Error) {
+      throw new Error(`Failed to fetch workspaces: ${error.message}`)
+    }
+
+    throw new Error('Unknown error occurred while fetching workspaces')
+  }
+}
+
+/**
+ * Interactive workspace selection
+ */
+async function selectWorkspace(workspaces: TogglWorkspace[], defaultWorkspaceId: number): Promise<TogglWorkspace> {
+  if (workspaces.length === 0) {
+    throw new Error('No workspaces found for this account')
+  }
+
+  if (workspaces.length === 1) {
+    const workspace = workspaces[0]
+    console.log(formatInfo(`Using workspace: ${workspace.name}`))
+    return workspace
+  }
+
+  // Find default workspace
+  const defaultWorkspace = workspaces.find(w => w.id === defaultWorkspaceId)
+
+  const choices = workspaces.map(workspace => ({
+    name: workspace.name + (workspace.id === defaultWorkspaceId ? ' (default)' : ''),
+    value: workspace
+  }))
+
+  return await select({
+    message: 'Select a workspace:',
+    choices,
+    default: defaultWorkspace || workspaces[0]
+  })
 }
