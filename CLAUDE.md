@@ -4,13 +4,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a Toggl CLI tool built with oclif framework. The project uses TypeScript with ES modules and follows oclif conventions for command structure and organization.
+This is a Toggl CLI tool built with Commander.js framework. The project uses TypeScript with ES modules and follows a simplified single-file command pattern for maximum clarity and maintainability.
 
 ## Development Commands
 
 - **Build**: `yarn build` - Compiles TypeScript to dist/ directory
 - **Test**: `yarn test` - Runs Mocha tests with TypeScript support
-- **Lint**: `yarn lint` - Runs ESLint with oclif configuration
+- **Lint**: `yarn lint` - ESLint configuration pending (currently skipped)
 - **Test single file**: `yarn test test/path/to/specific.test.ts`
 - **Development workflow**: Tests automatically run linting via `posttest` script
 
@@ -33,7 +33,7 @@ The project includes GitHub Actions workflows for quality gates:
 - ❌ **Command files (`src/commands/`)**: NEVER require tests - DO NOT SUGGEST OR CREATE THEM
 - ❌ **Command test files**: NEVER create `test/commands/` directory or files
 
-**IMPORTANT: This is NOT an oversight. This is an INTENTIONAL architectural decision for this oclif CLI project.**
+**IMPORTANT: This is NOT an oversight. This is an INTENTIONAL architectural decision for this Commander.js CLI project.**
 
 **VIOLATIONS OF THESE RULES:**
 - DO NOT suggest adding command tests
@@ -113,7 +113,7 @@ The project implements a **single-file command pattern** where each command cont
 - Test files in `test/` directory mirror `src/` structure (lib only)
 - Uses Mocha with TypeScript support via ts-node
 - Tests have 60-second timeout configured
-- Use `@oclif/test` for oclif-specific testing utilities (when testing is needed)
+- Focus on utility functions that require comprehensive testing
 
 ### ✅ MUST Test (REQUIRED)
 - Core utilities in `src/utils/` (format utilities, time calculations, validation)
@@ -138,7 +138,7 @@ The project implements a **single-file command pattern** where each command cont
 - Use `tog nuke` to delete configuration (with confirmation prompt)
 
 ### API Integration
-- Uses `TogglClient` class from `src/lib/toggl-client.ts`
+- Uses `createTogglClient` function from `src/utils/api.ts`
 - Implements Basic Auth with API token format: `${token}:api_token`
 - Client provides `ping()` method for token validation
 - Base URL: `https://api.track.toggl.com/api/v9`
@@ -298,9 +298,19 @@ Brief description of the feature and its purpose.
 - Use `yarn version` command for automated version bumping if preferred
 
 ## Documentation
-- PRDs (Product Requirements Documents) follow the new workflow in `docs/DEVELOPMENT.md`
-- Local PRDs are kept in `docs/prd/` for development reference (not committed)
-- GitHub issues serve as the source of truth for approved PRDs
+
+The project includes comprehensive developer documentation:
+
+- **[Developer Onboarding](docs/ONBOARDING.md)** - Complete guide for new contributors with architecture overview, progressive learning from 5-minute quick start to 30-minute first contribution
+- **[Troubleshooting Guide](docs/TROUBLESHOOTING.md)** - Solutions to common development and usage issues with debugging techniques
+- **[Architecture Deep Dive](docs/AI_DEVELOPMENT.md)** - Development process and architectural decisions
+- **[Release Process](docs/RELEASE.md)** - How to cut releases and manage versions
+
+### Documentation Standards
+- All examples in documentation must be tested and working
+- Architecture diagrams use Mermaid for clear visualization
+- Progressive complexity from basic usage to advanced development
+- Focus on copy-paste examples and practical workflows
 
 ## Refactoring Approach
 
