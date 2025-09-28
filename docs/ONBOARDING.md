@@ -136,7 +136,7 @@ sequenceDiagram
 - **[TypeScript](https://www.typescriptlang.org/)** - Type safety and developer experience
 - **[ArkType](https://arktype.io/)** - Runtime validation with perfect TypeScript integration
 - **[@inquirer/prompts](https://github.com/SBoudrias/Inquirer.js/)** - Interactive prompts
-- **[Axios](https://axios-http.com/)** - HTTP client for Toggl API
+- **[Axios](https://axios-http.com/)** - HTTP client for Toggl API with intelligent caching
 - **[Day.js](https://day.js.org/)** - Lightweight date manipulation
 
 ## 🔨 Your First Contribution (30 minutes)

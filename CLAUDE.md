@@ -85,9 +85,10 @@ The project implements a **single-file command pattern** where each command cont
 - **Interactive UX**: Uses @inquirer/prompts for user-friendly interactions
 
 **Shared Utilities:**
-- **api/client.ts**: HTTP client with axios and proper type guards
+- **api/client.ts**: HTTP client with axios, intelligent caching, and proper type guards
 - **config/**: Configuration management with arktype validation
 - **utils/format.ts**: Output formatting utilities (100% test coverage)
+- **utils/cache.ts**: File-based caching with TTL expiration and request deduplication
 
 **Architecture Benefits:**
 - ✅ **Immediate understanding**: All logic visible in one file
@@ -116,9 +117,10 @@ The project implements a **single-file command pattern** where each command cont
 - Focus on utility functions that require comprehensive testing
 
 ### ✅ MUST Test (REQUIRED)
-- Core utilities in `src/utils/` (format utilities, time calculations, validation)
+- Core utilities in `src/utils/` (format utilities, time calculations, validation, caching)
 - API client methods (with proper type safety)
 - Data transformation and business logic
+- Cache functionality including TTL, persistence, and request deduplication
 - ALL utility functions with comprehensive edge cases
 
 ### ❌ MUST NOT Test (FORBIDDEN)
@@ -138,7 +140,7 @@ The project implements a **single-file command pattern** where each command cont
 - Use `tog nuke` to delete configuration (with confirmation prompt)
 
 ### API Integration
-- Uses `createTogglClient` function from `src/utils/api.ts`
+- Uses `createTogglClient` function from `src/api/client.ts` with integrated caching
 - Implements Basic Auth with API token format: `${token}:api_token`
 - Client provides `ping()` method for token validation
 - Base URL: `https://api.track.toggl.com/api/v9`
@@ -440,7 +442,7 @@ When user says things like:
 
 ### Caching Implementation Lessons
 
-The file-based caching implementation (Issue #23) revealed that:
+The file-based caching implementation (Issue #23) was successfully restored and revealed that:
 
 1. **User requirements should be taken literally** - When they say "simple", don't add analytics or complex configuration
 2. **Async patterns matter** - Proper `await` is always better than fire-and-forget

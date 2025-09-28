@@ -11,7 +11,7 @@ A simple, fast command-line interface for Toggl time tracking built with TypeScr
 - **🎯 Interactive**: Smart prompts for projects, tasks, and timers
 - **📊 Rich Reports**: Daily, weekly summaries with project breakdowns
 - **🔧 Developer-Friendly**: Type-safe, well-documented, easy to extend
-- **⚡ Performance**: Optimized API calls with efficient pagination
+- **⚡ Performance**: Optimized API calls with efficient pagination and intelligent caching
 
 ## 🚀 Quick Start
 
@@ -74,9 +74,9 @@ This CLI follows a **simplified single-file command pattern** for maximum clarit
 ```
 src/
 ├── commands/          # One file per command (self-contained)
-├── utils/            # Shared utilities (time, formatting)
+├── utils/            # Shared utilities (time, formatting, caching)
 ├── config/           # Configuration management
-├── api/              # Toggl API client
+├── api/              # Toggl API client with intelligent caching
 └── cli.ts           # Main entry point
 ```
 
