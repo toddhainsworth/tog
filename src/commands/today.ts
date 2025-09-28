@@ -18,6 +18,7 @@
 import { Command } from 'commander'
 import { isAxiosError } from 'axios'
 import Table from 'cli-table3'
+import dayjs from 'dayjs'
 import { loadConfig } from '../config/index.js'
 import { createTogglClient, TogglTimeEntry, TogglProject } from '../api/client.js'
 import { formatSuccess, formatError, formatInfo } from '../utils/format.js'
@@ -28,7 +29,7 @@ import {
   formatDuration,
   calculateElapsedSeconds,
   type TimeEntrySummary,
-  type ProjectSummary
+  type ProjectSummary,
 } from '../utils/time.js'
 
 /**
@@ -36,10 +37,10 @@ import {
  */
 export function createTodayCommand(): Command {
   return new Command('today')
-    .description('Display a comprehensive summary of today\'s time tracking activities')
+    .description("Display a comprehensive summary of today's time tracking activities")
     .action(async () => {
       try {
-        console.log(formatInfo('Fetching today\'s time entries...'))
+        console.log(formatInfo("Fetching today's time entries..."))
 
         // Step 1: Load configuration
         const config = await loadConfig()
@@ -56,7 +57,7 @@ export function createTodayCommand(): Command {
         const [timeEntries, currentTimer, projects] = await Promise.all([
           fetchTimeEntries(client, dateRange.start_date, dateRange.end_date),
           getCurrentTimeEntry(client),
-          fetchAllProjects(client)
+          fetchAllProjects(client),
         ])
 
         const allEntries = [...timeEntries]
@@ -65,17 +66,19 @@ export function createTodayCommand(): Command {
         }
 
         console.log('')
-        console.log('📅 Today\'s Time Entries')
+        console.log("📅 Today's Time Entries")
         console.log('')
 
         // Step 3: Handle empty state
         if (allEntries.length === 0) {
-          console.log(formatInfo('No time entries found for today. Start tracking with "tog start"!'))
+          console.log(
+            formatInfo('No time entries found for today. Start tracking with "tog start"!')
+          )
           return
         }
 
         // Step 4: Sort entries chronologically and format
-        allEntries.sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime())
+        allEntries.sort((a, b) => dayjs(a.start).valueOf() - dayjs(b.start).valueOf())
 
         const timeEntrySummaries = allEntries.map(entry => formatTimeEntry(entry, projects))
         const projectSummaries = aggregateTimeEntriesByProject(allEntries, projects)
@@ -102,9 +105,8 @@ export function createTodayCommand(): Command {
           console.log('')
           console.log(formatInfo('⏰ Timer is currently running'))
         }
-
       } catch (error: unknown) {
-        console.error(formatError('Failed to fetch today\'s summary'))
+        console.error(formatError("Failed to fetch today's summary"))
 
         if (isAxiosError(error) && error.response) {
           const status = error.response.status
@@ -171,11 +173,7 @@ function displayProjectSummaryTable(projectSummaries: ProjectSummary[]): void {
 
   // Add rows to table
   for (const project of projectSummaries) {
-    table.push([
-      project.projectName,
-      project.formattedDuration,
-      `${project.percentage}%`,
-    ])
+    table.push([project.projectName, project.formattedDuration, `${project.percentage}%`])
   }
 
   console.log(table.toString())
@@ -189,8 +187,8 @@ async function fetchTimeEntries(
   startDate: string,
   endDate: string
 ): Promise<TogglTimeEntry[]> {
-  const start = startDate.split('T')[0] // Get YYYY-MM-DD format
-  const end = endDate.split('T')[0]
+  const start = dayjs(startDate).format('YYYY-MM-DD')
+  const end = dayjs(endDate).format('YYYY-MM-DD')
 
   return await client.get(`/me/time_entries?start_date=${start}&end_date=${end}`)
 }

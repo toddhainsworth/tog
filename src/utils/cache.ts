@@ -8,6 +8,7 @@
 import { readFile, writeFile, access, unlink } from 'fs/promises'
 import { join } from 'path'
 import { homedir } from 'os'
+import dayjs from 'dayjs'
 
 interface CacheEntry<T> {
   data: T
@@ -58,14 +59,16 @@ export class FileCacheManager {
     }
 
     // Start new request with deduplication
-    const promise = fetchFn().then(async data => {
-      await this.set(key, data, ttlMs)
-      this.pendingRequests.delete(key)
-      return data
-    }).catch(error => {
-      this.pendingRequests.delete(key)
-      throw error
-    })
+    const promise = fetchFn()
+      .then(async data => {
+        await this.set(key, data, ttlMs)
+        this.pendingRequests.delete(key)
+        return data
+      })
+      .catch(error => {
+        this.pendingRequests.delete(key)
+        throw error
+      })
 
     this.pendingRequests.set(key, promise)
     return promise
@@ -79,7 +82,7 @@ export class FileCacheManager {
       const cache = await this.loadCache()
       const entry = cache[key] as CacheEntry<T> | undefined
 
-      if (!entry || entry.expiresAt <= Date.now()) {
+      if (!entry || entry.expiresAt <= dayjs().valueOf()) {
         // Entry doesn't exist or expired
         if (entry) {
           await this.delete(key)
@@ -88,7 +91,7 @@ export class FileCacheManager {
       }
 
       // Update last accessed time for LRU
-      entry.lastAccessed = Date.now()
+      entry.lastAccessed = dayjs().valueOf()
       await this.saveCache(cache)
 
       return entry.data
@@ -110,8 +113,8 @@ export class FileCacheManager {
 
       cleanedCache[key] = {
         data: value,
-        expiresAt: Date.now() + ttlMs,
-        lastAccessed: Date.now()
+        expiresAt: dayjs().add(ttlMs, 'milliseconds').valueOf(),
+        lastAccessed: dayjs().valueOf(),
       }
 
       await this.saveCache(cleanedCache)
@@ -143,7 +146,10 @@ export class FileCacheManager {
       // File might not exist, which is fine
       if (error && typeof error === 'object' && 'code' in error && error.code !== 'ENOENT') {
         const errorMessage = error instanceof Error ? error.message : String(error)
-        throw new CacheError('Failed to clear cache', error instanceof Error ? error : new Error(errorMessage))
+        throw new CacheError(
+          'Failed to clear cache',
+          error instanceof Error ? error : new Error(errorMessage)
+        )
       }
     }
   }
@@ -195,7 +201,7 @@ export class FileCacheManager {
    * Cleans expired entries from cache
    */
   private cleanExpiredEntries(cache: FileCache): FileCache {
-    const now = Date.now()
+    const now = dayjs().valueOf()
     const cleaned: FileCache = {}
 
     for (const [key, entry] of Object.entries(cache)) {
@@ -217,8 +223,8 @@ export class FileCacheManager {
     }
 
     // Keep most recently accessed entries
-    const sortedEntries = entries.sort((a, b) =>
-      (b[1].lastAccessed || 0) - (a[1].lastAccessed || 0)
+    const sortedEntries = entries.sort(
+      (a, b) => (b[1].lastAccessed || 0) - (a[1].lastAccessed || 0)
     )
 
     return Object.fromEntries(sortedEntries.slice(0, this.maxEntries))

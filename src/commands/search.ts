@@ -45,7 +45,7 @@ export function createSearchCommand(): Command {
   return new Command('search')
     .description('Search time entries by description text')
     .argument('<query>', 'Search query to find in time entry descriptions')
-    .action(async (query: string, options) => {
+    .action(async (query: string) => {
       try {
         // Step 1: Load configuration and create client
         const config = await loadConfig()
@@ -59,26 +59,28 @@ export function createSearchCommand(): Command {
 
         // Step 3: Fetch matching time entries and projects
         const [timeEntries, projects] = await Promise.all([
-          fetchTimeEntriesWithSearch(client, config.workspaceId, dateRange, query),
-          fetchAllProjects(client, config.workspaceId)
+          fetchTimeEntriesWithSearch(client, config.workspaceId, dateRange),
+          fetchAllProjects(client, config.workspaceId),
         ])
 
         // Step 4: Filter entries that match the query (case-insensitive)
         const searchLower = query.toLowerCase()
-        const matchingEntries = timeEntries.filter(entry =>
-          entry.description && entry.description.toLowerCase().includes(searchLower)
+        const matchingEntries = timeEntries.filter(
+          entry => entry.description && entry.description.toLowerCase().includes(searchLower)
         )
 
         if (matchingEntries.length === 0) {
           console.log('')
-          console.log(formatWarning(`No time entries found matching "${query}" for ${scopeDescription}`))
+          console.log(
+            formatWarning(`No time entries found matching "${query}" for ${scopeDescription}`)
+          )
           console.log('')
           console.log(formatInfo('No matching entries found for this month'))
           return
         }
 
         // Step 5: Sort by date (newest first) and format for display
-        matchingEntries.sort((a, b) => new Date(b.start).getTime() - new Date(a.start).getTime())
+        matchingEntries.sort((a, b) => dayjs(b.start).valueOf() - dayjs(a.start).valueOf())
 
         const projectMap = new Map(projects.map(p => [p.id, p]))
         const summaries = matchingEntries.map(entry => formatTimeEntry(entry, projectMap))
@@ -96,14 +98,15 @@ export function createSearchCommand(): Command {
         // Step 6: Display results
         console.log('')
         console.log(`🔍 Search Results: "${query}" (${scopeDescription})`)
-        console.log(`Found ${matchingEntries.length} matching ${matchingEntries.length === 1 ? 'entry' : 'entries'}`)
+        console.log(
+          `Found ${matchingEntries.length} matching ${matchingEntries.length === 1 ? 'entry' : 'entries'}`
+        )
         console.log('')
 
         displaySearchResultsTable(summaries)
 
         console.log('')
         console.log(formatSuccess(`Total time found: ${formatDuration(totalSeconds)}`))
-
       } catch (error: unknown) {
         console.error(formatError('Search failed'))
         console.error(`  ${(error as Error).message}`)
@@ -122,10 +125,9 @@ function getCurrentMonthDateRange(): DateRange {
 
   return {
     start_date: startOfMonth.format('YYYY-MM-DD'),
-    end_date: endOfMonth.format('YYYY-MM-DD')
+    end_date: endOfMonth.format('YYYY-MM-DD'),
   }
 }
-
 
 /**
  * Fetch all time entries in date range
@@ -133,8 +135,7 @@ function getCurrentMonthDateRange(): DateRange {
 async function fetchTimeEntriesWithSearch(
   client: TogglApiClient,
   workspaceId: number,
-  dateRange: DateRange,
-  query: string
+  dateRange: DateRange
 ): Promise<TogglTimeEntry[]> {
   // Note: Toggl API doesn't have a search parameter, so we fetch all in range and filter client-side
   // The /me/time_entries endpoint returns all entries for the date range in a single response
@@ -147,7 +148,10 @@ async function fetchTimeEntriesWithSearch(
 /**
  * Fetch all projects with pagination
  */
-async function fetchAllProjects(client: TogglApiClient, workspaceId: number): Promise<TogglProject[]> {
+async function fetchAllProjects(
+  client: TogglApiClient,
+  workspaceId: number
+): Promise<TogglProject[]> {
   const allProjects: TogglProject[] = []
   const maxPages = 50
   const perPage = 200
@@ -177,7 +181,10 @@ async function fetchAllProjects(client: TogglApiClient, workspaceId: number): Pr
 /**
  * Format time entry for display
  */
-function formatTimeEntry(entry: TogglTimeEntry, projectMap: Map<number, TogglProject>): TimeEntrySummary {
+function formatTimeEntry(
+  entry: TogglTimeEntry,
+  projectMap: Map<number, TogglProject>
+): TimeEntrySummary {
   const project = entry.project_id ? projectMap.get(entry.project_id) : undefined
   const date = dayjs(entry.start).format('YYYY-MM-DD')
   const startTime = formatStartTime(entry.start)
@@ -196,7 +203,7 @@ function formatTimeEntry(entry: TogglTimeEntry, projectMap: Map<number, TogglPro
     startTime,
     duration,
     description: entry.description || '(no description)',
-    projectName: project?.name || '-'
+    projectName: project?.name || '-',
   }
 }
 
@@ -216,13 +223,7 @@ function displaySearchResultsTable(entries: TimeEntrySummary[]): void {
 
   // Add rows to table
   for (const entry of entries) {
-    table.push([
-      entry.date,
-      entry.startTime,
-      entry.duration,
-      entry.description,
-      entry.projectName,
-    ])
+    table.push([entry.date, entry.startTime, entry.duration, entry.description, entry.projectName])
   }
 
   console.log(table.toString())

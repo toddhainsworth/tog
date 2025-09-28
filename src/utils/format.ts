@@ -96,7 +96,7 @@ export function formatTimeEntry(entry: {
 }): string {
   const duration = formatDuration(entry.duration)
   const project = entry.project ? ` [${entry.project.name}]` : ''
-  const startTime = new Date(entry.start).toLocaleTimeString()
+  const startTime = dayjs(entry.start).format('h:mm:ss A')
 
   return `${entry.description}${project} - ${duration} (started ${startTime})`
 }

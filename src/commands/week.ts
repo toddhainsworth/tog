@@ -19,6 +19,10 @@
 import { Command } from 'commander'
 import { isAxiosError } from 'axios'
 import Table from 'cli-table3'
+import dayjs from 'dayjs'
+import isBetween from 'dayjs/plugin/isBetween.js'
+
+dayjs.extend(isBetween)
 import { loadConfig } from '../config/index.js'
 import { createTogglClient, TogglTimeEntry, TogglProject } from '../api/client.js'
 import { formatSuccess, formatError, formatInfo } from '../utils/format.js'
@@ -32,7 +36,7 @@ import {
   formatDuration,
   calculateElapsedSeconds,
   type DailySummary,
-  type WeeklyProjectSummary
+  type WeeklyProjectSummary,
 } from '../utils/time.js'
 
 /**
@@ -63,18 +67,18 @@ export function createWeekCommand(): Command {
         const [timeEntries, currentTimer, projects] = await Promise.all([
           fetchTimeEntries(client, dateRange.start_date, dateRange.end_date),
           getCurrentTimeEntry(client),
-          fetchAllProjects(client)
+          fetchAllProjects(client),
         ])
 
         const allEntries = [...timeEntries]
 
         // Step 3: Include current timer if it's in the current week and we're viewing current week
         if (currentTimer && !options.last) {
-          const currentStart = new Date(currentTimer.start)
-          const rangeStart = new Date(dateRange.start_date)
-          const rangeEnd = new Date(dateRange.end_date)
+          const currentStart = dayjs(currentTimer.start)
+          const rangeStart = dayjs(dateRange.start_date)
+          const rangeEnd = dayjs(dateRange.end_date)
 
-          if (currentStart >= rangeStart && currentStart <= rangeEnd) {
+          if (currentStart.isBetween(rangeStart, rangeEnd, null, '[]')) {
             allEntries.push(currentTimer)
           }
         }
@@ -85,7 +89,11 @@ export function createWeekCommand(): Command {
 
         // Step 4: Handle empty state
         if (allEntries.length === 0) {
-          console.log(formatInfo(`No time entries found for ${weekLabel.toLowerCase()}. Start tracking with "tog start"!`))
+          console.log(
+            formatInfo(
+              `No time entries found for ${weekLabel.toLowerCase()}. Start tracking with "tog start"!`
+            )
+          )
           return
         }
 
@@ -115,16 +123,15 @@ export function createWeekCommand(): Command {
 
         // Show running timer info if applicable
         if (currentTimer && !options.last) {
-          const currentStart = new Date(currentTimer.start)
-          const rangeStart = new Date(dateRange.start_date)
-          const rangeEnd = new Date(dateRange.end_date)
+          const currentStart = dayjs(currentTimer.start)
+          const rangeStart = dayjs(dateRange.start_date)
+          const rangeEnd = dayjs(dateRange.end_date)
 
-          if (currentStart >= rangeStart && currentStart <= rangeEnd) {
+          if (currentStart.isBetween(rangeStart, rangeEnd, null, '[]')) {
             console.log('')
             console.log(formatInfo('⏰ Timer is currently running'))
           }
         }
-
       } catch (error: unknown) {
         console.error(formatError('Failed to fetch weekly summary'))
 
@@ -165,10 +172,7 @@ function displayDailySummaryTable(dailySummaries: DailySummary[]): void {
 
   // Add rows to table
   for (const day of dailySummaries) {
-    table.push([
-      day.dayName,
-      day.formattedDuration,
-    ])
+    table.push([day.dayName, day.formattedDuration])
   }
 
   console.log(table.toString())
@@ -209,8 +213,8 @@ async function fetchTimeEntries(
   startDate: string,
   endDate: string
 ): Promise<TogglTimeEntry[]> {
-  const start = startDate.split('T')[0] // Get YYYY-MM-DD format
-  const end = endDate.split('T')[0]
+  const start = dayjs(startDate).format('YYYY-MM-DD')
+  const end = dayjs(endDate).format('YYYY-MM-DD')
 
   return await client.get(`/me/time_entries?start_date=${start}&end_date=${end}`)
 }

@@ -9,11 +9,11 @@ import axios, { AxiosInstance, AxiosResponse, isAxiosError } from 'axios'
 import { FileCacheManager } from '../utils/cache.js'
 
 export interface TogglApiClient {
-  get<T = unknown>(endpoint: string): Promise<T>
-  post<T = unknown>(endpoint: string, data?: Record<string, unknown>): Promise<T>
-  put<T = unknown>(endpoint: string, data?: Record<string, unknown>): Promise<T>
-  patch<T = unknown>(endpoint: string, data?: Record<string, unknown>): Promise<T>
-  delete<T = unknown>(endpoint: string): Promise<T>
+  get<T = unknown>(_endpoint: string): Promise<T>
+  post<T = unknown>(_endpoint: string, _data?: Record<string, unknown>): Promise<T>
+  put<T = unknown>(_endpoint: string, _data?: Record<string, unknown>): Promise<T>
+  patch<T = unknown>(_endpoint: string, _data?: Record<string, unknown>): Promise<T>
+  delete<T = unknown>(_endpoint: string): Promise<T>
 }
 
 /**
@@ -28,13 +28,13 @@ export function createTogglClient(apiToken: string): TogglApiClient {
     baseURL: 'https://api.track.toggl.com/api/v9',
     auth: {
       username: apiToken,
-      password: 'api_token'
+      password: 'api_token',
     },
     headers: {
       'Content-Type': 'application/json',
-      'User-Agent': 'tog-cli/0.6.0'
+      'User-Agent': 'tog-cli/0.6.0',
     },
-    timeout: 10000
+    timeout: 10000,
   })
 
   // Initialize cache for reference data
@@ -47,14 +47,18 @@ export function createTogglClient(apiToken: string): TogglApiClient {
 
       if (shouldCacheEndpoint(endpoint)) {
         const ttl = getCacheTTL(endpoint)
-        return cache.getOrFetch(cacheKey, async () => {
-          try {
-            const response: AxiosResponse<T> = await client.get(endpoint)
-            return response.data
-          } catch (error: unknown) {
-            throw formatApiError(error, 'GET', endpoint)
-          }
-        }, ttl)
+        return cache.getOrFetch(
+          cacheKey,
+          async () => {
+            try {
+              const response: AxiosResponse<T> = await client.get(endpoint)
+              return response.data
+            } catch (error: unknown) {
+              throw formatApiError(error)
+            }
+          },
+          ttl
+        )
       }
 
       // Direct API call for non-cached endpoints
@@ -62,7 +66,7 @@ export function createTogglClient(apiToken: string): TogglApiClient {
         const response: AxiosResponse<T> = await client.get(endpoint)
         return response.data
       } catch (error: unknown) {
-        throw formatApiError(error, 'GET', endpoint)
+        throw formatApiError(error)
       }
     },
 
@@ -73,7 +77,7 @@ export function createTogglClient(apiToken: string): TogglApiClient {
         await invalidateRelatedCache(cache, endpoint)
         return response.data
       } catch (error: unknown) {
-        throw formatApiError(error, 'POST', endpoint)
+        throw formatApiError(error)
       }
     },
 
@@ -84,7 +88,7 @@ export function createTogglClient(apiToken: string): TogglApiClient {
         await invalidateRelatedCache(cache, endpoint)
         return response.data
       } catch (error: unknown) {
-        throw formatApiError(error, 'PUT', endpoint)
+        throw formatApiError(error)
       }
     },
 
@@ -95,7 +99,7 @@ export function createTogglClient(apiToken: string): TogglApiClient {
         await invalidateRelatedCache(cache, endpoint)
         return response.data
       } catch (error: unknown) {
-        throw formatApiError(error, 'PATCH', endpoint)
+        throw formatApiError(error)
       }
     },
 
@@ -106,9 +110,9 @@ export function createTogglClient(apiToken: string): TogglApiClient {
         await invalidateRelatedCache(cache, endpoint)
         return response.data
       } catch (error: unknown) {
-        throw formatApiError(error, 'DELETE', endpoint)
+        throw formatApiError(error)
       }
-    }
+    },
   }
 }
 
@@ -144,12 +148,14 @@ function getSemanticCacheKey(endpoint: string): string {
  */
 function shouldCacheEndpoint(endpoint: string): boolean {
   // Cache reference data that rarely changes, but not current timer
-  return (endpoint.includes('/projects') ||
-          endpoint.includes('/tasks') ||
-          endpoint.includes('/clients') ||
-          endpoint === '/me' ||
-          endpoint.includes('/workspaces')) &&
-         !endpoint.includes('/current')
+  return (
+    (endpoint.includes('/projects') ||
+      endpoint.includes('/tasks') ||
+      endpoint.includes('/clients') ||
+      endpoint === '/me' ||
+      endpoint.includes('/workspaces')) &&
+    !endpoint.includes('/current')
+  )
 }
 
 /**
@@ -159,7 +165,11 @@ function getCacheTTL(endpoint: string): number {
   if (endpoint === '/me') {
     return 604_800_000 // 1 week for user data
   }
-  if (endpoint.includes('/projects') || endpoint.includes('/tasks') || endpoint.includes('/clients')) {
+  if (
+    endpoint.includes('/projects') ||
+    endpoint.includes('/tasks') ||
+    endpoint.includes('/clients')
+  ) {
     return 604_800_000 // 1 week for reference data
   }
   if (endpoint.includes('/workspaces')) {
@@ -199,7 +209,7 @@ async function invalidateRelatedCache(cache: FileCacheManager, endpoint: string)
 /**
  * Format API errors with helpful context
  */
-function formatApiError(error: unknown, method: string, endpoint: string): Error {
+function formatApiError(error: unknown): Error {
   // Use axios's built-in type guard
   if (isAxiosError(error)) {
     if (error.response) {
@@ -224,7 +234,9 @@ function formatApiError(error: unknown, method: string, endpoint: string): Error
 
     if (error.request) {
       // Network error
-      return new Error('Network error: Unable to connect to Toggl API. Check your internet connection.')
+      return new Error(
+        'Network error: Unable to connect to Toggl API. Check your internet connection.'
+      )
     }
   }
 
