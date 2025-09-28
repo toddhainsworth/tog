@@ -1,5 +1,13 @@
 #!/usr/bin/env node
 
-import {execute} from '@oclif/core'
+/**
+ * Binary entry point for the tog CLI
+ *
+ * This script loads and executes the compiled CLI application.
+ * Much simpler than the oclif equivalent.
+ */
 
-await execute({dir: import.meta.url})
+import('../dist/cli.js').catch((error) => {
+  console.error('Failed to start tog CLI:', error.message)
+  process.exit(1)
+})

@@ -1,0 +1,5 @@
+✅ Connected to Toggl API
+ℹ️  User: Test User (test@example.com)
+ℹ️  Default Workspace: 123456
+ℹ️  Timezone: UTC
+ℹ️  Token: abcd1234...

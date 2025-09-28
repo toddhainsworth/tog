@@ -1,0 +1,26 @@
+{
+  "compilerOptions": {
+    "declaration": true,
+    "module": "Node16",
+    "outDir": "dist",
+    "rootDir": "src",
+    "strict": true,
+    "target": "es2022",
+    "moduleResolution": "node16",
+    // Additional strict settings for enhanced type safety
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedSideEffectImports": true,
+    // Ban implicit 'any' types - require explicit typing
+    "noImplicitAny": true,
+    "noImplicitThis": true,
+    // Additional 'any' prevention
+    "useUnknownInCatchVariables": true
+  },
+  "include": ["./src/**/*"],
+  "ts-node": {
+    "esm": true
+  }
+}

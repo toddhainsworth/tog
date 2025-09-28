@@ -1,52 +1,60 @@
-import {Flags} from '@oclif/core'
+/**
+ * Ping Command - Test connection to Toggl API
+ *
+ * Usage: tog ping
+ *
+ * This command demonstrates the new single-file pattern where all
+ * command logic is contained in one readable file.
+ *
+ * Flow:
+ *   1. Load API token from configuration
+ *   2. Make authenticated request to /me endpoint
+ *   3. Display connection status and user information
+ *   4. Handle common error scenarios with helpful messages
+ */
 
-import {BaseCommand} from '../lib/base-command.js'
-import {withSpinner} from '../lib/prompts.js'
-import {UserService} from '../lib/user-service.js'
+import { Command } from 'commander'
+import { loadConfig } from '../config/index.js'
+import { createTogglClient, TogglUser } from '../api/client.js'
+import { formatSuccess, formatError, formatInfo } from '../utils/format.js'
 
-export default class Ping extends BaseCommand {
-  static override description = 'Test connection to Toggl API using stored token'
-  static override examples = [
-    '<%= config.bin %> <%= command.id %>',
-  ]
-static override flags = {
-    json: Flags.boolean({description: 'Format output as json'}),
-  }
+/**
+ * Create the ping command
+ */
+export function createPingCommand(): Command {
+  return new Command('ping')
+    .description('Test connection to Toggl API')
+    .action(async () => {
+      try {
+        // Step 1: Load configuration
+        const config = await loadConfig()
 
-  public async run(): Promise<void | {connected: boolean; message: string}> {
-    try {
-      const {flags} = await this.parse(Ping)
+        // Step 2: Create API client
+        const client = createTogglClient(config.apiToken)
 
-      // Load config and create client using base class methods
-      this.loadConfigOrExit()
-      const client = this.getClient()
+        // Step 3: Test connection by fetching user info
+        const user: TogglUser = await client.get('/me')
 
-      const result = await withSpinner(
-        'Testing connection to Toggl API...',
-        () => UserService.validateToken(client, this.getLoggingContext()),
-        {
-          jsonEnabled: () => flags.json,
-          log: this.log.bind(this),
-          warn: this.warn.bind(this)
-        }
-      )
+        // Step 4: Display success information
+        console.log(formatSuccess('Connected to Toggl API'))
+        console.log(formatInfo(`User: ${user.fullname} (${user.email})`))
+        console.log(formatInfo(`Default Workspace: ${user.default_workspace_id}`))
+        console.log(formatInfo(`Timezone: ${user.timezone}`))
+        console.log(formatInfo(`Token: ${config.apiToken.substring(0, 8)}...`))
 
-      const isConnected = result.isValid
+      } catch (error) {
+        // Step 5: Handle errors with helpful troubleshooting
+        console.error(formatError('Connection failed'))
+        console.error(`  ${(error as Error).message}`)
 
-      if (flags.json) {
-        return {connected: isConnected, message: isConnected ? 'API connection successful' : 'API connection failed'}
+        // Provide troubleshooting steps
+        console.error('')
+        console.error('Troubleshooting:')
+        console.error('  1. Check your internet connection')
+        console.error('  2. Verify your API token with "tog init"')
+        console.error('  3. Check Toggl API status at https://status.toggl.com')
+
+        process.exit(1)
       }
-
-      if (isConnected) {
-        this.logSuccess('Successfully connected to Toggl API!')
-        this.log('Your API token is working correctly.')
-      } else {
-        const errorMessage = result.error || 'Failed to connect to Toggl API. Your API token may be invalid.'
-        this.handleError(new Error(errorMessage), 'Connection test failed')
-      }
-
-    } catch (error) {
-      this.handleError(error, 'Failed to test connection')
-    }
-  }
+    })
 }

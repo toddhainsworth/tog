@@ -1,26 +1,19 @@
 {
   "compilerOptions": {
-    "declaration": true,
-    "module": "Node16",
-    "outDir": "dist",
-    "rootDir": "src",
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "Node",
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
     "strict": true,
-    "target": "es2022",
-    "moduleResolution": "node16",
-    // Additional strict settings for enhanced type safety
-    "noUncheckedIndexedAccess": true,
-    "noImplicitOverride": true,
-    "noImplicitReturns": true,
-    "noFallthroughCasesInSwitch": true,
-    "noUncheckedSideEffectImports": true,
-    // Ban implicit 'any' types - require explicit typing
-    "noImplicitAny": true,
-    "noImplicitThis": true,
-    // Additional 'any' prevention
-    "useUnknownInCatchVariables": true
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true
   },
-  "include": ["./src/**/*"],
-  "ts-node": {
-    "esm": true
-  }
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist", "legacy"]
 }
