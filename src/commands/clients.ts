@@ -44,7 +44,7 @@ export function createClientsCommand(): Command {
         const client = createTogglClient(config.apiToken)
         const [clients, projects] = await Promise.all([
           fetchAllClients(client),
-          fetchAllProjects(client)
+          fetchAllProjects(client),
         ])
 
         // Step 3: Handle empty state
@@ -62,7 +62,6 @@ export function createClientsCommand(): Command {
         } else {
           displayTableView(clients, projects)
         }
-
       } catch (error: unknown) {
         console.error(formatError('Failed to fetch clients'))
 
@@ -123,11 +122,7 @@ function displayTableView(clients: TogglClient[], projects: TogglProject[]): voi
   // Add rows to table
   for (const client of sortedClients) {
     const projectCount = clientProjectCounts.get(client.id) || 0
-    table.push([
-      String(client.id),
-      client.name,
-      String(projectCount),
-    ])
+    table.push([String(client.id), client.name, String(projectCount)])
   }
 
   console.log(table.toString())
@@ -137,7 +132,11 @@ function displayTableView(clients: TogglClient[], projects: TogglProject[]): voi
 /**
  * Display clients in hierarchical tree format
  */
-function displayTreeView(clients: TogglClient[], projects: TogglProject[], tasks: TogglTask[]): void {
+function displayTreeView(
+  clients: TogglClient[],
+  projects: TogglProject[],
+  tasks: TogglTask[]
+): void {
   // Organize data into hierarchical structure
   const clientProjectMap = new Map<number, TogglProject[]>()
   const projectTaskMap = new Map<number, TogglTask[]>()
@@ -185,8 +184,9 @@ function displayTreeView(clients: TogglClient[], projects: TogglProject[], tasks
   console.log('')
 
   for (const client of sortedClients) {
-    const clientProjects = (clientProjectMap.get(client.id) || [])
-      .sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase()))
+    const clientProjects = (clientProjectMap.get(client.id) || []).sort((a, b) =>
+      a.name.toLowerCase().localeCompare(b.name.toLowerCase())
+    )
 
     console.log(`📁 ${client.name}`)
 
@@ -213,15 +213,20 @@ function displayTreeView(clients: TogglClient[], projects: TogglProject[], tasks
 
       console.log(`${projectPrefix}📋 ${project.name}`)
 
-      const projectTasks = (projectTaskMap.get(project.id) || [])
-        .sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase()))
+      const projectTasks = (projectTaskMap.get(project.id) || []).sort((a, b) =>
+        a.name.toLowerCase().localeCompare(b.name.toLowerCase())
+      )
 
       for (let j = 0; j < projectTasks.length; j++) {
         const task = projectTasks[j]
         const isLastTask = j === projectTasks.length - 1
         const taskPrefix = isLastProject
-          ? (isLastTask ? '    └── ' : '    ├── ')
-          : (isLastTask ? '│   └── ' : '│   ├── ')
+          ? isLastTask
+            ? '    └── '
+            : '    ├── '
+          : isLastTask
+            ? '│   └── '
+            : '│   ├── '
 
         console.log(`${taskPrefix}📝 ${task.name}`)
       }
@@ -247,7 +252,10 @@ function displayTreeView(clients: TogglClient[], projects: TogglProject[], tasks
 /**
  * Display projects with their tasks in tree format
  */
-function displayProjectsWithTasks(projects: TogglProject[], projectTaskMap: Map<number, TogglTask[]>): void {
+function displayProjectsWithTasks(
+  projects: TogglProject[],
+  projectTaskMap: Map<number, TogglTask[]>
+): void {
   for (let i = 0; i < projects.length; i++) {
     const project = projects[i]
     const isLastProject = i === projects.length - 1
@@ -255,15 +263,20 @@ function displayProjectsWithTasks(projects: TogglProject[], projectTaskMap: Map<
 
     console.log(`${projectPrefix}📋 ${project.name}`)
 
-    const projectTasks = (projectTaskMap.get(project.id) || [])
-      .sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase()))
+    const projectTasks = (projectTaskMap.get(project.id) || []).sort((a, b) =>
+      a.name.toLowerCase().localeCompare(b.name.toLowerCase())
+    )
 
     for (let j = 0; j < projectTasks.length; j++) {
       const task = projectTasks[j]
       const isLastTask = j === projectTasks.length - 1
       const taskPrefix = isLastProject
-        ? (isLastTask ? '    └── ' : '    ├── ')
-        : (isLastTask ? '│   └── ' : '│   ├── ')
+        ? isLastTask
+          ? '    └── '
+          : '    ├── '
+        : isLastTask
+          ? '│   └── '
+          : '│   ├── '
 
       console.log(`${taskPrefix}📝 ${task.name}`)
     }
@@ -273,16 +286,16 @@ function displayProjectsWithTasks(projects: TogglProject[], projectTaskMap: Map<
 /**
  * Fetch all clients using pagination
  */
-async function fetchAllClients(client: ReturnType<typeof createTogglClient>): Promise<TogglClient[]> {
+async function fetchAllClients(
+  client: ReturnType<typeof createTogglClient>
+): Promise<TogglClient[]> {
   const allClients: TogglClient[] = []
   const perPage = 50
   let page = 1
   let hasMorePages = true
 
   while (hasMorePages) {
-    const clients: TogglClient[] = await client.get(
-      `/me/clients?per_page=${perPage}&page=${page}`
-    )
+    const clients: TogglClient[] = await client.get(`/me/clients?per_page=${perPage}&page=${page}`)
 
     allClients.push(...clients)
     hasMorePages = clients.length === perPage
@@ -299,7 +312,9 @@ async function fetchAllClients(client: ReturnType<typeof createTogglClient>): Pr
 /**
  * Fetch all projects using pagination
  */
-async function fetchAllProjects(client: ReturnType<typeof createTogglClient>): Promise<TogglProject[]> {
+async function fetchAllProjects(
+  client: ReturnType<typeof createTogglClient>
+): Promise<TogglProject[]> {
   const allProjects: TogglProject[] = []
   const perPage = 50
   let page = 1
@@ -332,9 +347,7 @@ async function fetchAllTasks(client: ReturnType<typeof createTogglClient>): Prom
   let hasMorePages = true
 
   while (hasMorePages) {
-    const tasks: TogglTask[] = await client.get(
-      `/me/tasks?per_page=${perPage}&page=${page}`
-    )
+    const tasks: TogglTask[] = await client.get(`/me/tasks?per_page=${perPage}&page=${page}`)
 
     allTasks.push(...tasks)
     hasMorePages = tasks.length === perPage

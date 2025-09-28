@@ -32,73 +32,72 @@ interface TogglWorkspace {
  * Create the init command
  */
 export function createInitCommand(): Command {
-  return new Command('init')
-    .description('Initialize Toggl CLI configuration')
-    .action(async () => {
-      try {
-        console.log(formatInfo('Welcome to Toggl CLI setup!'))
-        console.log('')
+  return new Command('init').description('Initialize Toggl CLI configuration').action(async () => {
+    try {
+      console.log(formatInfo('Welcome to Toggl CLI setup!'))
+      console.log('')
 
-        // Step 1: Check if configuration already exists
-        const configAlreadyExists = await configExists()
+      // Step 1: Check if configuration already exists
+      const configAlreadyExists = await configExists()
 
-        if (configAlreadyExists) {
-          console.log(formatWarning('Configuration already exists'))
+      if (configAlreadyExists) {
+        console.log(formatWarning('Configuration already exists'))
 
-          const shouldOverwrite = await confirm({
-            message: 'Do you want to overwrite the existing configuration?',
-            default: false
-          })
-
-          if (!shouldOverwrite) {
-            console.log(formatInfo('Setup cancelled'))
-            return
-          }
-          console.log('')
-        }
-
-        // Step 2: Prompt for API token
-        const apiToken = await getApiToken()
-        if (!apiToken) {
-          console.log(formatError('Setup cancelled - API token is required'))
-          process.exit(1)
-        }
-
-        // Step 3: Validate token with Toggl API
-        console.log(formatInfo('Validating API token...'))
-        const user = await validateApiToken(apiToken)
-
-        // Step 4: Get workspaces and let user select
-        console.log(formatInfo('Fetching available workspaces...'))
-        const client = createTogglClient(apiToken)
-        const workspaces = await getWorkspaces(client)
-        const selectedWorkspace = await selectWorkspace(workspaces, user.default_workspace_id)
-
-        // Step 5: Save configuration
-        await saveConfig({
-          apiToken,
-          workspaceId: selectedWorkspace.id
+        const shouldOverwrite = await confirm({
+          message: 'Do you want to overwrite the existing configuration?',
+          default: false,
         })
 
-        // Step 6: Display success
+        if (!shouldOverwrite) {
+          console.log(formatInfo('Setup cancelled'))
+          return
+        }
         console.log('')
-        console.log(formatSuccess('Configuration saved successfully!'))
-        console.log('')
-        console.log(formatInfo(`Connected as: ${user.fullname} (${user.email})`))
-        console.log(formatInfo(`Selected workspace: ${selectedWorkspace.name} (ID: ${selectedWorkspace.id})`))
-        console.log(formatInfo(`Timezone: ${user.timezone}`))
-        console.log('')
-        console.log('You can now use Toggl CLI commands like:')
-        console.log('  tog ping      # Test connection')
-        console.log('  tog current   # Show running timer')
-        console.log('  tog start     # Start a new timer')
+      }
 
-      } catch (error: unknown) {
-        console.error(formatError('Setup failed'))
-        console.error(`  ${error instanceof Error ? error.message : String(error)}`)
+      // Step 2: Prompt for API token
+      const apiToken = await getApiToken()
+      if (!apiToken) {
+        console.log(formatError('Setup cancelled - API token is required'))
         process.exit(1)
       }
-    })
+
+      // Step 3: Validate token with Toggl API
+      console.log(formatInfo('Validating API token...'))
+      const user = await validateApiToken(apiToken)
+
+      // Step 4: Get workspaces and let user select
+      console.log(formatInfo('Fetching available workspaces...'))
+      const client = createTogglClient(apiToken)
+      const workspaces = await getWorkspaces(client)
+      const selectedWorkspace = await selectWorkspace(workspaces, user.default_workspace_id)
+
+      // Step 5: Save configuration
+      await saveConfig({
+        apiToken,
+        workspaceId: selectedWorkspace.id,
+      })
+
+      // Step 6: Display success
+      console.log('')
+      console.log(formatSuccess('Configuration saved successfully!'))
+      console.log('')
+      console.log(formatInfo(`Connected as: ${user.fullname} (${user.email})`))
+      console.log(
+        formatInfo(`Selected workspace: ${selectedWorkspace.name} (ID: ${selectedWorkspace.id})`)
+      )
+      console.log(formatInfo(`Timezone: ${user.timezone}`))
+      console.log('')
+      console.log('You can now use Toggl CLI commands like:')
+      console.log('  tog ping      # Test connection')
+      console.log('  tog current   # Show running timer')
+      console.log('  tog start     # Start a new timer')
+    } catch (error: unknown) {
+      console.error(formatError('Setup failed'))
+      console.error(`  ${error instanceof Error ? error.message : String(error)}`)
+      process.exit(1)
+    }
+  })
 }
 
 /**
@@ -122,7 +121,7 @@ async function getApiToken(): Promise<string> {
         return 'API token must be at least 32 characters long'
       }
       return true
-    }
+    },
   })
 
   return token.trim()
@@ -166,7 +165,9 @@ async function validateApiToken(apiToken: string): Promise<TogglUser> {
 /**
  * Get available workspaces for the user
  */
-async function getWorkspaces(client: ReturnType<typeof createTogglClient>): Promise<TogglWorkspace[]> {
+async function getWorkspaces(
+  client: ReturnType<typeof createTogglClient>
+): Promise<TogglWorkspace[]> {
   try {
     const workspaces: TogglWorkspace[] = await client.get('/workspaces')
     return workspaces
@@ -195,7 +196,10 @@ async function getWorkspaces(client: ReturnType<typeof createTogglClient>): Prom
 /**
  * Interactive workspace selection
  */
-async function selectWorkspace(workspaces: TogglWorkspace[], defaultWorkspaceId: number): Promise<TogglWorkspace> {
+async function selectWorkspace(
+  workspaces: TogglWorkspace[],
+  defaultWorkspaceId: number
+): Promise<TogglWorkspace> {
   if (workspaces.length === 0) {
     throw new Error('No workspaces found for this account')
   }
@@ -211,12 +215,12 @@ async function selectWorkspace(workspaces: TogglWorkspace[], defaultWorkspaceId:
 
   const choices = workspaces.map(workspace => ({
     name: workspace.name + (workspace.id === defaultWorkspaceId ? ' (default)' : ''),
-    value: workspace
+    value: workspace,
   }))
 
   return await select({
     message: 'Select a workspace:',
     choices,
-    default: defaultWorkspace || workspaces[0]
+    default: defaultWorkspace || workspaces[0],
   })
 }

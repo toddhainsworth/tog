@@ -29,7 +29,7 @@ import { formatSuccess, formatError, formatInfo, formatWarning } from '../utils/
 const TimerUpdateSchema = type({
   description: 'string?',
   project_id: 'number | null?',
-  task_id: 'number | null?'
+  task_id: 'number | null?',
 })
 
 /**
@@ -46,93 +46,89 @@ type TimerUpdateData = typeof TimerUpdateSchema.infer
  * Create the edit command
  */
 export function createEditCommand(): Command {
-  return new Command('edit')
-    .description('Edit the currently running timer')
-    .action(async () => {
-      try {
-        console.log(formatInfo('Checking for running timer...'))
+  return new Command('edit').description('Edit the currently running timer').action(async () => {
+    try {
+      console.log(formatInfo('Checking for running timer...'))
 
-        // Step 1: Load configuration
-        const config = await loadConfig()
-        if (!config) {
-          console.error(formatError('No configuration found'))
-          console.error('Run "tog init" to set up your API token.')
-          process.exit(1)
-        }
-
-        const client = createTogglClient(config.apiToken)
-
-        // Step 2: Get current timer
-        const currentTimer = await getCurrentTimeEntry(client)
-        if (!currentTimer) {
-          console.log('')
-          console.log(formatInfo('No timer is currently running'))
-          console.log('Start a timer with "tog start" first.')
-          return
-        }
-
-        // Step 3: Fetch reference data for projects and tasks
-        const [projects, tasks] = await Promise.all([
-          fetchAllProjects(client),
-          fetchAllTasks(client)
-        ])
-
-        // Step 4: Show current timer details
-        showCurrentTimer(currentTimer, projects, tasks)
-
-        // Step 5: Interactive editing
-        const updates = await collectEdits(currentTimer, projects, tasks)
-
-        if (Object.keys(updates).length === 0) {
-          console.log('')
-          console.log(formatInfo('No changes made'))
-          return
-        }
-
-        // Step 6: Validate and update timer
-        const validatedUpdates = TimerUpdateSchema(updates)
-        if (validatedUpdates instanceof type.errors) {
-          throw new Error(`Invalid update data: ${validatedUpdates.summary}`)
-        }
-
-        const updatedTimer = await updateTimer(client, currentTimer.id, validatedUpdates)
-
-        // Step 7: Show success and changes
-        console.log('')
-        console.log(formatSuccess('Timer updated successfully!'))
-        showUpdateSummary(currentTimer, updatedTimer, projects, tasks)
-
-      } catch (error: unknown) {
-        console.error(formatError('Failed to edit timer'))
-
-        if (isAxiosError(error) && error.response) {
-          const status = error.response.status
-          if (status === 401) {
-            console.error('Invalid API token. Run "tog init" to update your credentials.')
-          } else if (status === 403) {
-            console.error('Access denied. Check your API token permissions.')
-          } else if (status === 404) {
-            console.error('Timer not found. It may have been stopped or deleted.')
-          } else if (status >= 500) {
-            console.error('Toggl API is currently unavailable. Please try again later.')
-          } else {
-            console.error(`API error ${status}: ${error.response.statusText}`)
-          }
-        } else if (error instanceof Error) {
-          console.error(`Error: ${error.message}`)
-        } else {
-          console.error(`Unknown error: ${String(error)}`)
-        }
-
+      // Step 1: Load configuration
+      const config = await loadConfig()
+      if (!config) {
+        console.error(formatError('No configuration found'))
+        console.error('Run "tog init" to set up your API token.')
         process.exit(1)
       }
-    })
+
+      const client = createTogglClient(config.apiToken)
+
+      // Step 2: Get current timer
+      const currentTimer = await getCurrentTimeEntry(client)
+      if (!currentTimer) {
+        console.log('')
+        console.log(formatInfo('No timer is currently running'))
+        console.log('Start a timer with "tog start" first.')
+        return
+      }
+
+      // Step 3: Fetch reference data for projects and tasks
+      const [projects, tasks] = await Promise.all([fetchAllProjects(client), fetchAllTasks(client)])
+
+      // Step 4: Show current timer details
+      showCurrentTimer(currentTimer, projects, tasks)
+
+      // Step 5: Interactive editing
+      const updates = await collectEdits(currentTimer, projects, tasks)
+
+      if (Object.keys(updates).length === 0) {
+        console.log('')
+        console.log(formatInfo('No changes made'))
+        return
+      }
+
+      // Step 6: Validate and update timer
+      const validatedUpdates = TimerUpdateSchema(updates)
+      if (validatedUpdates instanceof type.errors) {
+        throw new Error(`Invalid update data: ${validatedUpdates.summary}`)
+      }
+
+      const updatedTimer = await updateTimer(client, currentTimer.id, validatedUpdates)
+
+      // Step 7: Show success and changes
+      console.log('')
+      console.log(formatSuccess('Timer updated successfully!'))
+      showUpdateSummary(currentTimer, updatedTimer, projects, tasks)
+    } catch (error: unknown) {
+      console.error(formatError('Failed to edit timer'))
+
+      if (isAxiosError(error) && error.response) {
+        const status = error.response.status
+        if (status === 401) {
+          console.error('Invalid API token. Run "tog init" to update your credentials.')
+        } else if (status === 403) {
+          console.error('Access denied. Check your API token permissions.')
+        } else if (status === 404) {
+          console.error('Timer not found. It may have been stopped or deleted.')
+        } else if (status >= 500) {
+          console.error('Toggl API is currently unavailable. Please try again later.')
+        } else {
+          console.error(`API error ${status}: ${error.response.statusText}`)
+        }
+      } else if (error instanceof Error) {
+        console.error(`Error: ${error.message}`)
+      } else {
+        console.error(`Unknown error: ${String(error)}`)
+      }
+
+      process.exit(1)
+    }
+  })
 }
 
 /**
  * Get currently running timer
  */
-async function getCurrentTimeEntry(client: ReturnType<typeof createTogglClient>): Promise<TogglTimeEntry | null> {
+async function getCurrentTimeEntry(
+  client: ReturnType<typeof createTogglClient>
+): Promise<TogglTimeEntry | null> {
   try {
     const currentEntry: TogglTimeEntry = await client.get('/me/time_entries/current')
     return currentEntry || null
@@ -147,7 +143,11 @@ async function getCurrentTimeEntry(client: ReturnType<typeof createTogglClient>)
 /**
  * Show current timer details
  */
-function showCurrentTimer(timer: TogglTimeEntry, projects: TogglProject[], tasks: TogglTask[]): void {
+function showCurrentTimer(
+  timer: TogglTimeEntry,
+  projects: TogglProject[],
+  tasks: TogglTask[]
+): void {
   console.log('')
   console.log('📋 Current timer:')
   console.log(`Description: "${timer.description || 'Untitled'}"`)
@@ -182,7 +182,7 @@ async function collectEdits(
   // Edit description
   const editDescription = await confirm({
     message: 'Edit description?',
-    default: false
+    default: false,
   })
 
   if (editDescription) {
@@ -195,7 +195,7 @@ async function collectEdits(
           return 'Description must be 200 characters or less'
         }
         return true
-      }
+      },
     })
 
     if (newDescription !== (currentTimer.description || '')) {
@@ -206,7 +206,7 @@ async function collectEdits(
   // Edit project
   const editProject = await confirm({
     message: 'Edit project?',
-    default: false
+    default: false,
   })
 
   if (editProject) {
@@ -215,13 +215,13 @@ async function collectEdits(
       ...projects
         .filter(p => p.active)
         .sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase()))
-        .map(p => ({ name: p.name, value: p.id }))
+        .map(p => ({ name: p.name, value: p.id })),
     ]
 
     const selectedProjectId = await select({
       message: 'Select project:',
       choices: projectChoices,
-      default: currentTimer.project_id || null
+      default: currentTimer.project_id || null,
     })
 
     if (selectedProjectId !== (currentTimer.project_id || null)) {
@@ -234,12 +234,13 @@ async function collectEdits(
   }
 
   // Edit task (only if project is selected)
-  const finalProjectId = updates.project_id !== undefined ? updates.project_id : currentTimer.project_id
+  const finalProjectId =
+    updates.project_id !== undefined ? updates.project_id : currentTimer.project_id
 
   if (finalProjectId) {
     const editTask = await confirm({
       message: 'Edit task?',
-      default: false
+      default: false,
     })
 
     if (editTask) {
@@ -250,13 +251,13 @@ async function collectEdits(
           { name: 'No Task', value: null },
           ...projectTasks
             .sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase()))
-            .map(t => ({ name: t.name, value: t.id }))
+            .map(t => ({ name: t.name, value: t.id })),
         ]
 
         const selectedTaskId = await select({
           message: 'Select task:',
           choices: taskChoices,
-          default: currentTimer.task_id || null
+          default: currentTimer.task_id || null,
         })
 
         if (selectedTaskId !== (currentTimer.task_id || null)) {
@@ -311,28 +312,32 @@ function showUpdateSummary(
 
   // Description changes
   if (originalTimer.description !== updatedTimer.description) {
-    console.log(`Description: "${originalTimer.description || 'Untitled'}" → "${updatedTimer.description || 'Untitled'}"`)
+    console.log(
+      `Description: "${originalTimer.description || 'Untitled'}" → "${updatedTimer.description || 'Untitled'}"`
+    )
   }
 
   // Project changes
   if (originalTimer.project_id !== updatedTimer.project_id) {
-    const oldProject = originalTimer.project_id ?
-      projects.find(p => p.id === originalTimer.project_id)?.name || `ID ${originalTimer.project_id}` :
-      'None'
-    const newProject = updatedTimer.project_id ?
-      projects.find(p => p.id === updatedTimer.project_id)?.name || `ID ${updatedTimer.project_id}` :
-      'None'
+    const oldProject = originalTimer.project_id
+      ? projects.find(p => p.id === originalTimer.project_id)?.name ||
+        `ID ${originalTimer.project_id}`
+      : 'None'
+    const newProject = updatedTimer.project_id
+      ? projects.find(p => p.id === updatedTimer.project_id)?.name ||
+        `ID ${updatedTimer.project_id}`
+      : 'None'
     console.log(`Project: ${oldProject} → ${newProject}`)
   }
 
   // Task changes
   if (originalTimer.task_id !== updatedTimer.task_id) {
-    const oldTask = originalTimer.task_id ?
-      tasks.find(t => t.id === originalTimer.task_id)?.name || `ID ${originalTimer.task_id}` :
-      'None'
-    const newTask = updatedTimer.task_id ?
-      tasks.find(t => t.id === updatedTimer.task_id)?.name || `ID ${updatedTimer.task_id}` :
-      'None'
+    const oldTask = originalTimer.task_id
+      ? tasks.find(t => t.id === originalTimer.task_id)?.name || `ID ${originalTimer.task_id}`
+      : 'None'
+    const newTask = updatedTimer.task_id
+      ? tasks.find(t => t.id === updatedTimer.task_id)?.name || `ID ${updatedTimer.task_id}`
+      : 'None'
     console.log(`Task: ${oldTask} → ${newTask}`)
   }
 
@@ -342,7 +347,9 @@ function showUpdateSummary(
 /**
  * Fetch all projects using pagination
  */
-async function fetchAllProjects(client: ReturnType<typeof createTogglClient>): Promise<TogglProject[]> {
+async function fetchAllProjects(
+  client: ReturnType<typeof createTogglClient>
+): Promise<TogglProject[]> {
   const allProjects: TogglProject[] = []
   const perPage = 50
   let page = 1
@@ -375,9 +382,7 @@ async function fetchAllTasks(client: ReturnType<typeof createTogglClient>): Prom
   let hasMorePages = true
 
   while (hasMorePages) {
-    const tasks: TogglTask[] = await client.get(
-      `/me/tasks?per_page=${perPage}&page=${page}`
-    )
+    const tasks: TogglTask[] = await client.get(`/me/tasks?per_page=${perPage}&page=${page}`)
 
     allTasks.push(...tasks)
     hasMorePages = tasks.length === perPage
