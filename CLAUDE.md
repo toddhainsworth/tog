@@ -63,6 +63,7 @@ The project includes GitHub Actions workflows for quality gates:
 - `arktype` - Runtime type validation library
 - `axios` - HTTP client for API requests
 - `dayjs` - Reliable time and date handling
+- `cli-table3` - Professional table formatting for command output
 
 ### Build Output
 - Compiled code goes to `dist/`
@@ -97,6 +98,45 @@ The project implements a **single-file command pattern** where each command cont
 - ✅ **Fast development**: No service layer to design or maintain
 - ✅ **Type safety**: Comprehensive TypeScript with zero `any` types
 - ✅ **Maintainability**: Dramatically reduced codebase complexity
+
+## UI and Table Formatting
+
+### Table Display Standards
+All commands use **cli-table3** for professional table formatting with consistent styling:
+
+```typescript
+import Table from 'cli-table3'
+
+const table = new Table({
+  colWidths: [12, 10, 10, 35, 25],
+  head: ['Date', 'Start', 'Duration', 'Description', 'Project'],
+  style: {
+    border: ['gray'],
+    head: ['cyan'],
+  },
+  wordWrap: true,
+})
+
+// Add rows
+for (const entry of entries) {
+  table.push([entry.date, entry.startTime, entry.duration, entry.description, entry.projectName])
+}
+
+console.log(table.toString())
+```
+
+**Table Style Requirements:**
+- ✅ **Gray borders**: `border: ['gray']` for professional appearance
+- ✅ **Cyan headers**: `head: ['cyan']` for consistent branding
+- ✅ **Word wrapping**: `wordWrap: true` for long content
+- ✅ **Fixed column widths**: Ensures consistent alignment across different data sets
+- ✅ **Consistent patterns**: All table-displaying commands use identical styling
+
+**Commands with Tables:**
+- **search**: Time entries with Date, Start, Duration, Description, Project columns
+- **today**: Time entries table + Project summary table
+- **week**: Daily summary table + Project summary table
+- **projects/tasks/clients**: List tables with relevant columns
 
 ## Testing Policy (Detailed)
 

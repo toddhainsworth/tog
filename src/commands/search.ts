@@ -17,6 +17,7 @@
 import { Command } from 'commander'
 import dayjs from 'dayjs'
 import utc from 'dayjs/plugin/utc.js'
+import Table from 'cli-table3'
 import { createTogglClient, TogglApiClient, TogglTimeEntry, TogglProject } from '../api/client.js'
 import { loadConfig } from '../config/index.js'
 import { formatSuccess, formatError, formatInfo, formatWarning } from '../utils/format.js'
@@ -200,37 +201,29 @@ function formatTimeEntry(entry: TogglTimeEntry, projectMap: Map<number, TogglPro
 }
 
 /**
- * Display search results in table format
+ * Display search results in table format using cli-table3
  */
 function displaySearchResultsTable(entries: TimeEntrySummary[]): void {
-  // Calculate column widths
-  const maxDescWidth = Math.max(11, ...entries.map(e => e.description.length))
-  const maxProjectWidth = Math.max(7, ...entries.map(e => e.projectName.length))
+  const table = new Table({
+    colWidths: [12, 10, 10, 35, 25],
+    head: ['Date', 'Start', 'Duration', 'Description', 'Project'],
+    style: {
+      border: ['gray'],
+      head: ['cyan'],
+    },
+    wordWrap: true,
+  })
 
-  // Header
-  console.log(
-    'Date'.padEnd(10) + '  ' +
-    'Start'.padEnd(5) + '  ' +
-    'Duration'.padEnd(8) + '  ' +
-    'Description'.padEnd(maxDescWidth) + '  ' +
-    'Project'
-  )
-  console.log(
-    '-'.repeat(10) + '  ' +
-    '-'.repeat(5) + '  ' +
-    '-'.repeat(8) + '  ' +
-    '-'.repeat(maxDescWidth) + '  ' +
-    '-'.repeat(maxProjectWidth)
-  )
-
-  // Rows
+  // Add rows to table
   for (const entry of entries) {
-    console.log(
-      entry.date.padEnd(10) + '  ' +
-      entry.startTime.padEnd(5) + '  ' +
-      entry.duration.padEnd(8) + '  ' +
-      entry.description.padEnd(maxDescWidth) + '  ' +
-      entry.projectName
-    )
+    table.push([
+      entry.date,
+      entry.startTime,
+      entry.duration,
+      entry.description,
+      entry.projectName,
+    ])
   }
+
+  console.log(table.toString())
 }

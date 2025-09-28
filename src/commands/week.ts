@@ -18,6 +18,7 @@
 
 import { Command } from 'commander'
 import { isAxiosError } from 'axios'
+import Table from 'cli-table3'
 import { loadConfig } from '../config/index.js'
 import { createTogglClient, TogglTimeEntry, TogglProject } from '../api/client.js'
 import { formatSuccess, formatError, formatInfo } from '../utils/format.js'
@@ -150,62 +151,54 @@ export function createWeekCommand(): Command {
 }
 
 /**
- * Display daily summary table
+ * Display daily summary table using cli-table3
  */
 function displayDailySummaryTable(dailySummaries: DailySummary[]): void {
-  const maxDayWidth = Math.max(3, ...dailySummaries.map(d => d.dayName.length))
+  const table = new Table({
+    colWidths: [15, 12],
+    head: ['Day', 'Duration'],
+    style: {
+      border: ['gray'],
+      head: ['cyan'],
+    },
+  })
 
-  // Header
-  console.log(
-    'Day'.padEnd(maxDayWidth) + '  ' +
-    'Duration'
-  )
-  console.log(
-    '-'.repeat(maxDayWidth) + '  ' +
-    '--------'
-  )
-
-  // Daily rows
+  // Add rows to table
   for (const day of dailySummaries) {
-    console.log(
-      day.dayName.padEnd(maxDayWidth) + '  ' +
-      day.formattedDuration
-    )
+    table.push([
+      day.dayName,
+      day.formattedDuration,
+    ])
   }
+
+  console.log(table.toString())
 }
 
 /**
- * Display project summary table
+ * Display project summary table using cli-table3
  */
 function displayProjectSummaryTable(projectSummaries: WeeklyProjectSummary[]): void {
-  const maxProjectWidth = Math.max(7, ...projectSummaries.map(p => p.projectName.length))
+  const table = new Table({
+    colWidths: [25, 12, 8, 12, 12],
+    head: ['Project', 'Duration', 'Days', 'Daily Avg', 'Percentage'],
+    style: {
+      border: ['gray'],
+      head: ['cyan'],
+    },
+  })
 
-  // Header
-  console.log(
-    'Project'.padEnd(maxProjectWidth) + '  ' +
-    'Duration'.padEnd(10) + '  ' +
-    'Days'.padEnd(4) + '  ' +
-    'Daily Avg'.padEnd(10) + '  ' +
-    '%'
-  )
-  console.log(
-    '-'.repeat(maxProjectWidth) + '  ' +
-    '-'.repeat(10) + '  ' +
-    '-'.repeat(4) + '  ' +
-    '-'.repeat(10) + '  ' +
-    '---'
-  )
-
-  // Project rows
+  // Add rows to table
   for (const project of projectSummaries) {
-    console.log(
-      project.projectName.padEnd(maxProjectWidth) + '  ' +
-      project.formattedDuration.padEnd(10) + '  ' +
-      String(project.daysWorked).padEnd(4) + '  ' +
-      project.dailyAverage.padEnd(10) + '  ' +
-      `${project.percentage}%`
-    )
+    table.push([
+      project.projectName,
+      project.formattedDuration,
+      String(project.daysWorked),
+      project.dailyAverage,
+      `${project.percentage}%`,
+    ])
   }
+
+  console.log(table.toString())
 }
 
 /**

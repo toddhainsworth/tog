@@ -138,6 +138,7 @@ sequenceDiagram
 - **[@inquirer/prompts](https://github.com/SBoudrias/Inquirer.js/)** - Interactive prompts
 - **[Axios](https://axios-http.com/)** - HTTP client for Toggl API with intelligent caching
 - **[Day.js](https://day.js.org/)** - Lightweight date manipulation
+- **[cli-table3](https://github.com/cli-table/cli-table3)** - Professional table formatting
 
 ## 🔨 Your First Contribution (30 minutes)
 

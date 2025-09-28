@@ -63,6 +63,7 @@ yarn build && ./bin/run.js ping
 | `edit` | Modify current timer | `tog edit` |
 | `today` | Today's time summary | `tog today` |
 | `week` | Weekly summary | `tog week --last` |
+| `search` | Search time entries by description | `tog search "meeting"` |
 | `projects` | List all projects | `tog projects` |
 | `tasks` | List all tasks | `tog tasks` |
 | `clients` | List clients | `tog clients --tree` |
@@ -123,6 +124,7 @@ yarn clean        # Remove build artifacts
 - **[@inquirer/prompts](https://github.com/SBoudrias/Inquirer.js/)** - Interactive prompts
 - **[Axios](https://axios-http.com/)** - HTTP client for Toggl API
 - **[Day.js](https://day.js.org/)** - Date manipulation
+- **[cli-table3](https://github.com/cli-table/cli-table3)** - Professional table formatting
 
 ## 📚 Documentation
 

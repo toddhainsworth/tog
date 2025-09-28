@@ -17,6 +17,7 @@
 
 import { Command } from 'commander'
 import { isAxiosError } from 'axios'
+import Table from 'cli-table3'
 import { loadConfig } from '../config/index.js'
 import { createTogglClient, TogglTimeEntry, TogglProject } from '../api/client.js'
 import { formatSuccess, formatError, formatInfo } from '../utils/format.js'
@@ -128,66 +129,56 @@ export function createTodayCommand(): Command {
 }
 
 /**
- * Display time entries table in chronological order
+ * Display time entries table in chronological order using cli-table3
  */
 function displayTimeEntriesTable(entries: TimeEntrySummary[]): void {
-  const maxDescriptionWidth = Math.max(11, ...entries.map(e => e.description.length))
-  const maxProjectWidth = Math.max(7, ...entries.map(e => (e.projectName || '-').length))
+  const table = new Table({
+    colWidths: [10, 10, 10, 35, 25],
+    head: ['Start', 'End', 'Duration', 'Description', 'Project'],
+    style: {
+      border: ['gray'],
+      head: ['cyan'],
+    },
+    wordWrap: true,
+  })
 
-  // Header
-  console.log(
-    'Start'.padEnd(8) + '  ' +
-    'End'.padEnd(8) + '  ' +
-    'Duration'.padEnd(8) + '  ' +
-    'Description'.padEnd(maxDescriptionWidth) + '  ' +
-    'Project'
-  )
-  console.log(
-    '-'.repeat(8) + '  ' +
-    '-'.repeat(8) + '  ' +
-    '-'.repeat(8) + '  ' +
-    '-'.repeat(maxDescriptionWidth) + '  ' +
-    '-'.repeat(maxProjectWidth)
-  )
-
-  // Entry rows
+  // Add rows to table
   for (const entry of entries) {
-    console.log(
-      entry.startTime.padEnd(8) + '  ' +
-      entry.endTime.padEnd(8) + '  ' +
-      entry.duration.padEnd(8) + '  ' +
-      entry.description.padEnd(maxDescriptionWidth) + '  ' +
-      (entry.projectName || '-')
-    )
+    table.push([
+      entry.startTime,
+      entry.endTime,
+      entry.duration,
+      entry.description,
+      entry.projectName || '-',
+    ])
   }
+
+  console.log(table.toString())
 }
 
 /**
- * Display project summary table
+ * Display project summary table using cli-table3
  */
 function displayProjectSummaryTable(projectSummaries: ProjectSummary[]): void {
-  const maxProjectWidth = Math.max(7, ...projectSummaries.map(p => p.projectName.length))
+  const table = new Table({
+    colWidths: [30, 12, 12],
+    head: ['Project', 'Duration', 'Percentage'],
+    style: {
+      border: ['gray'],
+      head: ['cyan'],
+    },
+  })
 
-  // Header
-  console.log(
-    'Project'.padEnd(maxProjectWidth) + '  ' +
-    'Duration'.padEnd(10) + '  ' +
-    'Percentage'
-  )
-  console.log(
-    '-'.repeat(maxProjectWidth) + '  ' +
-    '-'.repeat(10) + '  ' +
-    '----------'
-  )
-
-  // Project rows
+  // Add rows to table
   for (const project of projectSummaries) {
-    console.log(
-      project.projectName.padEnd(maxProjectWidth) + '  ' +
-      project.formattedDuration.padEnd(10) + '  ' +
-      `${project.percentage}%`
-    )
+    table.push([
+      project.projectName,
+      project.formattedDuration,
+      `${project.percentage}%`,
+    ])
   }
+
+  console.log(table.toString())
 }
 
 /**

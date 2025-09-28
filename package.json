@@ -11,6 +11,7 @@
     "@inquirer/prompts": "^7.8.6",
     "arktype": "^2.1.22",
     "axios": "^1.12.2",
+    "cli-table3": "^0.6.5",
     "commander": "^12.1.0",
     "dayjs": "^1.11.18"
   },
