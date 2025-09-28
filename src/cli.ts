@@ -10,6 +10,8 @@ import { createPingCommand } from './commands/ping.js'
 import { createCurrentCommand } from './commands/current.js'
 import { createStopCommand } from './commands/stop.js'
 import { createStartCommand } from './commands/start.js'
+import { createInitCommand } from './commands/init.js'
+import { createNukeCommand } from './commands/nuke.js'
 
 // Create the main program
 const program = new Command()
@@ -25,6 +27,8 @@ program.addCommand(createPingCommand())
 program.addCommand(createCurrentCommand())
 program.addCommand(createStopCommand())
 program.addCommand(createStartCommand())
+program.addCommand(createInitCommand())
+program.addCommand(createNukeCommand())
 
 // Parse command line arguments
 program.parse()
