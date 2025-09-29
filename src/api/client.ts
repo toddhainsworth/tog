@@ -280,6 +280,7 @@ export interface TogglProject {
   active: boolean
   workspace_id: number
   client_id?: number
+  billable: boolean
 }
 
 export interface TogglTask {
