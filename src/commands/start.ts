@@ -44,6 +44,7 @@ const StartTimerDataSchema = type({
   task_id: 'number?',
   workspace_id: 'number',
   created_with: 'string',
+  billable: 'boolean?',
 })
 
 /**
@@ -127,6 +128,7 @@ export function createStartCommand(): Command {
         start: dayjs().toISOString(), // Current time as start time
         workspace_id: workspaceId,
         created_with: 'tog-cli',
+        billable: selectedProject?.billable ?? false, // Inherit billable status from project
       }
 
       if (selectedProject) {

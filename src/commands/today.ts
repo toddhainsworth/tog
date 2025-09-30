@@ -191,8 +191,9 @@ async function fetchTimeEntries(
   startDate: string,
   endDate: string
 ): Promise<TogglTimeEntry[]> {
-  const start = dayjs(startDate).format('YYYY-MM-DD')
-  const end = dayjs(endDate).format('YYYY-MM-DD')
+  // Use full ISO timestamps to ensure proper timezone handling
+  const start = encodeURIComponent(startDate)
+  const end = encodeURIComponent(endDate)
 
   return await client.get(`/me/time_entries?start_date=${start}&end_date=${end}`)
 }

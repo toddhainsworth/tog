@@ -91,7 +91,7 @@ export function createEditCommand(): Command {
         throw new Error(`Invalid update data: ${validatedUpdates.summary}`)
       }
 
-      const updatedTimer = await updateTimer(client, currentTimer.id, validatedUpdates)
+      const updatedTimer = await updateTimer(client, currentTimer, validatedUpdates)
 
       // Step 7: Show success and changes
       console.log('')
@@ -256,9 +256,14 @@ async function collectEdits(
  */
 async function updateTimer(
   client: ReturnType<typeof createTogglClient>,
-  timerId: number,
+  timer: TogglTimeEntry,
   updates: TimerUpdateData
 ): Promise<TogglTimeEntry> {
+  // Validate timer has required IDs
+  if (!timer.workspace_id || !timer.id) {
+    throw new Error('Timer missing required workspace ID or timer ID. Unable to update timer.')
+  }
+
   // Convert validated updates to the format expected by the API
   const updateData: Record<string, unknown> = {}
 
@@ -274,7 +279,7 @@ async function updateTimer(
     updateData.task_id = updates.task_id
   }
 
-  return await client.put(`/me/time_entries/${timerId}`, updateData)
+  return await client.put(`/workspaces/${timer.workspace_id}/time_entries/${timer.id}`, updateData)
 }
 
 /**
