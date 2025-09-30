@@ -28,6 +28,7 @@ import {
   aggregateTimeEntriesByProject,
   formatDuration,
   calculateElapsedSeconds,
+  setTimezone,
   type TimeEntrySummary,
   type ProjectSummary,
 } from '../utils/time.js'
@@ -49,6 +50,9 @@ export function createTodayCommand(): Command {
           console.error('Run "tog init" to set up your API token.')
           process.exit(1)
         }
+
+        // Set timezone from config for consistent date handling
+        setTimezone(config.timezone)
 
         // Step 2: Create API client and fetch data in parallel
         const client = createTogglClient(config.apiToken)

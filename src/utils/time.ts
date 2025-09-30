@@ -7,9 +7,23 @@
 
 import dayjs from 'dayjs'
 import utc from 'dayjs/plugin/utc.js'
+import timezone from 'dayjs/plugin/timezone.js'
 import { TogglTimeEntry, TogglProject } from '../api/client.js'
 
 dayjs.extend(utc)
+dayjs.extend(timezone)
+
+/**
+ * Set the timezone for all date operations
+ * This should be called by commands after loading config
+ */
+export function setTimezone(tz: string): void {
+  dayjs.tz.setDefault(tz)
+}
+
+// Set default timezone to Adelaide for consistent behavior
+// This will be overridden when commands load user config
+dayjs.tz.setDefault('Australia/Adelaide')
 
 /**
  * Time formatting constants
