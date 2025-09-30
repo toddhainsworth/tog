@@ -16,12 +16,13 @@
  */
 
 import { Command } from 'commander'
-import { input, select, confirm } from '@inquirer/prompts'
+import { input, confirm } from '@inquirer/prompts'
 import { type } from 'arktype'
 import { isAxiosError } from 'axios'
 import { loadConfig } from '../config/index.js'
 import { createTogglClient, TogglTimeEntry, TogglProject, TogglTask } from '../api/client.js'
-import { formatSuccess, formatError, formatInfo, formatWarning } from '../utils/format.js'
+import { formatSuccess, formatError, formatInfo } from '../utils/format.js'
+import { UnifiedSelector } from '../utils/selectors/UnifiedSelector.js'
 
 /**
  * Schema for timer update data
@@ -69,14 +70,14 @@ export function createEditCommand(): Command {
         return
       }
 
-      // Step 3: Fetch reference data for projects and tasks
+      // Step 3: Fetch reference data for projects and tasks (for display only)
       const [projects, tasks] = await Promise.all([fetchAllProjects(client), fetchAllTasks(client)])
 
       // Step 4: Show current timer details
       showCurrentTimer(currentTimer, projects, tasks)
 
       // Step 5: Interactive editing
-      const updates = await collectEdits(currentTimer, projects, tasks)
+      const updates = await collectEdits(currentTimer, client)
 
       if (Object.keys(updates).length === 0) {
         console.log('')
@@ -174,8 +175,7 @@ function showCurrentTimer(
  */
 async function collectEdits(
   currentTimer: TogglTimeEntry,
-  projects: TogglProject[],
-  tasks: TogglTask[]
+  client: ReturnType<typeof createTogglClient>
 ): Promise<TimerUpdateData> {
   const updates: TimerUpdateData = {}
 
@@ -203,68 +203,47 @@ async function collectEdits(
     }
   }
 
-  // Edit project
-  const editProject = await confirm({
-    message: 'Edit project?',
+  // Edit project or task using unified selector
+  const editProjectOrTask = await confirm({
+    message: 'Edit project or task?',
     default: false,
   })
 
-  if (editProject) {
-    const projectChoices = [
-      { name: 'No Project', value: null },
-      ...projects
-        .filter(p => p.active)
-        .sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase()))
-        .map(p => ({ name: p.name, value: p.id })),
-    ]
-
-    const selectedProjectId = await select({
-      message: 'Select project:',
-      choices: projectChoices,
-      default: currentTimer.project_id || null,
+  if (editProjectOrTask) {
+    const selector = new UnifiedSelector(client, currentTimer.workspace_id)
+    const selection = await selector.selectEntity({
+      includeProjects: true,
+      includeTasks: true,
+      allowNone: true,
     })
 
-    if (selectedProjectId !== (currentTimer.project_id || null)) {
-      updates.project_id = selectedProjectId
-      // Clear task if project changed
+    if (selection === null) {
+      // User selected "None" - clear project and task
+      if (currentTimer.project_id) {
+        updates.project_id = null
+      }
       if (currentTimer.task_id) {
         updates.task_id = null
       }
-    }
-  }
-
-  // Edit task (only if project is selected)
-  const finalProjectId =
-    updates.project_id !== undefined ? updates.project_id : currentTimer.project_id
-
-  if (finalProjectId) {
-    const editTask = await confirm({
-      message: 'Edit task?',
-      default: false,
-    })
-
-    if (editTask) {
-      const projectTasks = tasks.filter(t => t.project_id === finalProjectId && t.active)
-
-      if (projectTasks.length > 0) {
-        const taskChoices = [
-          { name: 'No Task', value: null },
-          ...projectTasks
-            .sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase()))
-            .map(t => ({ name: t.name, value: t.id })),
-        ]
-
-        const selectedTaskId = await select({
-          message: 'Select task:',
-          choices: taskChoices,
-          default: currentTimer.task_id || null,
-        })
-
-        if (selectedTaskId !== (currentTimer.task_id || null)) {
-          updates.task_id = selectedTaskId
+    } else if (selection) {
+      if (selection.type === 'project') {
+        const selectedProject = selection.entity as TogglProject
+        if (selectedProject.id !== (currentTimer.project_id || null)) {
+          updates.project_id = selectedProject.id
+          // Clear task if project changed
+          if (currentTimer.task_id) {
+            updates.task_id = null
+          }
         }
-      } else {
-        console.log(formatWarning('No tasks available for this project'))
+      } else if (selection.type === 'task') {
+        const selectedTask = selection.entity as TogglTask
+        if (selectedTask.id !== (currentTimer.task_id || null)) {
+          updates.task_id = selectedTask.id
+          // Set project if task is selected
+          if (selectedTask.project_id !== (currentTimer.project_id || null)) {
+            updates.project_id = selectedTask.project_id
+          }
+        }
       }
     }
   }
