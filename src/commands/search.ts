@@ -21,7 +21,7 @@ import Table from 'cli-table3'
 import { createTogglClient, TogglApiClient, TogglTimeEntry, TogglProject } from '../api/client.js'
 import { loadConfig } from '../config/index.js'
 import { formatSuccess, formatError, formatInfo, formatWarning } from '../utils/format.js'
-import { formatDuration, formatStartTime } from '../utils/time.js'
+import { formatDuration, formatStartTime, setTimezone } from '../utils/time.js'
 
 dayjs.extend(utc)
 
@@ -49,6 +49,10 @@ export function createSearchCommand(): Command {
       try {
         // Step 1: Load configuration and create client
         const config = await loadConfig()
+
+        // Set timezone from config for consistent date handling
+        setTimezone(config.timezone)
+
         const client = createTogglClient(config.apiToken)
 
         // Step 2: Get current month date range

@@ -72,10 +72,11 @@ export function createInitCommand(): Command {
       const workspaces = await getWorkspaces(client)
       const selectedWorkspace = await selectWorkspace(workspaces, user.default_workspace_id)
 
-      // Step 5: Save configuration
+      // Step 5: Save configuration with timezone from Toggl
       await saveConfig({
         apiToken,
         workspaceId: selectedWorkspace.id,
+        timezone: user.timezone,
       })
 
       // Step 6: Display success

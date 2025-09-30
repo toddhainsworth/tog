@@ -20,6 +20,7 @@ export const ApiTokenSchema = type('string>=32')
 export const ConfigSchema = type({
   apiToken: ApiTokenSchema,
   workspaceId: 'number',
+  timezone: 'string',
 })
 
 /**

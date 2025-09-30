@@ -35,6 +35,7 @@ import {
   fillMissingDays,
   formatDuration,
   calculateElapsedSeconds,
+  setTimezone,
   type DailySummary,
   type WeeklyProjectSummary,
 } from '../utils/time.js'
@@ -55,6 +56,9 @@ export function createWeekCommand(): Command {
           console.error('Run "tog init" to set up your API token.')
           process.exit(1)
         }
+
+        // Set timezone from config for consistent date handling
+        setTimezone(config.timezone)
 
         const dateRange = options.last ? getPreviousWeekDateRange() : getCurrentWeekDateRange()
         const weekLabel = options.last ? 'Last Week' : 'This Week'

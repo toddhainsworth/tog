@@ -16,7 +16,7 @@
  *   7. Confirm success with timer details
  */
 
-import { confirm, input, select } from '@inquirer/prompts'
+import { confirm, input } from '@inquirer/prompts'
 import { type } from 'arktype'
 import { isAxiosError } from 'axios'
 import { Command } from 'commander'
@@ -31,6 +31,7 @@ import {
 } from '../api/client.js'
 import { loadConfig } from '../config/index.js'
 import { formatError, formatInfo, formatSuccess, formatWarning } from '../utils/format.js'
+import { UnifiedSelector } from '../utils/selectors/UnifiedSelector.js'
 
 /**
  * Schema for timer data when starting a new timer
@@ -97,13 +98,33 @@ export function createStartCommand(): Command {
       const user: TogglUser = await client.get('/me')
       const workspaceId = user.default_workspace_id
 
-      // Step 5: Project selection
-      const selectedProject = await selectProject(client, workspaceId)
+      // Step 5: Unified entity selection (project or task)
+      const selector = new UnifiedSelector(client, workspaceId)
+      const selection = await selector.selectEntity({
+        includeProjects: true,
+        includeTasks: true,
+        allowNone: true,
+      })
 
-      // Step 6: Task selection (if project has tasks)
+      // Extract project and task from selection
+      let selectedProject: TogglProject | undefined
       let selectedTask: TogglTask | undefined
-      if (selectedProject) {
-        selectedTask = await selectTask(client, workspaceId, selectedProject.id)
+
+      if (selection) {
+        if (selection.type === 'project') {
+          selectedProject = selection.entity as TogglProject
+        } else if (selection.type === 'task') {
+          selectedTask = selection.entity as TogglTask
+          // Fetch the specific project for this task
+          try {
+            selectedProject = await client.get<TogglProject>(
+              `/workspaces/${workspaceId}/projects/${selectedTask.project_id}`
+            )
+          } catch (error: unknown) {
+            // Project not found or deleted - continue without project association
+            selectedProject = undefined
+          }
+        }
       }
 
       // Step 7: Create and start timer
@@ -176,7 +197,7 @@ async function stopTimeEntry(
   timeEntryId: number
 ): Promise<void> {
   try {
-    await client.put(`/workspaces/${workspaceId}/time_entries/${timeEntryId}/stop`)
+    await client.patch(`/workspaces/${workspaceId}/time_entries/${timeEntryId}/stop`)
   } catch (error: unknown) {
     if (isAxiosError(error) && error.response?.status === 404) {
       throw new Error('Timer not found. It may have already been stopped.')
@@ -203,91 +224,6 @@ async function getTimerDescription(): Promise<string> {
   })
 
   return description.trim()
-}
-
-/**
- * Interactive project selection
- */
-async function selectProject(
-  client: TogglApiClient,
-  workspaceId: number
-): Promise<TogglProject | undefined> {
-  try {
-    // Fetch available projects
-    const projects: TogglProject[] = await client.get(`/workspaces/${workspaceId}/projects`)
-
-    if (projects.length === 0) {
-      console.log(formatInfo('No projects available'))
-      return undefined
-    }
-
-    // Create choices with "No project" option
-    const choices = [
-      {
-        name: 'No project',
-        value: null,
-      },
-      ...projects.map(project => ({
-        name: project.name,
-        value: project,
-      })),
-    ]
-
-    const selectedProject = await select({
-      message: 'Select a project:',
-      choices,
-    })
-
-    return selectedProject || undefined
-  } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : String(error)
-    throw new Error(`Failed to fetch projects: ${message}`)
-  }
-}
-
-/**
- * Interactive task selection for a project
- */
-async function selectTask(
-  client: TogglApiClient,
-  workspaceId: number,
-  projectId: number
-): Promise<TogglTask | undefined> {
-  try {
-    // Fetch all tasks for the user, then filter by project
-    const allTasks: TogglTask[] = await client.get('/me/tasks?meta=true')
-    const projectTasks = allTasks.filter(task => task.project_id === projectId)
-
-    if (projectTasks.length === 0) {
-      return undefined
-    }
-
-    // Create choices with "No task" option
-    const choices = [
-      {
-        name: 'No task',
-        value: null,
-      },
-      ...projectTasks.map(task => ({
-        name: task.name,
-        value: task,
-      })),
-    ]
-
-    const selectedTask = await select({
-      message: 'Select a task:',
-      choices,
-    })
-
-    return selectedTask || undefined
-  } catch (error: unknown) {
-    // If user has no tasks or endpoint fails, that's ok
-    if (isAxiosError(error) && (error.response?.status === 404 || error.response?.status === 403)) {
-      return undefined
-    }
-    const message = error instanceof Error ? error.message : String(error)
-    throw new Error(`Failed to fetch tasks: ${message}`)
-  }
 }
 
 /**
