@@ -120,7 +120,7 @@ export function createStartCommand(): Command {
             selectedProject = await client.get<TogglProject>(
               `/workspaces/${workspaceId}/projects/${selectedTask.project_id}`
             )
-          } catch (error: unknown) {
+          } catch {
             // Project not found or deleted - continue without project association
             selectedProject = undefined
           }
