@@ -247,6 +247,7 @@ describe('Time Utilities', () => {
         color: '#ff0000',
         active: true,
         workspace_id: 12345,
+        billable: false,
       },
     ]
 
@@ -339,6 +340,7 @@ describe('Time Utilities', () => {
         color: '#ff0000',
         active: true,
         workspace_id: 12345,
+        billable: false,
       },
       {
         id: 102,
@@ -346,6 +348,7 @@ describe('Time Utilities', () => {
         color: '#00ff00',
         active: true,
         workspace_id: 12345,
+        billable: false,
       },
     ]
 
@@ -521,6 +524,7 @@ describe('Time Utilities', () => {
         color: '#ff0000',
         active: true,
         workspace_id: 12345,
+        billable: false,
       },
     ]
 
@@ -665,6 +669,7 @@ describe('Time Utilities', () => {
         color: '#ff0000',
         active: true,
         workspace_id: 12345,
+        billable: false,
       },
       {
         id: 102,
@@ -672,6 +677,7 @@ describe('Time Utilities', () => {
         color: '#00ff00',
         active: true,
         workspace_id: 12345,
+        billable: false,
       },
     ]
 

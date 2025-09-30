@@ -28,6 +28,7 @@ describe('choiceBuilder', () => {
       active: true,
       workspace_id: mockWorkspaceId,
       client_id: 1,
+      billable: false,
     },
     {
       id: 102,
@@ -36,6 +37,7 @@ describe('choiceBuilder', () => {
       active: true,
       workspace_id: mockWorkspaceId,
       client_id: 2,
+      billable: false,
     },
   ]
 
@@ -163,6 +165,7 @@ describe('choiceBuilder', () => {
           color: '#ff0000',
           active: true,
           workspace_id: mockWorkspaceId,
+          billable: false,
         }
         const choices = buildEntityChoices([projectWithEmptyName], false)
 
@@ -178,6 +181,7 @@ describe('choiceBuilder', () => {
           color: '#ff0000',
           active: true,
           workspace_id: mockWorkspaceId,
+          billable: false,
         }))
 
         const choices = buildEntityChoices(manyProjects, false)
@@ -222,6 +226,7 @@ describe('choiceBuilder', () => {
             color: '#ff0000',
             active: true,
             workspace_id: mockWorkspaceId,
+            billable: false,
           },
         ]
         const choices = buildEntityChoices(mixedEntities, false)
