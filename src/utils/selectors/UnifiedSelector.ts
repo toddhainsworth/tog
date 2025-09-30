@@ -121,7 +121,10 @@ export class UnifiedSelector {
             entities.push(...clients)
           })
           .catch(() => {
-            // Silently ignore client fetch failures
+            // Intentionally ignore fetch failures - this allows the selector
+            // to work with partial data (e.g., if clients API fails, we can
+            // still show projects and tasks). The search UI will simply show
+            // fewer options rather than completely failing.
           })
       )
     }
@@ -134,7 +137,10 @@ export class UnifiedSelector {
             entities.push(...projects.filter(p => p.active))
           })
           .catch(() => {
-            // Silently ignore project fetch failures
+            // Intentionally ignore fetch failures - this allows the selector
+            // to work with partial data (e.g., if projects API fails, we can
+            // still show clients and tasks). The search UI will simply show
+            // fewer options rather than completely failing.
           })
       )
     }
@@ -147,7 +153,10 @@ export class UnifiedSelector {
             entities.push(...tasks.filter(t => t.active))
           })
           .catch(() => {
-            // Silently ignore task fetch failures
+            // Intentionally ignore fetch failures - this allows the selector
+            // to work with partial data (e.g., if tasks API fails, we can
+            // still show clients and projects). The search UI will simply show
+            // fewer options rather than completely failing.
           })
       )
     }

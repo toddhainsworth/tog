@@ -74,24 +74,12 @@ function getEntityType(entity: UnifiedEntity): EntityType {
 }
 
 /**
- * Get entity name
+ * Type prefix mapping for display
  */
-function getEntityName(entity: UnifiedEntity): string {
-  return entity.name
-}
-
-/**
- * Get type prefix for display
- */
-function getTypePrefix(type: EntityType): string {
-  switch (type) {
-    case 'client':
-      return '[Client]'
-    case 'project':
-      return '[Project]'
-    case 'task':
-      return '[Task]'
-  }
+const TYPE_PREFIXES: Record<EntityType, string> = {
+  client: '[Client]',
+  project: '[Project]',
+  task: '[Task]',
 }
 
 /**
@@ -107,13 +95,12 @@ function getTypePrefix(type: EntityType): string {
 export function buildEntityChoices(entities: UnifiedEntity[], allowNone: boolean): EntityChoice[] {
   const entityChoices = entities.map(entity => {
     const type = getEntityType(entity)
-    const name = getEntityName(entity)
-    const prefix = getTypePrefix(type)
+    const prefix = TYPE_PREFIXES[type]
 
     return {
-      name: `${prefix} ${name}`,
+      name: `${prefix} ${entity.name}`,
       value: { type, entity },
-      originalName: name,
+      originalName: entity.name,
     }
   })
 

@@ -115,9 +115,15 @@ export function createStartCommand(): Command {
           selectedProject = selection.entity as TogglProject
         } else if (selection.type === 'task') {
           selectedTask = selection.entity as TogglTask
-          // Fetch the project for this task
-          const projects = await client.get<TogglProject[]>(`/workspaces/${workspaceId}/projects`)
-          selectedProject = projects.find(p => p.id === selectedTask?.project_id)
+          // Fetch the specific project for this task
+          try {
+            selectedProject = await client.get<TogglProject>(
+              `/workspaces/${workspaceId}/projects/${selectedTask.project_id}`
+            )
+          } catch (error: unknown) {
+            // Project not found or deleted - continue without project association
+            selectedProject = undefined
+          }
         }
       }
 
